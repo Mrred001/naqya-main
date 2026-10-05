@@ -1,3 +1,5 @@
+import { ThemeToggle } from "./ThemeToggle";
+import { CommunityFooter } from "./CommunityFooter";
 import { Link } from "@tanstack/react-router";
 
 export function NaqyaMark({ className = "h-6 w-6" }: { className?: string }) {
@@ -32,25 +34,14 @@ export function SiteHeader() {
     <header className="glass sticky top-0 z-40 border-b">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 md:px-8">
         <Logo />
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-3 sm:gap-6">
           <Link to="/" className={link} activeOptions={{ exact: true }} activeProps={{ className: "text-foreground" }}>الرئيسية</Link>
           <Link to="/explore" className={link} activeProps={{ className: "text-foreground" }}>استكشف</Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>
   );
 }
 
-export function SiteFooter() {
-  return (
-    <footer className="mt-32 border-t">
-      <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-5 py-10 text-sm text-muted-foreground md:flex-row md:items-center md:px-8">
-        <p dir="rtl" lang="ar" className="text-base text-foreground">نقيا — ما يستحق وقتك.</p>
-        <div className="flex items-center gap-4">
-          <span>Curated by Ahmed Osama</span>
-          <Link to="/admin" className="text-xs opacity-50 hover:opacity-100">·</Link>
-        </div>
-      </div>
-    </footer>
-  );
-}
+export function SiteFooter() { return <CommunityFooter />; }
