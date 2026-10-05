@@ -1,0 +1,254 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ExternalLink } from "lucide-react";
+
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/fcds/course/$slug")({
+  component: CoursePage,
+});
+
+type FcdsCourse = {
+  id: string;
+  name: string;
+  slug: string;
+  code: string;
+  year: string;
+  created_at: string;
+};
+
+type FcdsPlaylistRow = {
+  id: string;
+  course_slug: string;
+  youtube_url: string;
+  title: string;
+  channel: string | null;
+  language: string;
+  thumbnail_url: string | null;
+  created_at: string;
+};
+
+function CoursePage() {
+  const { slug } = Route.useParams();
+
+  const {
+    data: course,
+    isLoading: courseLoading,
+    error: courseError,
+  } = useQuery({
+    queryKey: ["fcds-course", slug],
+
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fcds_courses")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data as FcdsCourse | null;
+    },
+  });
+
+  const {
+    data: playlists = [],
+    isLoading: playlistsLoading,
+    error: playlistsError,
+  } = useQuery({
+    queryKey: ["fcds-course-playlists", slug],
+
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fcds_playlists")
+        .select("*")
+        .eq("course_slug", slug)
+        .order("created_at", {
+          ascending: false,
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []) as FcdsPlaylistRow[];
+    },
+  });
+
+  if (courseLoading) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050d08] text-white/40">
+        جاري تحميل المادة...
+      </div>
+    );
+  }
+
+  if (courseError) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050d08] text-red-300">
+        حصلت مشكلة أثناء تحميل المادة.
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050d08] text-white">
+        المادة غير موجودة
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-[100dvh] bg-[#050d08] text-white">
+      <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
+
+        <Link
+          to="/fcds"
+          className="text-sm text-white/50 transition-colors hover:text-green-400"
+        >
+          ← العودة للمواد
+        </Link>
+
+        <section className="mt-16">
+          <p className="font-mono text-sm text-green-400">
+            COURSE
+          </p>
+
+          <h1 className="mt-3 text-5xl font-bold md:text-7xl">
+            {course.name}
+          </h1>
+
+          <div className="mt-4 flex items-center gap-3 text-sm text-white/40">
+            <span className="font-mono text-green-400">
+              {course.code}
+            </span>
+
+            <span>•</span>
+
+            <span>
+              {course.year}
+            </span>
+          </div>
+        </section>
+
+        <section className="mt-16">
+
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-xs text-green-400">
+                PLAYLISTS
+              </p>
+
+              <h2 className="mt-2 text-3xl font-bold">
+                المصادر المتاحة
+              </h2>
+            </div>
+
+            <p className="text-sm text-white/40">
+              {playlists.length} Playlists
+            </p>
+          </div>
+
+          {playlistsLoading && (
+            <div className="rounded-2xl border border-white/10 p-8 text-center text-white/40">
+              جاري تحميل المصادر...
+            </div>
+          )}
+
+          {playlistsError && (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center text-red-300">
+              حصلت مشكلة أثناء تحميل الـPlaylists.
+            </div>
+          )}
+
+          {!playlistsLoading &&
+            !playlistsError &&
+            playlists.length === 0 && (
+              <div
+                className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center"
+                dir="rtl"
+              >
+                <p className="text-lg font-semibold">
+                  ما في مصادر للمادة دي حالياً.
+                </p>
+
+                <p className="mt-2 text-sm text-white/40">
+                  لو عندك Playlist كويسة، اقترحها من صفحة FCDS.
+                </p>
+              </div>
+            )}
+
+          {!playlistsLoading &&
+            !playlistsError &&
+            playlists.length > 0 && (
+              <div className="grid gap-4">
+
+                {playlists.map((playlist) => (
+                  <a
+                    key={playlist.id}
+                    href={playlist.youtube_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] transition-all hover:border-green-400/40 hover:bg-green-400/[0.03] md:flex"
+                  >
+
+                    {playlist.thumbnail_url && (
+                      <img
+                        src={playlist.thumbnail_url}
+                        alt=""
+                        className="aspect-video w-full object-cover md:w-64"
+                      />
+                    )}
+
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-6 p-6">
+
+                      <div className="min-w-0">
+                        <h3
+                          className="text-xl font-semibold"
+                          dir="auto"
+                        >
+                          {playlist.title}
+                        </h3>
+
+                        <p
+                          className="mt-2 text-sm text-white/40"
+                          dir="auto"
+                        >
+                          {playlist.channel || "Unknown channel"}
+                        </p>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                            {playlist.language}
+                          </span>
+
+                          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                            YouTube
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-2 text-sm text-green-400">
+                        <span>
+                          WATCH
+                        </span>
+
+                        <ExternalLink className="h-4 w-4" />
+                      </div>
+
+                    </div>
+                  </a>
+                ))}
+
+              </div>
+            )}
+
+        </section>
+
+      </main>
+    </div>
+  );
+}
