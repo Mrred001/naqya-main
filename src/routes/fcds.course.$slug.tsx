@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
@@ -79,7 +80,7 @@ function CoursePage() {
 
   if (courseLoading) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050d08] text-white/40">
+      <div className="flex min-h-[100dvh] items-center justify-center fcds-theme bg-background text-muted-foreground">
         جاري تحميل المادة...
       </div>
     );
@@ -87,7 +88,7 @@ function CoursePage() {
 
   if (courseError) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050d08] text-red-300">
+      <div className="flex min-h-[100dvh] items-center justify-center fcds-theme bg-background text-red-300">
         حصلت مشكلة أثناء تحميل المادة.
       </div>
     );
@@ -95,25 +96,26 @@ function CoursePage() {
 
   if (!course) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[#050d08] text-white">
+      <div className="flex min-h-[100dvh] items-center justify-center fcds-theme bg-background text-foreground">
         المادة غير موجودة
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#050d08] text-white">
+    <div className="min-h-[100dvh] fcds-theme bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
+        <div className="mb-6 flex justify-end"><ThemeToggle /></div>
 
         <Link
           to="/fcds"
-          className="text-sm text-white/50 transition-colors hover:text-green-400"
+          className="text-sm text-muted-foreground transition-colors hover:text-primary"
         >
           ← العودة للمواد
         </Link>
 
         <section className="mt-16">
-          <p className="font-mono text-sm text-green-400">
+          <p className="font-mono text-sm text-primary">
             COURSE
           </p>
 
@@ -121,8 +123,8 @@ function CoursePage() {
             {course.name}
           </h1>
 
-          <div className="mt-4 flex items-center gap-3 text-sm text-white/40">
-            <span className="font-mono text-green-400">
+          <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+            <span className="font-mono text-primary">
               {course.code}
             </span>
 
@@ -138,7 +140,7 @@ function CoursePage() {
 
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-xs text-green-400">
+              <p className="font-mono text-xs text-primary">
                 PLAYLISTS
               </p>
 
@@ -147,13 +149,13 @@ function CoursePage() {
               </h2>
             </div>
 
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-muted-foreground">
               {playlists.length} Playlists
             </p>
           </div>
 
           {playlistsLoading && (
-            <div className="rounded-2xl border border-white/10 p-8 text-center text-white/40">
+            <div className="rounded-2xl border border-border p-8 text-center text-muted-foreground">
               جاري تحميل المصادر...
             </div>
           )}
@@ -168,14 +170,14 @@ function CoursePage() {
             !playlistsError &&
             playlists.length === 0 && (
               <div
-                className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center"
+                className="rounded-2xl border border-border bg-card p-10 text-center"
                 dir="rtl"
               >
                 <p className="text-lg font-semibold">
                   ما في مصادر للمادة دي حالياً.
                 </p>
 
-                <p className="mt-2 text-sm text-white/40">
+                <p className="mt-2 text-sm text-muted-foreground">
                   لو عندك Playlist كويسة، اقترحها من صفحة FCDS.
                 </p>
               </div>
@@ -192,7 +194,7 @@ function CoursePage() {
                     href={playlist.youtube_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] transition-all hover:border-green-400/40 hover:bg-green-400/[0.03] md:flex"
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:bg-primary/[0.03] md:flex"
                   >
 
                     {playlist.thumbnail_url && (
@@ -214,24 +216,24 @@ function CoursePage() {
                         </h3>
 
                         <p
-                          className="mt-2 text-sm text-white/40"
+                          className="mt-2 text-sm text-muted-foreground"
                           dir="auto"
                         >
                           {playlist.channel || "Unknown channel"}
                         </p>
 
                         <div className="mt-4 flex flex-wrap gap-2">
-                          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                          <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
                             {playlist.language}
                           </span>
 
-                          <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                          <span className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
                             YouTube
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2 text-sm text-green-400">
+                      <div className="flex shrink-0 items-center gap-2 text-sm text-primary">
                         <span>
                           WATCH
                         </span>

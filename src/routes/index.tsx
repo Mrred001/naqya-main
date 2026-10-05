@@ -51,7 +51,7 @@ function Gateway() {
       {/* NAQYA FCDS */}
       <Link
         to="/fcds"
-        className={`${panel} bg-[#07110b] text-white`}
+        className={`${panel} fcds-theme bg-background text-foreground`}
       >
         {/* Logo */}
         <img
@@ -64,16 +64,16 @@ function Gateway() {
         <div className="my-auto">
           <h2 className="text-5xl font-bold tracking-[0.08em] md:text-7xl">
             NAQYA
-            <span className="block font-mono tracking-normal text-green-400">
+            <span className="block font-mono tracking-normal text-primary">
               FCDS
             </span>
           </h2>
 
-          <p className="mt-5 max-w-md text-lg text-white/60" dir="rtl">
+          <p className="mt-5 max-w-md text-lg text-muted-foreground" dir="rtl">
             اعثر على Playlist لمادتك.
           </p>
 
-          <p className="mt-8 font-mono text-sm text-green-400">
+          <p className="mt-8 font-mono text-sm text-primary">
             ENTER FCDS →
           </p>
         </div>

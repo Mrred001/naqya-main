@@ -1,3 +1,4 @@
+import { ReportsAdmin } from "@/components/admin/ReportsAdmin";
 import {
   Pencil,
   Star,
@@ -257,7 +258,8 @@ type AdminTab =
   | "fcds"
   | "courses"
   | "suggestions"
-  | "categories";
+  | "categories"
+  | "reports";
 
 function Dashboard({ email }: { email: string }) {
   const [tab, setTab] = useState<AdminTab>("overview");
@@ -296,6 +298,7 @@ function Dashboard({ email }: { email: string }) {
 });
 
   const navItems = [
+    { id: "reports" as const, label: "البلاغات", icon: Inbox },
     {
       id: "overview" as const,
       label: "Overview",
@@ -426,6 +429,8 @@ function Dashboard({ email }: { email: string }) {
 {tab === "suggestions" && (
   <SuggestionsAdmin />
 )}
+
+{tab === "reports" && <ReportsAdmin />}
 
 {tab === "categories" && (
   <CategoryAdmin />
