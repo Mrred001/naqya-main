@@ -1,3 +1,4 @@
+import { ThemeToggle } from "@/components/site/ThemeToggle";
 import {
   createFileRoute,
   Link,
@@ -229,8 +230,8 @@ function FCDS() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050d08] text-white">
-     <header className="border-b border-white/10">
+    <div className="min-h-screen fcds-theme bg-background text-foreground">
+     <header className="border-b border-border">
   <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 md:px-8">
 
     {/* FCDS Logo - Right */}
@@ -246,29 +247,31 @@ function FCDS() {
       />
 
       <div className="leading-none">
-        <p className="text-base font-bold tracking-[0.12em] transition-colors group-hover:text-green-400">
+        <p className="text-base font-bold tracking-[0.12em] transition-colors group-hover:text-primary">
           NAQYA
         </p>
 
-        <p className="mt-1 font-mono text-xs tracking-[0.18em] text-green-400">
+        <p className="mt-1 font-mono text-xs tracking-[0.18em] text-primary">
           FCDS
         </p>
       </div>
     </Link>
 
+    <div className="flex items-center gap-4"><ThemeToggle />
     {/* Home - Left */}
     <Link
       to="/"
-      className="text-sm text-white/50 transition-colors hover:text-green-400"
+      className="text-sm text-muted-foreground transition-colors hover:text-primary"
     >
       الرئيسية
     </Link>
 
+    </div>
   </div>
 </header>
 
       <main className="mx-auto max-w-7xl px-5 pb-24 md:px-8">
-        <section className="pb-16 pt-16 md:pb-20 md:pt-24">
+        <section className="hero-surface mb-10 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
           <h1
             className="max-w-3xl text-5xl font-bold leading-tight md:text-7xl"
             dir="rtl"
@@ -276,20 +279,20 @@ function FCDS() {
             كل مادة.
             <br />
 
-            <span className="text-green-400">
+            <span className="text-primary">
               مصادرها في مكان واحد.
             </span>
           </h1>
 
           <p
-            className="mt-6 max-w-xl text-lg text-white/50"
+            className="mt-6 max-w-xl text-lg text-muted-foreground"
             dir="rtl"
           >
             ابحث عن مادتك وشوف الـPlaylists المتاحة ليها.
           </p>
 
-          <div className="mt-10 flex max-w-2xl items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 focus-within:border-green-400/50">
-            <Search className="h-5 w-5 shrink-0 text-green-400" />
+          <div className="mt-10 flex max-w-2xl items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 focus-within:border-primary/50">
+            <Search className="h-5 w-5 shrink-0 text-primary" />
 
             <input
               type="text"
@@ -297,7 +300,7 @@ function FCDS() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="اكتب اسم المادة أو كودها..."
               dir="rtl"
-              className="w-full bg-transparent text-base outline-none placeholder:text-white/30"
+              className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
             />
           </div>
 
@@ -318,8 +321,8 @@ function FCDS() {
                 onClick={() => setSelectedYear(year)}
                 className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                   selectedYear === year
-                    ? "border-green-400 bg-green-400 text-black"
-                    : "border-white/10 text-white/60 hover:border-green-400/40 hover:text-green-400"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
                 }`}
               >
                 {year}
@@ -334,7 +337,7 @@ function FCDS() {
             dir="rtl"
           >
             <div>
-              <p className="font-mono text-xs text-green-400">
+              <p className="font-mono text-xs text-primary">
                 COURSES
               </p>
 
@@ -343,13 +346,13 @@ function FCDS() {
               </h2>
             </div>
 
-            <p className="text-sm text-white/40">
+            <p className="text-sm text-muted-foreground">
               {filteredCourses.length} مواد
             </p>
           </div>
 
           {coursesLoading && (
-            <div className="rounded-2xl border border-white/10 p-10 text-center text-white/40">
+            <div className="rounded-2xl border border-border p-10 text-center text-muted-foreground">
               جاري تحميل المواد...
             </div>
           )}
@@ -377,7 +380,7 @@ function FCDS() {
             !coursesError &&
             filteredCourses.length === 0 && (
               <div
-                className="rounded-2xl border border-white/10 p-10 text-center text-white/40"
+                className="rounded-2xl border border-border p-10 text-center text-muted-foreground"
                 dir="rtl"
               >
                 ما لقينا مادة مطابقة للبحث.
@@ -389,7 +392,7 @@ function FCDS() {
       <button
         type="button"
         onClick={() => setSuggestOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-green-400 px-5 py-3 text-sm font-semibold text-black shadow-lg transition-transform hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105"
       >
         <Plus className="h-4 w-4" />
         اقترح Playlist
@@ -397,10 +400,10 @@ function FCDS() {
 
       {suggestOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0a1510] p-6 shadow-2xl md:p-8">
+          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl md:p-8">
             <div className="flex items-start justify-between gap-4">
               <div dir="rtl">
-                <p className="font-mono text-xs text-green-400">
+                <p className="font-mono text-xs text-primary">
                   SUGGEST PLAYLIST
                 </p>
 
@@ -408,7 +411,7 @@ function FCDS() {
                   اقترح Playlist
                 </h2>
 
-                <p className="mt-2 text-sm text-white/40">
+                <p className="mt-2 text-sm text-muted-foreground">
                   الصق رابط الـPlaylist وحنجيب بياناتها تلقائياً.
                 </p>
               </div>
@@ -416,7 +419,7 @@ function FCDS() {
               <button
                 type="button"
                 onClick={closeSuggest}
-                className="rounded-full p-2 text-white/40 transition-colors hover:bg-white/5 hover:text-white"
+                className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -424,21 +427,21 @@ function FCDS() {
 
             {submitted ? (
               <div
-                className="mt-8 rounded-2xl border border-green-400/20 bg-green-400/5 p-6 text-center"
+                className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center"
                 dir="rtl"
               >
-                <p className="text-lg font-semibold text-green-400">
+                <p className="text-lg font-semibold text-primary">
                   وصل الاقتراح 👌
                 </p>
 
-                <p className="mt-2 text-sm text-white/50">
+                <p className="mt-2 text-sm text-muted-foreground">
                   حنراجعه قبل إضافته للمكتبة.
                 </p>
 
                 <button
                   type="button"
                   onClick={closeSuggest}
-                  className="mt-6 rounded-xl bg-green-400 px-5 py-2.5 text-sm font-semibold text-black"
+                  className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
                 >
                   تمام
                 </button>
@@ -450,7 +453,7 @@ function FCDS() {
                 dir="rtl"
               >
                 <label className="block">
-                  <span className="mb-2 block text-sm text-white/60">
+                  <span className="mb-2 block text-sm text-muted-foreground">
                     المادة *
                   </span>
 
@@ -458,7 +461,7 @@ function FCDS() {
                     value={suggestCourse}
                     onChange={(e) => setSuggestCourse(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-white/10 bg-[#07110b] px-4 py-3 text-white outline-none transition-colors focus:border-green-400/50"
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50"
                   >
                     <option value="">
                       اختر المادة
@@ -477,12 +480,12 @@ function FCDS() {
 
                 <label className="block">
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-sm text-white/60">
+                    <span className="text-sm text-muted-foreground">
                       رابط YouTube Playlist *
                     </span>
 
                     {fetching && (
-                      <span className="flex items-center gap-1.5 text-xs text-green-400">
+                      <span className="flex items-center gap-1.5 text-xs text-primary">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         جاري جلب البيانات...
                       </span>
@@ -496,12 +499,12 @@ function FCDS() {
                     required
                     placeholder="https://youtube.com/playlist?list=..."
                     dir="ltr"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left text-white outline-none transition-colors placeholder:text-white/20 focus:border-green-400/50"
+                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm text-white/60">
+                  <span className="mb-2 block text-sm text-muted-foreground">
                     اسم الـPlaylist *
                   </span>
 
@@ -512,12 +515,12 @@ function FCDS() {
                     required
                     placeholder="بيتعبّى تلقائياً"
                     dir="auto"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-white outline-none transition-colors placeholder:text-white/20 focus:border-green-400/50"
+                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm text-white/60">
+                  <span className="mb-2 block text-sm text-muted-foreground">
                     القناة
                   </span>
 
@@ -527,14 +530,14 @@ function FCDS() {
                     onChange={(e) => setSuggestChannel(e.target.value)}
                     placeholder="بيتعبّى تلقائياً"
                     dir="auto"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-white outline-none transition-colors placeholder:text-white/20 focus:border-green-400/50"
+                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm text-white/60">
+                  <span className="mb-2 block text-sm text-muted-foreground">
                     ملاحظة
-                    <span className="mr-1 text-white/30">
+                    <span className="mr-1 text-muted-foreground">
                       (اختيارية)
                     </span>
                   </span>
@@ -544,14 +547,14 @@ function FCDS() {
                     value={suggestNote}
                     onChange={(e) => setSuggestNote(e.target.value)}
                     placeholder="ليه شايف الـPlaylist دي مفيدة؟"
-                    className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-white outline-none transition-colors placeholder:text-white/20 focus:border-green-400/50"
+                    className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 
                 <button
                   type="submit"
                   disabled={fetching || submitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-400 px-5 py-3.5 font-semibold text-black transition-colors hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -603,12 +606,12 @@ function CourseCard({
     <Link
       to="/fcds/course/$slug"
       params={{ slug: course.slug }}
-      className="group rounded-2xl border border-white/10 bg-white/[0.02] p-6 text-left transition-all hover:-translate-y-1 hover:border-green-400/40 hover:bg-green-400/[0.03]"
+      className="group rounded-2xl border border-border bg-card p-6 text-left transition-all hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/[0.03]"
     >
       <div className="flex items-start justify-between">
-        <BookOpen className="h-5 w-5 text-green-400" />
+        <BookOpen className="h-5 w-5 text-primary" />
 
-        <span className="font-mono text-xs text-white/30">
+        <span className="font-mono text-xs text-muted-foreground">
           {course.code}
         </span>
       </div>
@@ -617,7 +620,7 @@ function CourseCard({
         {course.name}
       </h3>
 
-      <div className="mt-3 flex items-center justify-between text-sm text-white/40">
+      <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
         <span>
           {playlistCount} Playlists
         </span>

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ListVideo, Play } from "lucide-react";
 import { formatDuration, thumbFor, type ContentItem } from "@/lib/content";
@@ -21,6 +21,7 @@ export function Pill({ children, tone = "default" }: { children: ReactNode; tone
 
 export function ContentCard({ item, size = "md" }: { item: ContentItem; size?: "md" | "lg" }) {
   const thumb = thumbFor(item);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return (
     <Link
       to="/watch/$id"
@@ -28,11 +29,13 @@ export function ContentCard({ item, size = "md" }: { item: ContentItem; size?: "
       className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="relative aspect-video overflow-hidden rounded-2xl border bg-card transition-colors duration-200 group-hover:border-primary/40">
-        {thumb && (
+        {(!thumb || failedSrc === thumb) && <div className="grid h-full place-items-center bg-primary-soft text-primary"><ListVideo size={40} aria-hidden="true" /></div>}
+        {thumb && failedSrc !== thumb && (
           <img
             src={thumb}
             alt=""
             loading="lazy"
+            onError={() => setFailedSrc(thumb)}
             className="h-full w-full object-cover transition-transform duration-250 ease-out group-hover:scale-[1.02]"
           />
         )}

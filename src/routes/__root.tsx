@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 
+import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { CommunityFooter } from "@/components/site/CommunityFooter";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteHeader";
@@ -105,8 +107,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className="dark">
+    <html lang="ar" dir="rtl" className="dark" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("naqya-theme");document.documentElement.classList.toggle("dark",t!=="light")}catch(e){}` }} />
         <HeadContent />
       </head>
       <body>
@@ -124,6 +127,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="grain min-h-screen">
+        {pathname === "/" && <div className="absolute start-5 top-5 z-40"><ThemeToggle /></div>}
 {pathname !== "/" &&
   !pathname.startsWith("/fcds") &&
   !pathname.startsWith("/admin") && (
@@ -132,13 +136,14 @@ function RootComponent() {
   <main key={pathname} className="page-enter">
     <Outlet />
   </main>
+  {pathname.startsWith("/fcds") && <CommunityFooter fcds />}
 
 {pathname !== "/" &&
   !pathname.startsWith("/fcds") &&
   !pathname.startsWith("/admin") && (
     <SiteFooter />
   )}</div>
-      <Toaster theme="dark" position="bottom-left" />
+      <Toaster theme="system" position="bottom-left" />
     </QueryClientProvider>
   );
 }

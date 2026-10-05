@@ -70,7 +70,8 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { color-scheme: dark; }
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -99,4 +100,44 @@
 @keyframes page-in {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
+}
+
+html:not(.dark) {
+  --background: #F8F7FC; --foreground: #201B2D;
+  --card: #FFFFFF; --card-foreground: #201B2D;
+  --popover: #FFFFFF; --popover-foreground: #201B2D;
+  --primary: #6D28D9; --primary-foreground: #FFFFFF;
+  --secondary: #EDE9F5; --secondary-foreground: #332C45;
+  --muted: #EDE9F5; --muted-foreground: #62596F;
+  --accent: #E8E1F4; --accent-foreground: #201B2D;
+  --border: rgb(43 30 65 / 14%); --input: rgb(43 30 65 / 22%);
+  --glass: rgb(248 247 252 / 90%);
+  --quiet: #EDE9F5; --quiet-foreground: #332C45;
+  --destructive: #B91C1C;
+}
+.fcds-theme {
+  --background: #07120E; --foreground: #F3FCF6;
+  --card: #10231A; --card-foreground: #F3FCF6;
+  --primary: #6EE7A3; --primary-foreground: #07120E;
+  --primary-soft: rgb(52 211 153 / 12%);
+  --muted-foreground: #A1B8AB; --border: rgb(161 184 171 / 18%);
+  --accent: #1C3528; --glass: rgb(7 18 14 / 90%);
+}
+html:not(.dark) .fcds-theme {
+  --background: #F3FAF5; --foreground: #153525;
+  --card: #FFFFFF; --card-foreground: #153525;
+  --primary: #147444; --primary-foreground: #FFFFFF;
+  --muted-foreground: #526B5C; --border: rgb(21 53 37 / 16%);
+  --accent: #DCEFE3; --glass: rgb(243 250 245 / 90%);
+}
+.pick-arrow { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 50%; background: var(--card); transition: border-color 180ms, transform 180ms; }
+.pick-arrow:hover { border-color: var(--primary); transform: translateY(-2px); }
+.pick-arrow:disabled { opacity: .4; transform: none; }
+.pick-description { animation: page-in 220ms ease-out both; }
+.weekly-panel { box-shadow: 0 18px 50px -36px var(--primary); }
+.hero-surface { background: radial-gradient(ellipse at 85% 0%, var(--primary-soft), transparent 70%), var(--card); }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

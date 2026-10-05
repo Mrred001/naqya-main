@@ -17,6 +17,7 @@ import {
   parseYouTube,
 } from "@/lib/content";
 
+import { WeeklyPicks } from "@/components/site/WeeklyPicks";
 import { ContentCard } from "@/components/site/ContentCard";
 import { SearchBar } from "@/components/site/SearchBar";
 import { fetchYouTubeMeta } from "@/lib/youtube.functions";
@@ -98,7 +99,7 @@ function Home() {
     (item) => item.featured,
   );
 
-  const [lead, ...restFeatured] = featured;
+
 
   const recent = items.slice(0, 6);
 
@@ -345,7 +346,7 @@ function Home() {
       <div className="mx-auto max-w-7xl px-5 md:px-8">
 
         {/* Hero */}
-        <section className="pb-16 pt-16 md:pb-24 md:pt-28">
+        <section className="hero-surface mb-4 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
 
           <div
             dir="rtl"
@@ -356,7 +357,7 @@ function Home() {
               منتقى بيد إنسان، لا خوارزمية
             </p>
 
-            <h1 className="mt-4 text-5xl font-bold leading-[1.2] md:text-7xl lg:text-8xl">
+            <h1 className="mt-4 text-5xl font-bold leading-[1.2] md:text-7xl lg:text-7xl">
               ما يستحق{" "}
               <span className="text-primary">
                 وقتك.
@@ -392,51 +393,7 @@ function Home() {
 
         </section>
 
-        {/* Featured */}
-        {lead && (
-          <section className="py-12">
-
-            <SectionHead
-              eyebrow="مختارات"
-              title="اختيارات هذا الأسبوع"
-            />
-
-            <div className="grid gap-10 lg:grid-cols-5">
-
-              <div className="lg:col-span-3">
-
-                <ContentCard
-                  item={lead}
-                  size="lg"
-                />
-
-                {lead.recommendation && (
-                  <p className="mt-4 max-w-xl border-s-2 border-primary ps-4 text-lg text-muted-foreground">
-                    <span dir="auto">
-                      {lead.recommendation}
-                    </span>
-                  </p>
-                )}
-
-              </div>
-
-              <div className="grid gap-10 sm:grid-cols-2 lg:col-span-2 lg:grid-cols-1">
-
-                {restFeatured
-                  .slice(0, 2)
-                  .map((item) => (
-                    <ContentCard
-                      key={item.id}
-                      item={item}
-                    />
-                  ))}
-
-              </div>
-
-            </div>
-
-          </section>
-        )}
+        <WeeklyPicks items={featured} />
 
         {/* Recent */}
         <section className="py-12">
