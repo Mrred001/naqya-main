@@ -1,25 +1,32 @@
-# Optional Google login and private bookmarks — prepared, not live
+# Optional Google login and private bookmarks
 
-The changes add optional Google sign-in, PKCE callback handling, an account dialog, sign-out on the current device, and a saved library covering both general content and FCDS playlists. Browsing and watching remain public. Bookmarks are fetched once per account through React Query; private cached data is cancelled and removed on session changes. No Google client secret belongs in Vite variables or repository files.
+Browsing and watching remain public. Google login is optional and only enables saving general content and FCDS playlists to a private library synchronized through Supabase.
 
-## Required setup before production
+## Live setup verified on 2026-10-06
 
-1. Check live database source IDs are UUIDs and inspect existing signup triggers. New Google users must not receive an admin role. Preserve the owner's existing admin role.
-2. Apply `supabase/migrations/20261005210000_user_bookmarks.sql`. Each row references exactly one real source; duplicate saves are prevented. Anonymous access is revoked, and SELECT/INSERT/DELETE policies require the current user to own the row. No update grant or admin read policy is added.
-3. In Google Cloud, create or reuse a dedicated NAQYA project. Configure an external OAuth application for the intended public audience and only `openid`, email and profile scopes. Do not request Drive, Gmail or YouTube access. Add the required support/developer email with the owner's confirmation where needed.
-4. Create a Web application OAuth client. Authorized origin: `https://naqya-main.vercel.app`. Google callback URI: `https://ypjneaoxluxausbseuju.supabase.co/auth/v1/callback`. Keep the generated client secret private and enter it directly into Supabase's Google provider configuration. Credential creation or permission expansion needs user confirmation at action time under browser policy.
-5. Set Supabase Site URL to `https://naqya-main.vercel.app` and allow `https://naqya-main.vercel.app/auth/callback`. For preview testing add only the exact preview callback, never a broad wildcard. Preserve existing approved redirects until reviewed.
-6. Enable Google provider with Client ID and Client Secret. Review audience publishing/testing restrictions; do not report public login ready while only test users can authenticate.
+- Supabase Google provider is enabled. A Google Web OAuth client ID is configured, and the OAuth client secret is present (never expose or store it in this repository).
+- Google callback shown by Supabase: `https://ypjneaoxluxausbseuju.supabase.co/auth/v1/callback`.
+- Supabase Site URL is `https://naqya-main.vercel.app`; the only configured redirect URL is `https://naqya-main.vercel.app/auth/callback`.
+- Live `public.content.id` and `public.fcds_playlists.id` are UUIDs, matching the bookmark foreign keys.
+- Before migration, `public.user_bookmarks` did not exist. The migration in `supabase/migrations/20261005210000_user_bookmarks.sql` was then applied successfully.
+- Post-migration inspection confirmed RLS is enabled; SELECT, INSERT and DELETE policies are restricted to `auth.uid() = user_id`; anonymous SELECT/INSERT/DELETE privileges are false; authenticated owners have the required operations; the table has zero rows.
+- Live inspection found no non-internal trigger on `auth.users`; `public.user_roles` contains one admin. No existing signup trigger can grant a new Google user admin privileges.
+- Google Cloud's OAuth audience/publishing state could not be verified because the Cloud Console returned “Site Unavailable” in the available browser. Do not claim public login availability until the app is confirmed published or the account being tested is an allowed test user.
 
-## Verification
+## Implementation and local verification
 
-- Production target build passed locally with Nitro's Vercel preset.
-- 12 automated tests passed, including guest saves, both source types, failed writes, owner filtering, removal, logout cache cleanup, stale session race and OAuth errors/scopes/callback.
-- `tsc --noEmit` still has the 3 preexisting imports of the empty generated `src/integrations/supabase/types.ts`. No additional diagnostics from these changes. Generate actual database types rather than inventing schema types.
-- Not yet verified live: actual Google authorization/callback, database migration and RLS isolation between two signed-in accounts, cross-device persistence, browser layout and deployment. Browser is currently blocked by native credential protection. Do not merge to production until the provider/database setup and live flows are verified.
+- AccountProvider watches session changes and clears private bookmark cache when the account changes or signs out.
+- GoogleSignIn uses Supabase OAuth with PKCE and only `openid email profile` scopes.
+- AccountMenu supports sign-in, saved items and sign-out on the current device.
+- SaveButton supports general content and FCDS playlists. `/saved` and `/auth/callback` handle the private library and OAuth return.
+- Migration enforces exactly one source per row, prevents duplicate saves, and grants no update or admin-read policy.
+- 12 automated tests pass, covering guest behavior, both source types, failed writes, removal, account filtering, cache cleanup, session races and OAuth error/scope handling.
+- `VERCEL=1 npm run build` passes with the Nitro Vercel output.
+- The generated Supabase `src/integrations/supabase/types.ts` is empty in the production repo, so `tsc --noEmit` reports three pre-existing type errors; generate real database types rather than inventing schema types.
 
-## Acceptance checklist
+## Still required before calling the feature live
 
-Guest can browse every existing route. Guest save opens optional login. Google success exchanges PKCE and removes callback parameters. Cancellation has a readable retry screen. Save and removal persist after reload, and saved items appear from another device with the same account. A second account cannot see/delete the first account's bookmarks; anonymous reads/writes fail. General, FCDS, watch, saved, callback and existing admin routes work. New Google users have no admin privileges. Sign-out hides private data. Google secrets remain server-side in Supabase.
-
-Official reference: https://supabase.com/docs/guides/auth/social-login/auth-google
+- Verify Google OAuth audience/publication state in Google Cloud.
+- Create a Vercel preview for the feature branch and test Google sign-in and callback on the real preview URL.
+- Verify saves/removals persist after reload and on another device, confirm account isolation with two accounts, and test the existing public, FCDS, watch and admin routes.
+- Promote to production only after the live OAuth flow and preview checks pass.
