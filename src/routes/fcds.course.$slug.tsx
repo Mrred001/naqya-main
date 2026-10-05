@@ -1,3 +1,5 @@
+import { SaveButton } from "@/components/account/SaveButton";
+import { AccountMenu } from "@/components/account/AccountMenu";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -105,7 +107,10 @@ function CoursePage() {
   return (
     <div className="min-h-[100dvh] fcds-theme bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
-        <div className="mb-6 flex justify-end"><ThemeToggle /></div>
+        <div className="mb-6 flex justify-end gap-3">
+          <AccountMenu />
+          <ThemeToggle />
+        </div>
 
         <Link
           to="/fcds"
@@ -115,43 +120,28 @@ function CoursePage() {
         </Link>
 
         <section className="mt-16">
-          <p className="font-mono text-sm text-primary">
-            COURSE
-          </p>
+          <p className="font-mono text-sm text-primary">COURSE</p>
 
-          <h1 className="mt-3 text-5xl font-bold md:text-7xl">
-            {course.name}
-          </h1>
+          <h1 className="mt-3 text-5xl font-bold md:text-7xl">{course.name}</h1>
 
           <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
-            <span className="font-mono text-primary">
-              {course.code}
-            </span>
+            <span className="font-mono text-primary">{course.code}</span>
 
             <span>•</span>
 
-            <span>
-              {course.year}
-            </span>
+            <span>{course.year}</span>
           </div>
         </section>
 
         <section className="mt-16">
-
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-xs text-primary">
-                PLAYLISTS
-              </p>
+              <p className="font-mono text-xs text-primary">PLAYLISTS</p>
 
-              <h2 className="mt-2 text-3xl font-bold">
-                المصادر المتاحة
-              </h2>
+              <h2 className="mt-2 text-3xl font-bold">المصادر المتاحة</h2>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              {playlists.length} Playlists
-            </p>
+            <p className="text-sm text-muted-foreground">{playlists.length} Playlists</p>
           </div>
 
           {playlistsLoading && (
@@ -166,37 +156,26 @@ function CoursePage() {
             </div>
           )}
 
-          {!playlistsLoading &&
-            !playlistsError &&
-            playlists.length === 0 && (
-              <div
-                className="rounded-2xl border border-border bg-card p-10 text-center"
-                dir="rtl"
-              >
-                <p className="text-lg font-semibold">
-                  ما في مصادر للمادة دي حالياً.
-                </p>
+          {!playlistsLoading && !playlistsError && playlists.length === 0 && (
+            <div className="rounded-2xl border border-border bg-card p-10 text-center" dir="rtl">
+              <p className="text-lg font-semibold">ما في مصادر للمادة دي حالياً.</p>
 
-                <p className="mt-2 text-sm text-muted-foreground">
-                  لو عندك Playlist كويسة، اقترحها من صفحة FCDS.
-                </p>
-              </div>
-            )}
+              <p className="mt-2 text-sm text-muted-foreground">
+                لو عندك Playlist كويسة، اقترحها من صفحة FCDS.
+              </p>
+            </div>
+          )}
 
-          {!playlistsLoading &&
-            !playlistsError &&
-            playlists.length > 0 && (
-              <div className="grid gap-4">
-
-                {playlists.map((playlist) => (
+          {!playlistsLoading && !playlistsError && playlists.length > 0 && (
+            <div className="grid gap-4">
+              {playlists.map((playlist) => (
+                <article key={playlist.id} className="space-y-3">
                   <a
-                    key={playlist.id}
                     href={playlist.youtube_url}
                     target="_blank"
                     rel="noreferrer"
                     className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:bg-primary/[0.03] md:flex"
                   >
-
                     {playlist.thumbnail_url && (
                       <img
                         src={playlist.thumbnail_url}
@@ -206,19 +185,12 @@ function CoursePage() {
                     )}
 
                     <div className="flex min-w-0 flex-1 items-center justify-between gap-6 p-6">
-
                       <div className="min-w-0">
-                        <h3
-                          className="text-xl font-semibold"
-                          dir="auto"
-                        >
+                        <h3 className="text-xl font-semibold" dir="auto">
                           {playlist.title}
                         </h3>
 
-                        <p
-                          className="mt-2 text-sm text-muted-foreground"
-                          dir="auto"
-                        >
+                        <p className="mt-2 text-sm text-muted-foreground" dir="auto">
                           {playlist.channel || "Unknown channel"}
                         </p>
 
@@ -234,22 +206,18 @@ function CoursePage() {
                       </div>
 
                       <div className="flex shrink-0 items-center gap-2 text-sm text-primary">
-                        <span>
-                          WATCH
-                        </span>
+                        <span>WATCH</span>
 
                         <ExternalLink className="h-4 w-4" />
                       </div>
-
                     </div>
                   </a>
-                ))}
-
-              </div>
-            )}
-
+                  <SaveButton kind="fcds" id={playlist.id} />
+                </article>
+              ))}
+            </div>
+          )}
         </section>
-
       </main>
     </div>
   );

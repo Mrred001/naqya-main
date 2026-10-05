@@ -49,6 +49,7 @@ function createSupabaseClient() {
       fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
     },
     auth: {
+      flowType: "pkce",
       storage: brokeredPreviewStorage(),
       persistSession: true,
       autoRefreshToken: true,

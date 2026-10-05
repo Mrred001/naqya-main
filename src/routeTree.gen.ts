@@ -14,6 +14,8 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as FcdsRouteImport } from './routes/fcds'
 import { Route as NaqyaRouteImport } from './routes/naqya'
+import { Route as SavedRouteImport } from './routes/saved'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as FcdsCourseSlugRouteImport } from './routes/fcds.course.$slug'
 
@@ -42,6 +44,16 @@ const NaqyaRoute = NaqyaRouteImport.update({
   path: '/naqya',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SavedRoute = SavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WatchIdRoute = WatchIdRouteImport.update({
   id: '/watch/$id',
   path: '/watch/$id',
@@ -59,6 +71,8 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/fcds': typeof FcdsRouteWithChildren
   '/naqya': typeof NaqyaRoute
+  '/saved': typeof SavedRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
 }
@@ -68,6 +82,8 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/fcds': typeof FcdsRouteWithChildren
   '/naqya': typeof NaqyaRoute
+  '/saved': typeof SavedRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
 }
@@ -78,6 +94,8 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/fcds': typeof FcdsRouteWithChildren
   '/naqya': typeof NaqyaRoute
+  '/saved': typeof SavedRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
 }
@@ -89,6 +107,8 @@ export interface FileRouteTypes {
     | '/explore'
     | '/fcds'
     | '/naqya'
+    | '/saved'
+    | '/auth/callback'
     | '/watch/$id'
     | '/fcds/course/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +118,8 @@ export interface FileRouteTypes {
     | '/explore'
     | '/fcds'
     | '/naqya'
+    | '/saved'
+    | '/auth/callback'
     | '/watch/$id'
     | '/fcds/course/$slug'
   id:
@@ -107,6 +129,8 @@ export interface FileRouteTypes {
     | '/explore'
     | '/fcds'
     | '/naqya'
+    | '/saved'
+    | '/auth/callback'
     | '/watch/$id'
     | '/fcds/course/$slug'
   fileRoutesById: FileRoutesById
@@ -117,6 +141,8 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   FcdsRoute: typeof FcdsRouteWithChildren
   NaqyaRoute: typeof NaqyaRoute
+  SavedRoute: typeof SavedRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   WatchIdRoute: typeof WatchIdRoute
 }
 
@@ -157,6 +183,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NaqyaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/saved': {
+      id: '/saved'
+      path: '/saved'
+      fullPath: '/saved'
+      preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/watch/$id': {
       id: '/watch/$id'
       path: '/watch/$id'
@@ -190,6 +230,8 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   FcdsRoute: FcdsRouteWithChildren,
   NaqyaRoute: NaqyaRoute,
+  SavedRoute: SavedRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   WatchIdRoute: WatchIdRoute,
 }
 export const routeTree = rootRouteImport
