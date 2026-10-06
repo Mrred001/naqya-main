@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { useAccount } from "./AccountProvider";
 import { GoogleSignIn } from "./GoogleSignIn";
 
 export function AccountMenu() {
+  const fcds = useRouterState({ select: (state) => state.location.pathname.startsWith("/fcds") });
   const { user, ready } = useAccount();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -28,7 +29,7 @@ export function AccountMenu() {
         {user ? "حسابي" : "دخول"}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className={fcds ? "fcds-theme text-foreground" : undefined}>
           <DialogTitle>{user ? "حسابك في نقيا" : "احفظ المحتوى وارجع ليه"}</DialogTitle>
           <DialogDescription>
             {user
