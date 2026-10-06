@@ -22,6 +22,7 @@ import { ContentCard } from "@/components/site/ContentCard";
 import { SearchBar } from "@/components/site/SearchBar";
 import { fetchYouTubeMeta } from "@/lib/youtube.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/naqya")({
   head: () => ({
@@ -503,9 +504,8 @@ function Home() {
 
       {/* Suggest Modal */}
       {suggestOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border bg-background p-6 shadow-2xl md:p-8">
+        <Dialog open onOpenChange={(open) => !open && closeSuggest()}>
+          <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-y-auto rounded-3xl border bg-background p-5 shadow-2xl md:p-8 [&>button]:hidden">
 
             <div className="flex items-start justify-between gap-4">
 
@@ -515,9 +515,9 @@ function Home() {
                   SUGGEST CONTENT
                 </p>
 
-                <h2 className="mt-2 text-2xl font-bold">
+                <DialogTitle className="mt-2 text-2xl font-bold">
                   اقترح محتوى
-                </h2>
+                </DialogTitle>
 
                 <p className="mt-2 text-sm text-muted-foreground">
                   عندك فيديو أو Playlist تستحق تكون في نقيا؟
@@ -767,10 +767,10 @@ function Home() {
               </form>
             )}
 
-          </div>
-
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );
 }
+
