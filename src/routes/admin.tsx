@@ -759,7 +759,7 @@ function SuggestionsAdmin() {
         duration_seconds:
           meta?.duration_seconds ?? 0,
 
-        content_type: "playlist",
+        content_type: parsed.kind,
 
         category_id: null,
 
@@ -942,6 +942,10 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
 
                     <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs text-white/50">
                       {suggestion.course_slug}
+                    </span>
+
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                      {parseYouTube(suggestion.youtube_url)?.kind === "video" ? "فيديو" : "Playlist"}
                     </span>
 
                     <span className="text-xs text-white/25">
@@ -1284,7 +1288,7 @@ function FcdsLibraryAdmin() {
       return;
     }
 
-    toast.success("Playlist deleted");
+    toast.success("Source deleted");
     refresh();
   };
 
@@ -1315,7 +1319,7 @@ function FcdsLibraryAdmin() {
           </h2>
 
           <p className="mt-3 text-sm text-white/40">
-            إدارة الـPlaylists الخاصة بمكتبة الكلية.
+            إدارة الـPlaylists والفيديوهات الخاصة بمكتبة الكلية.
           </p>
         </div>
 
@@ -1386,6 +1390,10 @@ function FcdsLibraryAdmin() {
                     </span>
 
                     <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-white/40">
+                      {parseYouTube(playlist.youtube_url)?.kind === "video" ? "Video" : "Playlist"}
+                    </span>
+
+                    <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-white/40">
                       {playlist.language}
                     </span>
 
@@ -1405,7 +1413,7 @@ function FcdsLibraryAdmin() {
 
                 <button
                   type="button"
-                  aria-label="Edit playlist"
+                  aria-label="Edit source"
                   onClick={() =>
                     editPlaylist(playlist)
                   }
@@ -1416,7 +1424,7 @@ function FcdsLibraryAdmin() {
 
                 <button
                   type="button"
-                  aria-label="Delete playlist"
+                  aria-label="Delete source"
                   onClick={() => remove(playlist)}
                   className="p-2 text-white/30 hover:text-red-400"
                 >
@@ -1475,13 +1483,6 @@ function FcdsPlaylistForm({
       parseYouTube(url);
 
     if (!parsed) return;
-
-    if (parsed.kind !== "playlist") {
-      toast.error(
-        "الرابط لازم يكون YouTube Playlist.",
-      );
-      return;
-    }
 
     if (
       lastFetched.current === parsed.id
@@ -1559,19 +1560,18 @@ function FcdsPlaylistForm({
     const parsed =
       parseYouTube(draft.youtube_url);
 
-    if (
-      !parsed ||
-      parsed.kind !== "playlist"
-    ) {
+    if (!parsed || (!id && parsed.kind !== "playlist")) {
       toast.error(
-        "Enter a valid YouTube Playlist URL.",
+        id
+          ? "Enter a valid YouTube video or playlist URL."
+          : "Enter a valid YouTube Playlist URL.",
       );
       return;
     }
 
     if (!draft.title.trim()) {
       toast.error(
-        "Playlist title is required.",
+        "Source title is required.",
       );
       return;
     }
@@ -1619,7 +1619,7 @@ function FcdsPlaylistForm({
 
     toast.success(
       id
-        ? "Playlist updated"
+        ? "Source updated"
         : "Playlist added to FCDS",
     );
 
@@ -1638,7 +1638,9 @@ function FcdsPlaylistForm({
 
           <h2 className="mt-2 text-4xl font-bold">
             {id
-              ? "Edit Playlist"
+              ? parseYouTube(draft.youtube_url)?.kind === "video"
+                ? "Edit Video"
+                : "Edit Playlist"
               : "Add Playlist"}
           </h2>
         </div>
@@ -1660,7 +1662,7 @@ function FcdsPlaylistForm({
       >
 
         <Label
-          label="YouTube Playlist URL"
+          label={id ? "YouTube video or playlist URL" : "YouTube Playlist URL"}
           className="md:col-span-2"
         >
           <input
@@ -1671,7 +1673,11 @@ function FcdsPlaylistForm({
             onChange={(e) =>
               onUrl(e.target.value)
             }
-            placeholder="https://youtube.com/playlist?list=..."
+            placeholder={
+              id
+                ? "https://youtube.com/watch?v=... or playlist URL"
+                : "https://youtube.com/playlist?list=..."
+            }
           />
 
           {fetching && (

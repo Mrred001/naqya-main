@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "@tanstack/react-router";
 import { Flag, Instagram, UserRound } from "lucide-react";
 import {
   Dialog,
@@ -165,15 +164,9 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
             >
               <Instagram size={16} />
               تواصل معي
-              <span dir="ltr" className="text-xs text-muted-foreground">
-                @visionwithahmed
-              </span>
             </a>
           </div>
         </div>
-        <Link to="/admin" className="mt-6 inline-block text-xs text-muted-foreground">
-          الإدارة
-        </Link>
       </div>
     </footer>
   );

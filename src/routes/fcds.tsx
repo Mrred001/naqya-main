@@ -3,7 +3,7 @@ import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { Search, Plus, BookOpen, X, Send, Loader2 } from "lucide-react";
+import { Search, Plus, BookOpen, X, Send, Loader2, Video } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/fcds")({
       { title: "NAQYA FCDS" },
       {
         name: "description",
-        content: "مكتبة Playlists لطلاب FCDS.",
+        content: "مكتبة Playlists وفيديوهات مفيدة لطلاب FCDS.",
       },
     ],
   }),
@@ -38,6 +38,7 @@ function FCDS() {
   const [selectedYear, setSelectedYear] = useState("كل السنوات");
 
   const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestKind, setSuggestKind] = useState<"playlist" | "video">("playlist");
   const [suggestCourse, setSuggestCourse] = useState("");
   const [suggestUrl, setSuggestUrl] = useState("");
   const [suggestTitle, setSuggestTitle] = useState("");
@@ -89,6 +90,7 @@ function FCDS() {
   });
 
   const resetSuggestionForm = () => {
+    setSuggestKind("playlist");
     setSuggestCourse("");
     setSuggestUrl("");
     setSuggestTitle("");
@@ -105,6 +107,12 @@ function FCDS() {
     resetSuggestionForm();
   };
 
+  const openSuggest = (kind: "playlist" | "video") => {
+    resetSuggestionForm();
+    setSuggestKind(kind);
+    setSuggestOpen(true);
+  };
+
   const onSuggestUrl = async (url: string) => {
     setSuggestUrl(url);
 
@@ -114,8 +122,7 @@ function FCDS() {
       return;
     }
 
-    if (parsed.kind !== "playlist") {
-      toast.error("الرابط لازم يكون YouTube Playlist.");
+    if (parsed.kind !== suggestKind) {
       return;
     }
 
@@ -136,7 +143,7 @@ function FCDS() {
       });
 
       if (!res.meta) {
-        toast.error(res.error ?? "ما قدرنا نجيب بيانات الـPlaylist.");
+        toast.error(res.error ?? "ما قدرنا نجيب بيانات المحتوى.");
 
         lastFetched.current = "";
         return;
@@ -147,11 +154,11 @@ function FCDS() {
       setSuggestTitle(meta.title || "");
       setSuggestChannel(meta.channel || "");
 
-      toast.success("تم جلب بيانات الـPlaylist تلقائياً");
+      toast.success("تم جلب بيانات المحتوى تلقائياً");
     } catch (error) {
       console.error(error);
 
-      toast.error("حصلت مشكلة أثناء جلب بيانات الـPlaylist.");
+      toast.error("حصلت مشكلة أثناء جلب بيانات YouTube.");
 
       lastFetched.current = "";
     } finally {
@@ -174,13 +181,17 @@ function FCDS() {
       return;
     }
 
-    if (parsed.kind !== "playlist") {
-      toast.error("الرابط لازم يكون Playlist.");
+    if (parsed.kind !== suggestKind) {
+      toast.error(
+        suggestKind === "video"
+          ? "الرابط لازم يكون فيديو YouTube مفرد."
+          : "الرابط لازم يكون YouTube Playlist.",
+      );
       return;
     }
 
     if (!suggestTitle.trim()) {
-      toast.error("اسم الـPlaylist مطلوب.");
+      toast.error(suggestKind === "video" ? "اسم الفيديو مطلوب." : "اسم الـPlaylist مطلوب.");
       return;
     }
 
@@ -259,7 +270,7 @@ function FCDS() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-muted-foreground" dir="rtl">
-            ابحث عن مادتك وشوف الـPlaylists المتاحة ليها.
+            ابحث عن مادتك وشوف الـPlaylists والفيديوهات المتاحة ليها.
           </p>
 
           <div className="mt-10 flex max-w-2xl items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 focus-within:border-primary/50">
@@ -337,26 +348,42 @@ function FCDS() {
         </section>
       </main>
 
-      <button
-        type="button"
-        onClick={() => setSuggestOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105"
-      >
-        <Plus className="h-4 w-4" />
-        اقترح Playlist
-      </button>
+      <div className="fixed bottom-5 right-4 z-40 flex flex-col items-end gap-2 sm:bottom-6 sm:right-6 sm:flex-row">
+        <button
+          type="button"
+          onClick={() => openSuggest("playlist")}
+          className="flex items-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" />
+          اقترح Playlist
+        </button>
+        <button
+          type="button"
+          onClick={() => openSuggest("video")}
+          className="flex items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-lg transition-colors hover:border-primary hover:text-primary"
+        >
+          <Video className="h-4 w-4" />
+          اقترح فيديو
+        </button>
+      </div>
 
       {suggestOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
           <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl md:p-8">
             <div className="flex items-start justify-between gap-4">
               <div dir="rtl">
-                <p className="font-mono text-xs text-primary">SUGGEST PLAYLIST</p>
+                <p className="font-mono text-xs text-primary">
+                  {suggestKind === "video" ? "SUGGEST VIDEO" : "SUGGEST PLAYLIST"}
+                </p>
 
-                <h2 className="mt-2 text-2xl font-bold">اقترح Playlist</h2>
+                <h2 className="mt-2 text-2xl font-bold">
+                  {suggestKind === "video" ? "اقترح فيديو" : "اقترح Playlist"}
+                </h2>
 
                 <p className="mt-2 text-sm text-muted-foreground">
-                  الصق رابط الـPlaylist وحنجيب بياناتها تلقائياً.
+                  {suggestKind === "video"
+                    ? "الصق رابط فيديو واحد وحنجيب بياناته تلقائياً."
+                    : "الصق رابط الـPlaylist وحنجيب بياناتها تلقائياً."}
                 </p>
               </div>
 
@@ -409,7 +436,9 @@ function FCDS() {
 
                 <label className="block">
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-sm text-muted-foreground">رابط YouTube Playlist *</span>
+                    <span className="text-sm text-muted-foreground">
+                      {suggestKind === "video" ? "رابط فيديو YouTube *" : "رابط YouTube Playlist *"}
+                    </span>
 
                     {fetching && (
                       <span className="flex items-center gap-1.5 text-xs text-primary">
@@ -424,7 +453,11 @@ function FCDS() {
                     value={suggestUrl}
                     onChange={(e) => onSuggestUrl(e.target.value)}
                     required
-                    placeholder="https://youtube.com/playlist?list=..."
+                    placeholder={
+                      suggestKind === "video"
+                        ? "https://youtube.com/watch?v=..."
+                        : "https://youtube.com/playlist?list=..."
+                    }
                     dir="ltr"
                     className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
@@ -432,7 +465,7 @@ function FCDS() {
 
                 <label className="block">
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    اسم الـPlaylist *
+                    {suggestKind === "video" ? "اسم الفيديو *" : "اسم الـPlaylist *"}
                   </span>
 
                   <input
@@ -469,7 +502,11 @@ function FCDS() {
                     rows={4}
                     value={suggestNote}
                     onChange={(e) => setSuggestNote(e.target.value)}
-                    placeholder="ليه شايف الـPlaylist دي مفيدة؟"
+                    placeholder={
+                      suggestKind === "video"
+                        ? "ليه شايف الفيديو ده مفيد؟"
+                        : "ليه شايف الـPlaylist دي مفيدة؟"
+                    }
                     className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
@@ -536,7 +573,7 @@ function CourseCard({ course }: { course: FcdsCourse }) {
       <h3 className="mt-10 text-2xl font-semibold">{course.name}</h3>
 
       <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{playlistCount} Playlists</span>
+        <span>{playlistCount} مصادر</span>
 
         <span>{course.year}</span>
       </div>

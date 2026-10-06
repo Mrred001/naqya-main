@@ -118,17 +118,29 @@ html:not(.dark) {
 .fcds-theme {
   --background: #07120E; --foreground: #F3FCF6;
   --card: #10231A; --card-foreground: #F3FCF6;
+  --popover: #10231A; --popover-foreground: #F3FCF6;
   --primary: #6EE7A3; --primary-foreground: #07120E;
+  --primary-strong: #34D399;
   --primary-soft: rgb(52 211 153 / 12%);
-  --muted-foreground: #A1B8AB; --border: rgb(161 184 171 / 18%);
+  --secondary: #1C3528; --secondary-foreground: #E6F5EB;
+  --muted: #1C3528; --muted-foreground: #A1B8AB;
+  --border: rgb(161 184 171 / 18%); --input: rgb(161 184 171 / 24%);
+  --ring: rgb(110 231 163 / 60%);
   --accent: #1C3528; --glass: rgb(7 18 14 / 90%);
+  --quiet: #1C3528; --quiet-foreground: #E6F5EB;
 }
 html:not(.dark) .fcds-theme {
   --background: #F3FAF5; --foreground: #153525;
   --card: #FFFFFF; --card-foreground: #153525;
-  --primary: #147444; --primary-foreground: #FFFFFF;
-  --muted-foreground: #526B5C; --border: rgb(21 53 37 / 16%);
+  --popover: #FFFFFF; --popover-foreground: #153525;
+  --primary: #147444; --primary-foreground: #FFFFFF; --primary-strong: #0F5E36;
+  --primary-soft: rgb(20 116 68 / 10%);
+  --secondary: #E7F3EA; --secondary-foreground: #244B34;
+  --muted: #E7F3EA; --muted-foreground: #526B5C;
+  --border: rgb(21 53 37 / 16%); --input: rgb(21 53 37 / 20%);
+  --ring: rgb(20 116 68 / 48%);
   --accent: #DCEFE3; --glass: rgb(243 250 245 / 90%);
+  --quiet: #E7F3EA; --quiet-foreground: #244B34;
 }
 .pick-arrow { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 50%; background: var(--card); transition: border-color 180ms, transform 180ms; }
 .pick-arrow:hover { border-color: var(--primary); transform: translateY(-2px); }

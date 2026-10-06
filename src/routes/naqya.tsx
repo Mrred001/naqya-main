@@ -495,7 +495,7 @@ function Home() {
         onClick={() =>
           setSuggestOpen(true)
         }
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
       >
         <Plus className="h-4 w-4" />
         اقترح محتوى
@@ -503,7 +503,7 @@ function Home() {
 
       {/* Suggest Modal */}
       {suggestOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
 
           <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border bg-background p-6 shadow-2xl md:p-8">
 
