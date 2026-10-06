@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { GoogleSignIn } from "@/components/account/GoogleSignIn";
@@ -11,23 +11,27 @@ export const Route = createFileRoute("/auth/callback")({
 });
 function AuthCallback() {
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
+  const navigate = useNavigate();
   useEffect(() => {
     let active = true;
     // getSession waits for Supabase's automatic PKCE exchange; never log auth URLs.
     void supabase.auth
       .getSession()
       .then(({ data, error }) => {
-        window.history.replaceState(null, "", "/auth/callback");
-        if (active) setState(!error && data.session ? "success" : "error");
+        if (!active) return;
+        setState(!error && data.session ? "success" : "error");
+        // Let TanStack Router remove the OAuth query string so its history state stays intact.
+        void navigate({ to: "/auth/callback", search: {}, replace: true });
       })
       .catch(() => {
-        window.history.replaceState(null, "", "/auth/callback");
-        if (active) setState("error");
+        if (!active) return;
+        setState("error");
+        void navigate({ to: "/auth/callback", search: {}, replace: true });
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [navigate]);
   return (
     <section className="mx-auto max-w-md space-y-5 px-5 py-24 text-center">
       <h1 className="text-3xl font-bold">
@@ -67,3 +71,4 @@ function AuthCallback() {
     </section>
   );
 }
+
