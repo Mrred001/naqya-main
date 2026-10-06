@@ -135,7 +135,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AccountProvider>
-        <div className="grain min-h-screen">
+        <div className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}>
           {pathname === "/" && (
             <div className="absolute start-5 top-5 z-40">
               <ThemeToggle />
