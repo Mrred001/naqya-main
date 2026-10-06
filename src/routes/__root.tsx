@@ -14,6 +14,7 @@ import { Toaster } from "sonner";
 
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { CommunityFooter } from "@/components/site/CommunityFooter";
+import { AccountProvider } from "@/components/account/AccountProvider";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteHeader";
@@ -84,7 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "NAQYA" },
-      { name: "description", content: "A curated library of videos, playlists and ideas worth watching." },
+      {
+        name: "description",
+        content: "A curated library of videos, playlists and ideas worth watching.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -109,7 +113,11 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className="dark" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem("naqya-theme");document.documentElement.classList.toggle("dark",t!=="light")}catch(e){}` }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("naqya-theme");document.documentElement.classList.toggle("dark",t!=="light")}catch(e){}`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -126,24 +134,27 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="grain min-h-screen">
-        {pathname === "/" && <div className="absolute start-5 top-5 z-40"><ThemeToggle /></div>}
-{pathname !== "/" &&
-  !pathname.startsWith("/fcds") &&
-  !pathname.startsWith("/admin") && (
-    <SiteHeader />
-  )}
-  <main key={pathname} className="page-enter">
-    <Outlet />
-  </main>
-  {pathname.startsWith("/fcds") && <CommunityFooter fcds />}
+      <AccountProvider>
+        <div className="grain min-h-screen">
+          {pathname === "/" && (
+            <div className="absolute start-5 top-5 z-40">
+              <ThemeToggle />
+            </div>
+          )}
+          {pathname !== "/" && !pathname.startsWith("/fcds") && !pathname.startsWith("/admin") && (
+            <SiteHeader />
+          )}
+          <main key={pathname} className="page-enter">
+            <Outlet />
+          </main>
+          {pathname.startsWith("/fcds") && <CommunityFooter fcds />}
 
-{pathname !== "/" &&
-  !pathname.startsWith("/fcds") &&
-  !pathname.startsWith("/admin") && (
-    <SiteFooter />
-  )}</div>
-      <Toaster theme="system" position="bottom-left" />
+          {pathname !== "/" && !pathname.startsWith("/fcds") && !pathname.startsWith("/admin") && (
+            <SiteFooter />
+          )}
+        </div>
+        <Toaster theme="system" position="bottom-left" />
+      </AccountProvider>
     </QueryClientProvider>
   );
 }

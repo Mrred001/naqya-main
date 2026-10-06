@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "@tanstack/react-router";
 import { Flag, Instagram, UserRound } from "lucide-react";
 import {
   Dialog,
@@ -55,7 +54,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
             <p className="font-semibold">
-              {fcds ? "NAQYA FCDS — مصادر مادتك، بلا تشتت." : "نقيا — ما يستحق وقتك."}
+              {fcds ? "درب FCDS — مصادر مادتك، بلا تشتت." : "نقيا — ما يستحق وقتك."}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">Curated by Ahmed Osama</p>
           </div>
@@ -71,7 +70,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
                 className={`max-h-[85dvh] max-w-2xl overflow-y-auto rounded-3xl ${fcds ? "fcds-theme" : ""}`}
               >
                 <DialogTitle className="text-2xl">من أنا</DialogTitle>
-                <DialogDescription>أحمد أسامة · {fcds ? "NAQYA FCDS" : "NAQYA"}</DialogDescription>
+                <DialogDescription>أحمد أسامة · {fcds ? "درب FCDS" : "NAQYA"}</DialogDescription>
                 <div className="space-y-5 text-base leading-loose">
                   <p>
                     أنا أحمد أسامة،{" "}
@@ -83,7 +82,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
                   {fcds ? (
                     <>
                       <p>
-                        جات فكرة NAQYA FCDS لما لاحظت إن طلب روابط الـPlaylists بتكرر كل فترة، سواء
+                        جات فكرة درب FCDS لما لاحظت إن طلب روابط الـPlaylists بتكرر كل فترة، سواء
                         من زملائي أو من الطلاب الجدد. ومن هنا سألت نفسي: ماذا لو في موقع يجمع قوائم
                         الشرح الخاصة بكل مادة، بشكل مرتب وجميل وسهل الوصول؟
                       </p>
@@ -165,15 +164,9 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
             >
               <Instagram size={16} />
               تواصل معي
-              <span dir="ltr" className="text-xs text-muted-foreground">
-                @visionwithahmed
-              </span>
             </a>
           </div>
         </div>
-        <Link to="/admin" className="mt-6 inline-block text-xs text-muted-foreground">
-          الإدارة
-        </Link>
       </div>
     </footer>
   );
