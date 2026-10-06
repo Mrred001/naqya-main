@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { parseYouTube } from "@/lib/content";
 
 export const Route = createFileRoute("/fcds/course/$slug")({
+  head: () => ({ meta: [{ title: "درب FCDS — مصادر مادتك" }] }),
   component: CoursePage,
 });
 
@@ -165,7 +166,7 @@ function CoursePage() {
               <p className="text-lg font-semibold">ما في مصادر للمادة دي حالياً.</p>
 
               <p className="mt-2 text-sm text-muted-foreground">
-                لو عندك فيديو أو Playlist مفيدة، اقترحها من صفحة FCDS.
+                لو عندك فيديو أو Playlist مفيدة، اقترحها من صفحة درب FCDS.
               </p>
             </div>
           )}

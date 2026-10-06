@@ -9,7 +9,7 @@ import { useAccount } from "@/components/account/AccountProvider";
 import { GoogleSignIn } from "@/components/account/GoogleSignIn";
 
 export const Route = createFileRoute("/saved")({
-  head: () => ({ meta: [{ title: "المحفوظات — نقيا" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "المحفوظات — نقيا ودرب" }, { name: "robots", content: "noindex" }] }),
   component: Saved,
 });
 type Playlist = { id: string; course_slug: string; title: string; channel: string | null };
@@ -34,7 +34,7 @@ function Saved() {
   return (
     <section className="mx-auto max-w-7xl space-y-6 px-5 py-12 md:px-8">
       <h1 className="text-4xl font-bold">المحفوظات</h1>
-      <p className="text-muted-foreground">مصادرك من نقيا والكلية، محفوظة مع حسابك.</p>
+      <p className="text-muted-foreground">مصادرك من نقيا ودرب، محفوظة مع حسابك.</p>
       {loading ? (
         <p role="status">جاري التحميل…</p>
       ) : !user ? (
@@ -80,7 +80,7 @@ function Saved() {
                   <ContentCard item={item} showSave={false} />
                 ) : playlist ? (
                   <div className="space-y-3">
-                    <span className="text-xs text-primary">NAQYA FCDS</span>
+                    <span className="text-xs text-primary">Darb FCDS</span>
                     <h2 dir="auto" className="text-xl font-bold">
                       {playlist.title}
                     </h2>

@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/fcds")({
   head: () => ({
     meta: [
-      { title: "NAQYA FCDS" },
+      { title: "درب FCDS — مصادر مادتك" },
       {
         name: "description",
         content: "مكتبة Playlists وفيديوهات مفيدة لطلاب FCDS.",
@@ -234,13 +234,13 @@ function FCDS() {
           >
             <img
               src="/naqya-fcds-logo.png"
-              alt="NAQYA FCDS"
+              alt="Darb FCDS"
               className="h-16 w-16 object-contain transition-transform duration-200 group-hover:scale-105"
             />
 
             <div className="leading-none">
               <p className="text-base font-bold tracking-[0.12em] transition-colors group-hover:text-primary">
-                NAQYA
+                DARB
               </p>
 
               <p className="mt-1 font-mono text-xs tracking-[0.18em] text-primary">FCDS</p>

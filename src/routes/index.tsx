@@ -3,10 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NAQYA" },
+      { title: "NAQYA & DARB FCDS" },
       {
         name: "description",
-        content: "اختر مكتبتك — نقيا أو نقيا FCDS.",
+        content: "اختر مكتبتك — نقيا أو درب FCDS.",
       },
     ],
   }),
@@ -48,7 +48,7 @@ function Gateway() {
         </div>
       </Link>
 
-      {/* NAQYA FCDS */}
+      {/* DARB FCDS */}
       <Link
         to="/fcds"
         className={`${panel} fcds-theme bg-background text-foreground`}
@@ -63,7 +63,7 @@ function Gateway() {
         {/* Content */}
         <div className="my-auto">
           <h2 className="text-5xl font-bold tracking-[0.08em] md:text-7xl">
-            NAQYA
+            DARB
             <span className="block font-mono tracking-normal text-primary">
               FCDS
             </span>
