@@ -17,16 +17,24 @@ function AuthCallback() {
     // getSession waits for Supabase's automatic PKCE exchange; never log auth URLs.
     void supabase.auth
       .getSession()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!active) return;
-        setState(!error && data.session ? "success" : "error");
-        // Let TanStack Router remove the OAuth query string so its history state stays intact.
-        void navigate({ to: "/auth/callback", search: {}, replace: true });
+        // Only clean an actual OAuth query, and finish that navigation before
+        // showing links the user can click. A same-route replace issued after
+        // success can otherwise land after a link click and send them back here.
+        if (window.location.search) {
+          try {
+            await navigate({ to: "/auth/callback", search: {}, replace: true });
+          } catch {
+            // Keep the callback usable if URL cleanup fails; Supabase has already
+            // completed the session exchange.
+          }
+        }
+        if (active) setState(!error && data.session ? "success" : "error");
       })
       .catch(() => {
         if (!active) return;
         setState("error");
-        void navigate({ to: "/auth/callback", search: {}, replace: true });
       });
     return () => {
       active = false;
@@ -71,4 +79,3 @@ function AuthCallback() {
     </section>
   );
 }
-
