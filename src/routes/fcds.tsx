@@ -345,27 +345,26 @@ function FCDS() {
               ما لقينا مادة مطابقة للبحث.
             </div>
           )}
+          <div className="mt-8 flex flex-col items-end gap-3 pb-8 sm:flex-row sm:justify-end" dir="rtl">
+            <button
+              type="button"
+              onClick={() => openSuggest("playlist")}
+              className="flex items-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
+            >
+              <Plus className="h-4 w-4" />
+              اقترح Playlist
+            </button>
+            <button
+              type="button"
+              onClick={() => openSuggest("video")}
+              className="flex items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-lg transition-colors hover:border-primary hover:text-primary"
+            >
+              <Video className="h-4 w-4" />
+              اقترح فيديو
+            </button>
+          </div>
         </section>
       </main>
-
-      <div className="fixed bottom-5 right-4 z-40 flex flex-col items-end gap-2 sm:bottom-6 sm:right-6 sm:flex-row">
-        <button
-          type="button"
-          onClick={() => openSuggest("playlist")}
-          className="flex items-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" />
-          اقترح Playlist
-        </button>
-        <button
-          type="button"
-          onClick={() => openSuggest("video")}
-          className="flex items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-lg transition-colors hover:border-primary hover:text-primary"
-        >
-          <Video className="h-4 w-4" />
-          اقترح فيديو
-        </button>
-      </div>
 
       {suggestOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
