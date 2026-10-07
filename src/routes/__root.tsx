@@ -12,12 +12,15 @@ import { useEffect, type ReactNode } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 
+import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { AccountMenu } from "@/components/account/AccountMenu";
 import { CommunityFooter } from "@/components/site/CommunityFooter";
 import { AccountProvider } from "@/components/account/AccountProvider";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteHeader";
 import { PreferencesProvider } from "@/components/site/PreferencesProvider";
+import { LanguageToggle } from "@/components/site/LanguageToggle";
 import { recordDailyVisit } from "@/lib/site-analytics";
 
 function NotFoundComponent() {
@@ -145,6 +148,13 @@ function RootComponent() {
         <div
           className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}
         >
+          {pathname === "/" && (
+            <div className="absolute start-5 top-5 z-40 flex items-center gap-2">
+              <ThemeToggle />
+              <LanguageToggle />
+              <AccountMenu />
+            </div>
+          )}
           {pathname !== "/" && !pathname.startsWith("/fcds") && !pathname.startsWith("/admin") && (
             <SiteHeader />
           )}
