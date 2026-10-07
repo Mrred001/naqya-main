@@ -52,7 +52,6 @@ function Gateway() {
             <ArrowRight size={22} aria-hidden="true" />
           </span>
         </div>
-        <span className="gateway-index">02 / 02</span>
       </Link>
 
       <Link
@@ -83,7 +82,6 @@ function Gateway() {
             <ArrowRight size={22} aria-hidden="true" />
           </span>
         </div>
-        <span className="gateway-index">01 / 02</span>
       </Link>
     </main>
   );
