@@ -347,7 +347,7 @@ function Home() {
       <div className="mx-auto max-w-7xl px-5 md:px-8">
 
         {/* Hero */}
-        <section className="hero-surface mb-4 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
+        <section className="hero-surface mb-3 mt-4 rounded-3xl border px-5 pb-8 pt-9 sm:px-6 sm:pb-10 sm:pt-12 md:mb-4 md:mt-6 md:px-10 md:pb-14 md:pt-16">
 
           <div
             dir="rtl"
@@ -358,7 +358,7 @@ function Home() {
               منتقى بيد إنسان، لا خوارزمية
             </p>
 
-            <h1 className="mt-4 text-5xl font-bold leading-[1.2] md:text-7xl lg:text-7xl">
+            <h1 className="mt-4 text-4xl font-bold leading-[1.2] sm:text-5xl md:text-7xl lg:text-7xl">
               ما يستحق{" "}
               <span className="text-primary">
                 وقتك.

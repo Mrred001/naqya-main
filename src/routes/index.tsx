@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,73 +15,50 @@ export const Route = createFileRoute("/")({
 });
 
 function Gateway() {
-  const panel =
-    "group relative flex min-h-[50vh] flex-col overflow-hidden p-8 transition-colors md:min-h-[100dvh] md:p-14";
-
   return (
-    <main className="grid min-h-[100dvh] md:grid-cols-2">
-
-      {/* NAQYA */}
-      <Link
-        to="/naqya"
-        className={`${panel} bg-background`}
-      >
-        {/* Logo */}
+    <main className="gateway-grid grid min-h-[100dvh] md:grid-cols-2">
+      <Link to="/naqya" className="gateway-panel gateway-naqya group">
         <img
           src="/naqya-logo-icon.svg"
           alt=""
-          className="h-16 w-16 object-contain"
+          className="h-16 w-16 object-contain md:h-[4.5rem] md:w-[4.5rem]"
         />
 
-        {/* Content */}
-        <div className="my-auto">
+        <div className="gateway-copy">
           <h1 className="text-5xl font-bold tracking-[0.08em] md:text-7xl">
             NAQYA
           </h1>
-
-          <p className="mt-5 max-w-md text-lg text-muted-foreground" dir="rtl">
+          <p className="mt-4 text-lg text-muted-foreground md:text-xl" dir="rtl">
             محتوى منتقى بعناية، يستحق وقتك.
           </p>
-
-          <p className="mt-8 text-sm font-medium text-primary">
-            ENTER NAQYA →
-          </p>
+          <span className="gateway-cta">
+            ادخل نقيا <ArrowRight size={22} aria-hidden="true" />
+          </span>
         </div>
       </Link>
 
-      {/* DARB FCDS */}
-      <Link
-        to="/fcds"
-        className={`${panel} fcds-theme bg-background text-foreground`}
-      >
-        {/* Logo */}
+      <Link to="/fcds" className="gateway-panel gateway-darb group fcds-theme">
         <img
           src="/naqya-fcds-logo.png"
           alt=""
-          className="h-19 w-19 object-contain"
+          className="h-16 w-16 object-contain md:h-[4.5rem] md:w-[4.5rem]"
         />
 
-        {/* Content */}
-        <div className="my-auto">
+        <div className="gateway-copy">
           <h2 className="text-5xl font-bold tracking-[0.08em] md:text-7xl">
             DARB
-            <span className="block font-mono tracking-normal text-primary">
+            <span className="mt-1 block font-mono tracking-normal text-primary">
               FCDS
             </span>
           </h2>
-
-          <p className="mt-5 max-w-md text-lg text-muted-foreground" dir="rtl">
+          <p className="mt-4 text-lg text-muted-foreground md:text-xl" dir="rtl">
             اعثر على Playlist لمادتك.
           </p>
-
-          <p className="mt-8 font-mono text-sm text-primary">
-            ENTER FCDS →
-          </p>
+          <span className="gateway-cta">
+            ادخل درب <ArrowRight size={22} aria-hidden="true" />
+          </span>
         </div>
-
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-green-500/10 blur-3xl" />
       </Link>
-
     </main>
   );
 }

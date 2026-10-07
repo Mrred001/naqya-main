@@ -17,13 +17,13 @@ export function WeeklyPicks({ items }: { items: ContentItem[] }) {
   }
   if (!selected) return null;
   return (
-    <section className="py-12" aria-label="اختيارات هذا الأسبوع">
-      <div className="mb-7 flex items-end justify-between gap-4">
+    <section className="scroll-mt-28 py-10 md:py-12" aria-label="اختيارات هذا الأسبوع">
+      <div className="mb-6 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs tracking-widest text-primary">مختارات</p>
-          <h2 className="mt-2 text-3xl font-bold md:text-4xl">اختيارات هذا الأسبوع</h2>
+          <h2 className="mt-2 text-2xl font-bold sm:text-3xl md:text-4xl">اختيارات هذا الأسبوع</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
             type="button"
             aria-label="الاختيار السابق"
