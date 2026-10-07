@@ -1,5 +1,6 @@
 import { SaveButton } from "@/components/account/SaveButton";
 import { AccountMenu } from "@/components/account/AccountMenu";
+import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -113,8 +114,9 @@ function CoursePage() {
     <div className="min-h-[100dvh] fcds-theme bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
         <div className="mb-6 flex justify-end gap-3">
-          <AccountMenu />
           <ThemeToggle />
+          <AccountMenu />
+          <AdminLink />
         </div>
 
         <Link
@@ -237,7 +239,10 @@ function CoursePage() {
               </summary>
               <div className="grid gap-3 border-t border-border p-4 sm:p-5">
                 {videos.map((video) => (
-                  <article key={video.id} className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center">
+                  <article
+                    key={video.id}
+                    className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center"
+                  >
                     <a
                       href={video.youtube_url}
                       target="_blank"
@@ -245,15 +250,24 @@ function CoursePage() {
                       className="flex min-w-0 flex-1 items-center gap-3"
                     >
                       {video.thumbnail_url ? (
-                        <img src={video.thumbnail_url} alt="" className="aspect-video w-28 shrink-0 rounded-lg object-cover" />
+                        <img
+                          src={video.thumbnail_url}
+                          alt=""
+                          className="aspect-video w-28 shrink-0 rounded-lg object-cover"
+                        />
                       ) : (
                         <span className="grid aspect-video w-28 shrink-0 place-items-center rounded-lg bg-accent">
                           <Video className="h-5 w-5 text-primary" />
                         </span>
                       )}
                       <span className="min-w-0">
-                        <span className="block truncate font-medium" dir="auto">{video.title}</span>
-                        <span className="mt-1 block truncate text-sm text-muted-foreground" dir="auto">
+                        <span className="block truncate font-medium" dir="auto">
+                          {video.title}
+                        </span>
+                        <span
+                          className="mt-1 block truncate text-sm text-muted-foreground"
+                          dir="auto"
+                        >
                           {video.channel || "YouTube"}
                         </span>
                       </span>

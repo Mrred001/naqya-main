@@ -1,70 +1,33 @@
-export type FcdsPlaylist = {
-  id: string;
-  title: string;
-  channel: string;
-  youtubeUrl: string;
-  language: "Arabic" | "English";
-};
+export const fcdsYearOptions = [
+  "السنة الأولى",
+  "السنة الثانية",
+  "السنة الثالثة",
+  "السنة الرابعة",
+] as const;
 
-export type FcdsCourse = {
-  name: string;
-  slug: string;
-  code: string;
-  year: string;
-  playlists: FcdsPlaylist[];
-};
+export function fcdsYearForSemester(semester: number): string | null {
+  if (!Number.isInteger(semester) || semester < 1 || semester > 8) return null;
+  return fcdsYearOptions[Math.floor((semester - 1) / 2)] ?? null;
+}
 
-export const fcdsCourses: FcdsCourse[] = [
-  {
-    name: "Programming I",
-    slug: "programming-1",
-    code: "CS101",
-    year: "السنة الأولى",
-    playlists: [
-      {
-        id: "prog-1",
-        title: "Programming I Playlist",
-        channel: "Example Channel",
-        youtubeUrl: "https://www.youtube.com/",
-        language: "English",
-      },
-    ],
-  },
-  {
-    name: "Calculus",
-    slug: "calculus",
-    code: "MATH101",
-    year: "السنة الأولى",
-    playlists: [
-      {
-        id: "calc-1",
-        title: "Calculus Playlist",
-        channel: "Example Channel",
-        youtubeUrl: "https://www.youtube.com/",
-        language: "English",
-      },
-    ],
-  },
-  {
-    name: "Data Structures",
-    slug: "data-structures",
-    code: "CS201",
-    year: "السنة الثانية",
-    playlists: [
-      {
-        id: "ds-1",
-        title: "Data Structures Full Course",
-        channel: "Example Channel",
-        youtubeUrl: "https://www.youtube.com/",
-        language: "English",
-      },
-      {
-        id: "ds-2",
-        title: "شرح Data Structures",
-        channel: "Example Arabic Channel",
-        youtubeUrl: "https://www.youtube.com/",
-        language: "Arabic",
-      },
-    ],
-  },
-];
+/**
+ * The 36 required courses in the 2019 Computing and Data Sciences study plan,
+ * numbered in plan order while the real course codes are pending.
+ * University/program electives and summer training are intentionally omitted.
+ */
+export function fcdsSemesterForTemporaryCode(code: string): number | null {
+  const normalized = code.trim();
+  if (!/^\d{1,2}$/.test(normalized)) return null;
+
+  const temporaryCode = Number(normalized);
+  if (!Number.isInteger(temporaryCode) || temporaryCode < 1 || temporaryCode > 36) return null;
+
+  if (temporaryCode <= 6) return 1;
+  if (temporaryCode <= 12) return 2;
+  if (temporaryCode <= 17) return 3;
+  if (temporaryCode <= 22) return 4;
+  if (temporaryCode <= 25) return 5;
+  if (temporaryCode <= 28) return 6;
+  if (temporaryCode <= 32) return 7;
+  return 8;
+}

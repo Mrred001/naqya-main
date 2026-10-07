@@ -1,4 +1,5 @@
 import { AccountMenu } from "@/components/account/AccountMenu";
+import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "./ThemeToggle";
 import { CommunityFooter } from "./CommunityFooter";
 import { Link } from "@tanstack/react-router";
@@ -64,8 +65,11 @@ export function SiteHeader() {
           <Link to="/explore" className={link} activeProps={{ className: "text-foreground" }}>
             استكشف
           </Link>
-          <AccountMenu />
-          <ThemeToggle />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            <AccountMenu />
+            <AdminLink />
+          </div>
         </nav>
       </div>
     </header>

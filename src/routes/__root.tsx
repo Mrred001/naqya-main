@@ -13,6 +13,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 
 import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { AccountMenu } from "@/components/account/AccountMenu";
 import { CommunityFooter } from "@/components/site/CommunityFooter";
 import { AccountProvider } from "@/components/account/AccountProvider";
 import appCss from "../styles.css?url";
@@ -135,10 +136,13 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AccountProvider>
-        <div className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}>
+        <div
+          className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}
+        >
           {pathname === "/" && (
-            <div className="absolute start-5 top-5 z-40">
+            <div className="absolute start-5 top-5 z-40 flex items-center gap-2">
               <ThemeToggle />
+              <AccountMenu />
             </div>
           )}
           {pathname !== "/" && !pathname.startsWith("/fcds") && !pathname.startsWith("/admin") && (

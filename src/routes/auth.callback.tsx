@@ -62,7 +62,7 @@ function AuthCallback() {
             تصفّح نقيا
           </Link>
           <Link to="/fcds" className="block text-primary">
-            تصفّح الكلية
+            تصفّح درب
           </Link>
         </>
       ) : state === "error" ? (

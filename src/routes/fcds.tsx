@@ -1,4 +1,5 @@
 import { AccountMenu } from "@/components/account/AccountMenu";
+import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -8,8 +9,10 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
 import { parseYouTube } from "@/lib/content";
+import { fcdsYearForSemester, fcdsYearOptions } from "@/lib/fcds";
 import { fetchYouTubeMeta } from "@/lib/youtube.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/fcds")({
   head: () => ({
@@ -30,12 +33,14 @@ type FcdsCourse = {
   slug: string;
   code: string;
   year: string;
+  semester: number | null;
   created_at: string;
 };
 
 function FCDS() {
   const [search, setSearch] = useState("");
   const [selectedYear, setSelectedYear] = useState("كل السنوات");
+  const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
 
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestKind, setSuggestKind] = useState<"playlist" | "video">("playlist");
@@ -67,6 +72,7 @@ function FCDS() {
       const { data, error } = await supabase
         .from("fcds_courses")
         .select("*")
+        .order("semester", { ascending: true, nullsFirst: false })
         .order("year", { ascending: true })
         .order("name", { ascending: true });
 
@@ -85,8 +91,9 @@ function FCDS() {
       course.name.toLowerCase().includes(q) || course.code.toLowerCase().includes(q);
 
     const matchesYear = selectedYear === "كل السنوات" || course.year === selectedYear;
+    const matchesSemester = selectedSemester === null || course.semester === selectedSemester;
 
-    return matchesSearch && matchesYear;
+    return matchesSearch && matchesYear && matchesSemester;
   });
 
   const resetSuggestionForm = () => {
@@ -226,30 +233,33 @@ function FCDS() {
     <div className="min-h-screen fcds-theme bg-background text-foreground">
       <header className="border-b border-border">
         <div className="mx-auto flex min-h-20 max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8">
-          {/* FCDS Logo - Right */}
-          <Link
-            to="/"
-            className="group flex items-center gap-3"
-            aria-label="العودة لاختيار المكتبة"
-          >
-            <img
-              src="/naqya-fcds-logo.png"
-              alt="Darb FCDS"
-              className="h-16 w-16 object-contain transition-transform duration-200 group-hover:scale-105"
-            />
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* FCDS Logo - Right */}
+            <Link
+              to="/"
+              className="group flex items-center gap-3"
+              aria-label="العودة لاختيار المكتبة"
+            >
+              <img
+                src="/naqya-fcds-logo.png"
+                alt="Darb FCDS"
+                className="h-16 w-16 object-contain transition-transform duration-200 group-hover:scale-105"
+              />
 
-            <div className="leading-none">
-              <p className="text-base font-bold tracking-[0.12em] transition-colors group-hover:text-primary">
-                DARB
-              </p>
+              <div className="leading-none">
+                <p className="text-base font-bold tracking-[0.12em] transition-colors group-hover:text-primary">
+                  DARB
+                </p>
 
-              <p className="mt-1 font-mono text-xs tracking-[0.18em] text-primary">FCDS</p>
-            </div>
-          </Link>
+                <p className="mt-1 font-mono text-xs tracking-[0.18em] text-primary">FCDS</p>
+              </div>
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <AccountMenu />
             <ThemeToggle />
+            <AccountMenu />
+            <AdminLink />
             {/* Home - Left */}
             <Link
               to="/"
@@ -286,13 +296,17 @@ function FCDS() {
             />
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2" dir="rtl">
-            {["كل السنوات", "السنة الأولى", "السنة الثانية", "السنة الثالثة", "السنة الرابعة"].map(
-              (year) => (
+          <div className="mt-6 space-y-4" dir="rtl">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="فلترة حسب السنة">
+              {["كل السنوات", ...fcdsYearOptions].map((year) => (
                 <button
                   key={year}
                   type="button"
-                  onClick={() => setSelectedYear(year)}
+                  aria-pressed={selectedYear === year}
+                  onClick={() => {
+                    setSelectedYear(year);
+                    setSelectedSemester(null);
+                  }}
                   className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                     selectedYear === year
                       ? "border-primary bg-primary text-primary-foreground"
@@ -301,8 +315,35 @@ function FCDS() {
                 >
                   {year}
                 </button>
-              ),
-            )}
+              ))}
+            </div>
+
+            <div
+              className="flex flex-wrap items-center gap-2"
+              role="group"
+              aria-label="فلترة حسب السمستر"
+            >
+              <span className="ml-1 text-xs font-medium text-muted-foreground">السمستر</span>
+              {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
+                <button
+                  key={semester}
+                  type="button"
+                  aria-label={`سمستر ${semester}`}
+                  aria-pressed={selectedSemester === semester}
+                  onClick={() => {
+                    setSelectedSemester(semester);
+                    setSelectedYear(fcdsYearForSemester(semester) ?? "كل السنوات");
+                  }}
+                  className={`grid h-10 w-10 place-items-center rounded-full border text-sm font-semibold transition-colors ${
+                    selectedSemester === semester
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+                  }`}
+                >
+                  {semester}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -342,10 +383,15 @@ function FCDS() {
               className="rounded-2xl border border-border p-10 text-center text-muted-foreground"
               dir="rtl"
             >
-              ما لقينا مادة مطابقة للبحث.
+              {selectedSemester === null
+                ? "ما لقينا مادة مطابقة للبحث."
+                : `ما لقينا مواد مسجلة لسمستر ${selectedSemester} لحدي هسي.`}
             </div>
           )}
-          <div className="mt-8 flex flex-col items-end gap-3 pb-8 sm:flex-row sm:justify-end" dir="rtl">
+          <div
+            className="mt-8 flex flex-col items-end gap-3 pb-8 sm:flex-row sm:justify-end"
+            dir="rtl"
+          >
             <button
               type="button"
               onClick={() => openSuggest("playlist")}
@@ -367,31 +413,32 @@ function FCDS() {
       </main>
 
       {suggestOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl md:p-8">
+        <Dialog open={suggestOpen} onOpenChange={(open) => !open && closeSuggest()}>
+          <DialogContent className="fcds-theme text-foreground max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl md:p-8 [&>button]:hidden">
             <div className="flex items-start justify-between gap-4">
               <div dir="rtl">
                 <p className="font-mono text-xs text-primary">
                   {suggestKind === "video" ? "SUGGEST VIDEO" : "SUGGEST PLAYLIST"}
                 </p>
 
-                <h2 className="mt-2 text-2xl font-bold">
+                <DialogTitle className="mt-2 text-2xl font-bold">
                   {suggestKind === "video" ? "اقترح فيديو" : "اقترح Playlist"}
-                </h2>
+                </DialogTitle>
 
-                <p className="mt-2 text-sm text-muted-foreground">
+                <DialogDescription className="mt-2 text-sm text-muted-foreground">
                   {suggestKind === "video"
                     ? "الصق رابط فيديو واحد وحنجيب بياناته تلقائياً."
                     : "الصق رابط الـPlaylist وحنجيب بياناتها تلقائياً."}
-                </p>
+                </DialogDescription>
               </div>
 
               <button
                 type="button"
                 onClick={closeSuggest}
+                aria-label="إغلاق الاقتراح"
                 className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
 
@@ -529,8 +576,8 @@ function FCDS() {
                 </button>
               </form>
             )}
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

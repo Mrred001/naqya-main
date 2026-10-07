@@ -56,7 +56,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
             <p className="font-semibold">
               {fcds ? "درب FCDS — مصادر مادتك، بلا تشتت." : "نقيا — ما يستحق وقتك."}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">Curated by Ahmed Osama</p>
+            <p className="mt-2 text-xs text-muted-foreground">Created by visionwithahmed</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Dialog>

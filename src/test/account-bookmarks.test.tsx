@@ -4,10 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountProvider, useAccount } from "@/components/account/AccountProvider";
 import { SaveButton } from "@/components/account/SaveButton";
 import { GoogleSignIn } from "@/components/account/GoogleSignIn";
+import { AccountMenu } from "@/components/account/AccountMenu";
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
   onAuthStateChange: vi.fn(),
   oauth: vi.fn(),
+  signOut: vi.fn(),
   from: vi.fn(),
   insert: vi.fn(),
   remove: vi.fn(),
@@ -19,9 +21,18 @@ vi.mock("@/integrations/supabase/client", () => ({
       getSession: mocks.getSession,
       onAuthStateChange: mocks.onAuthStateChange,
       signInWithOAuth: mocks.oauth,
+      signOut: mocks.signOut,
     },
     from: mocks.from,
   },
+}));
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, to, ...props }: React.PropsWithChildren<{ to: string }>) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
+  useRouterState: () => false,
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 let authEvent: (_event: string, session: { user: { id: string } } | null) => void;
@@ -78,9 +89,24 @@ describe("Account privacy and saved sources", () => {
       expect(screen.getByRole("button", { name: "احفظ لوقت لاحق" })).toBeEnabled(),
     );
     fireEvent.click(screen.getByRole("button", { name: "احفظ لوقت لاحق" }));
-    expect(screen.getByRole("button", { name: "المتابعة باستخدام Google" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "المتابعة باستخدام Google" })).toBeVisible();
     expect(mocks.insert).not.toHaveBeenCalled();
     expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("uses a persisted Supabase session when the account state is temporarily stale", async () => {
+    mocks.getSession.mockResolvedValueOnce({ data: { session: null } });
+    wrap(<SaveButton kind="general" id="video-1" />);
+    const button = await screen.findByRole("button", { name: "احفظ لوقت لاحق" });
+    await waitFor(() => expect(button).toBeEnabled());
+
+    fireEvent.click(button);
+
+    await waitFor(() =>
+      expect(mocks.insert).toHaveBeenCalledWith({ user_id: "user-a", content_id: "video-1" }),
+    );
+    expect(
+      screen.queryByRole("button", { name: "المتابعة باستخدام Google" }),
+    ).not.toBeInTheDocument();
   });
   it("saves the current user's general source and filters private reads by owner", async () => {
     wrap(<SaveButton kind="general" id="video-1" />);
@@ -152,6 +178,28 @@ describe("Account privacy and saved sources", () => {
     await act(async () => authEvent("SIGNED_IN", { user: { id: "user-b" } }));
     await act(async () => finish({ data: { session: { user: { id: "user-a" } } } }));
     expect(screen.getByText("user-b")).toBeVisible();
+  });
+  it("opens the saved/sign-out menu from the account avatar without a centered dialog", async () => {
+    mocks.getSession.mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: "user-a",
+            email: "ahmed@example.com",
+            user_metadata: { avatar_url: "https://google.test/avatar.png" },
+          },
+        },
+      },
+    });
+    mocks.signOut.mockResolvedValue({ error: null });
+    wrap(<AccountMenu />);
+
+    const avatar = await screen.findByRole("button", { name: "حسابي" });
+
+    fireEvent.keyDown(avatar, { key: "Enter" });
+    expect(await screen.findByRole("menuitem", { name: "المحفوظات" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "تسجيل خروج من الجهاز ده" })).toBeVisible();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
 it("uses only profile scopes, same-origin callback and allows retry on OAuth error", async () => {

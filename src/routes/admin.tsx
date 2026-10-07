@@ -15,7 +15,7 @@ import {
   XCircle,
   BookOpen,
 } from "lucide-react";
-import { fcdsCourses } from "@/lib/fcds";
+import { fcdsYearForSemester } from "@/lib/fcds";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -542,27 +542,64 @@ type Suggestion = {
   note: string | null;
   status: string;
   created_at: string;
+  user_id: string | null;
+  submitterUsername: string | null;
 };
 
-function SuggestionsAdmin() {
+type SuggestionOwner = { user_id: string | null };
+type GeneralSuggestion = {
+  id: string;
+  youtube_url: string;
+  youtube_id: string;
+  title: string;
+  channel: string | null;
+  thumbnail_url: string | null;
+  content_type: string;
+  language: string;
+  note: string | null;
+  status: string;
+  created_at: string;
+  user_id: string | null;
+};
 
-  const { data: generalSuggestions = [] } = useQuery({
-  queryKey: ["general-suggestions"],
+async function addSubmitterUsernames<T extends SuggestionOwner>(rows: T[]) {
+  const userIds = [...new Set(rows.flatMap((row) => (row.user_id ? [row.user_id] : [])))];
+  const usernamesById = new Map<string, string>();
 
-  queryFn: async () => {
+  if (userIds.length > 0) {
     const { data, error } = await supabase
-      .from("general_content_suggestions")
-      .select("*")
-      .eq("status", "pending")
-      .order("created_at", {
-        ascending: false,
-      });
+      .from("profiles")
+      .select("id, username")
+      .in("id", userIds);
 
     if (error) throw error;
 
-    return data ?? [];
-  },
-});
+    for (const profile of (data ?? []) as Array<{ id: string; username: string }>) {
+      usernamesById.set(profile.id, profile.username);
+    }
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    submitterUsername: row.user_id ? (usernamesById.get(row.user_id) ?? null) : null,
+  }));
+}
+
+function SuggestionsAdmin() {
+  const { data: generalSuggestions = [] } = useQuery({
+    queryKey: ["general-suggestions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("general_content_suggestions")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      return addSubmitterUsernames((data ?? []) as GeneralSuggestion[]);
+    },
+  });
   const qc = useQueryClient();
 
   const getMeta = useServerFn(fetchYouTubeMeta);
@@ -574,24 +611,22 @@ function SuggestionsAdmin() {
     Record<string, "Arabic" | "English">
   >({});
 
-  const { data: suggestions = [], isLoading } =
-    useQuery({
-      queryKey: ["fcds-suggestions"],
+  const { data: suggestions = [], isLoading } = useQuery({
+    queryKey: ["fcds-suggestions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fcds_playlist_suggestions")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
 
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("fcds_playlist_suggestions")
-          .select("*")
-          .eq("status", "pending")
-          .order("created_at", {
-            ascending: false,
-          });
+      if (error) throw error;
 
-        if (error) throw error;
-
-        return (data ?? []) as Suggestion[];
-      },
-    });
+      return addSubmitterUsernames(
+        (data ?? []) as Array<SuggestionOwner & Omit<Suggestion, "submitterUsername">>,
+      );
+    },
+  });
 
   const refresh = () => {
     qc.invalidateQueries({
@@ -948,6 +983,13 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                       {parseYouTube(suggestion.youtube_url)?.kind === "video" ? "فيديو" : "Playlist"}
                     </span>
 
+                    <span
+                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
+                      dir="auto"
+                    >
+                      {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "زائر"}
+                    </span>
+
                     <span className="text-xs text-white/25">
                       {new Date(
                         suggestion.created_at,
@@ -1112,6 +1154,10 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                   {suggestion.language}
                 </span>
 
+                <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60" dir="auto">
+                  {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "زائر"}
+                </span>
+
               </div>
 
               <h3 className="mt-4 text-xl font-semibold">
@@ -1185,6 +1231,16 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
 /* FCDS Library */
 /* ------------------------------------------------ */
 
+type FcdsCourseRow = {
+  id: string;
+  name: string;
+  slug: string;
+  code: string;
+  year: string;
+  semester: number | null;
+  created_at: string;
+};
+
 type FcdsPlaylistRow = {
   id: string;
   course_slug: string;
@@ -1236,6 +1292,22 @@ function FcdsLibraryAdmin() {
       if (error) throw error;
 
       return data ?? [];
+    },
+  });
+
+  const { data: courses = [], isLoading: coursesLoading } = useQuery({
+    queryKey: ["fcds-courses-admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fcds_courses")
+        .select("*")
+        .order("semester", { ascending: true, nullsFirst: false })
+        .order("year", { ascending: true })
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+
+      return (data ?? []) as FcdsCourseRow[];
     },
   });
 
@@ -1297,6 +1369,8 @@ function FcdsLibraryAdmin() {
       <FcdsPlaylistForm
         id={editing.id}
         initial={editing.draft}
+        courses={courses}
+        coursesLoading={coursesLoading}
         onDone={() => {
           setEditing(null);
           refresh();
@@ -1351,7 +1425,7 @@ function FcdsLibraryAdmin() {
         <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
 
           {playlists.map((playlist) => {
-            const course = fcdsCourses.find(
+            const course = courses.find(
               (course) =>
                 course.slug === playlist.course_slug,
             );
@@ -1444,10 +1518,14 @@ function FcdsLibraryAdmin() {
 function FcdsPlaylistForm({
   id,
   initial,
+  courses,
+  coursesLoading,
   onDone,
 }: {
   id: string | null;
   initial: FcdsPlaylistDraft;
+  courses: FcdsCourseRow[];
+  coursesLoading: boolean;
   onDone: () => void;
 }) {
   const [draft, setDraft] = useState(initial);
@@ -1690,6 +1768,7 @@ function FcdsPlaylistForm({
         <Label label="Course">
           <select
             required
+            disabled={coursesLoading || courses.length === 0}
             className={field}
             value={draft.course_slug}
             onChange={(e) =>
@@ -1703,15 +1782,21 @@ function FcdsPlaylistForm({
               Choose course
             </option>
 
-            {fcdsCourses.map((course) => (
+            {courses.map((course) => (
               <option
                 key={course.slug}
                 value={course.slug}
               >
                 {course.name} — {course.code}
+                {course.semester ? ` · سمستر ${course.semester}` : " · بدون سمستر"}
               </option>
             ))}
           </select>
+          {!coursesLoading && courses.length === 0 && (
+            <p className="mt-2 text-xs text-amber-300">
+              ما في مواد مضافة لسه. أضف المواد أولاً من تبويب Courses.
+            </p>
+          )}
         </Label>
 
         <Label label="Language">
@@ -2576,19 +2661,11 @@ function ContentForm({
 /* FCDS Courses */
 /* ------------------------------------------------ */
 
-type FcdsCourseRow = {
-  id: string;
-  name: string;
-  slug: string;
-  code: string;
-  year: string;
-  created_at: string;
-};
-
 type FcdsCourseDraft = {
   name: string;
   code: string;
   year: string;
+  semester: number | null;
   slug: string;
 };
 
@@ -2596,6 +2673,7 @@ const emptyCourseDraft = (): FcdsCourseDraft => ({
   name: "",
   code: "",
   year: "السنة الأولى",
+  semester: null,
   slug: "",
 });
 
@@ -2622,6 +2700,7 @@ function CoursesAdmin() {
       const { data, error } = await supabase
         .from("fcds_courses")
         .select("*")
+        .order("semester", { ascending: true, nullsFirst: false })
         .order("year", { ascending: true })
         .order("name", { ascending: true });
 
@@ -2653,6 +2732,7 @@ function CoursesAdmin() {
         name: course.name,
         code: course.code,
         year: course.year,
+        semester: course.semester,
         slug: course.slug,
       },
     });
@@ -2763,7 +2843,8 @@ function CoursesAdmin() {
                 </p>
 
                 <p className="mt-1 text-xs text-white/35">
-                  {course.code} · {course.year} · /{course.slug}
+                  {course.code} · {course.year}
+                  {course.semester ? ` · سمستر ${course.semester}` : " · بدون سمستر"} · /{course.slug}
                 </p>
               </div>
 
@@ -2839,6 +2920,11 @@ function CourseForm({
       return;
     }
 
+    if (!draft.semester || draft.semester < 1 || draft.semester > 8) {
+      toast.error("حدد سمستر المادة من 1 إلى 8.");
+      return;
+    }
+
     if (!draft.slug.trim()) {
       toast.error("Course slug is required.");
       return;
@@ -2850,6 +2936,7 @@ function CourseForm({
       name: draft.name.trim(),
       code: draft.code.trim().toUpperCase(),
       year: draft.year,
+      semester: draft.semester,
       slug: draft.slug.trim(),
     };
 
@@ -2931,9 +3018,11 @@ function CourseForm({
           <select
             className={field}
             value={draft.year}
-            onChange={(e) =>
-              update("year", e.target.value)
-            }
+            onChange={(e) => setDraft((previous) => ({
+              ...previous,
+              year: e.target.value,
+              semester: null,
+            }))}
           >
             <option value="السنة الأولى">
               السنة الأولى
@@ -2951,6 +3040,32 @@ function CourseForm({
               السنة الرابعة
             </option>
           </select>
+        </Label>
+
+        <Label label="Semester">
+          <select
+            required
+            className={field}
+            value={draft.semester ?? ""}
+            onChange={(e) => {
+              const semester = e.target.value ? Number(e.target.value) : null;
+              setDraft((previous) => ({
+                ...previous,
+                semester,
+                year: semester ? fcdsYearForSemester(semester) ?? previous.year : previous.year,
+              }));
+            }}
+          >
+            <option value="">حدد السمستر</option>
+            {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
+              <option key={semester} value={semester}>
+                سمستر {semester}
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-xs text-white/40">
+            اختار سمستر المادة حسب الخطة الدراسية؛ السنة بتتحدد تلقائياً.
+          </p>
         </Label>
 
         <Label label="Slug">
