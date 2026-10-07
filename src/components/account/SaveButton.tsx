@@ -8,8 +8,12 @@ import { bookmarkColumn, bookmarksQuery, type BookmarkTarget } from "@/lib/bookm
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAccount } from "./AccountProvider";
 import { GoogleSignIn } from "./GoogleSignIn";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export function SaveButton({ kind, id }: BookmarkTarget) {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const { user, ready, refreshSession } = useAccount();
   const [open, setOpen] = useState(false);
   const [checkingSession, setCheckingSession] = useState(false);
@@ -31,7 +35,7 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
     onSuccess: (_data, activeUser) => {
       void client.invalidateQueries({ queryKey: ["bookmarks", activeUser.id] });
     },
-    onError: () => toast.error("ما قدرنا نغيّر المحفوظات. جرّب تاني."),
+    onError: () => toast.error(t("ما قدرنا نغيّر المحفوظات. جرّب تاني.", "Could not update saved items. Try again.")),
   });
   const handleSave = async () => {
     let activeUser = user;
@@ -40,7 +44,7 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
       const session = await refreshSession();
       setCheckingSession(false);
       if (session.error) {
-        toast.error("ما قدرنا نتحقق من حسابك. جرّب تاني.");
+        toast.error(t("ما قدرنا نتحقق من حسابك. جرّب تاني.", "Could not verify your account. Try again."));
         return;
       }
       activeUser = session.user;
@@ -51,7 +55,7 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
     }
     if (query.isError && user?.id === activeUser.id) {
       void query.refetch();
-      toast.error("تعذّر تحميل المحفوظات. حاول تاني.");
+      toast.error(t("تعذّر تحميل المحفوظات. حاول تاني.", "Could not load saved items. Try again."));
       return;
     }
     mutation.mutate(activeUser);
@@ -73,18 +77,18 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
           aria-hidden="true"
         />
         {checkingSession
-          ? "جاري التحقق…"
+          ? t("جاري التحقق…", "Checking…")
           : mutation.isPending
-            ? "جاري الحفظ…"
+            ? t("جاري الحفظ…", "Saving…")
             : saved
-              ? "محفوظ"
-              : "احفظ لوقت لاحق"}
+              ? t("محفوظ", "Saved")
+              : t("احفظ لوقت لاحق", "Save for later")}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir="rtl">
-          <DialogTitle>محفوظاتك معاك في أي جهاز</DialogTitle>
+        <DialogContent dir={english ? "ltr" : "rtl"}>
+          <DialogTitle>{t("محفوظاتك معاك في أي جهاز", "Your saved items on every device")}</DialogTitle>
           <DialogDescription>
-            سجّل بقوقل، وبعد الرجوع اضغط حفظ على المصدر البتختاره. المشاهدة ما بتحتاج حساب.
+            {t("سجّل بقوقل، وبعد الرجوع اضغط حفظ على المصدر البتختاره. المشاهدة ما بتحتاج حساب.", "Sign in with Google, then save any resource to your account. Watching does not require an account.")}
           </DialogDescription>
           <GoogleSignIn />
         </DialogContent>

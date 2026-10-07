@@ -19,6 +19,9 @@ import { AccountProvider } from "@/components/account/AccountProvider";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteHeader";
+import { PreferencesProvider } from "@/components/site/PreferencesProvider";
+import { LanguageToggle } from "@/components/site/LanguageToggle";
+import { recordDailyVisit } from "@/lib/site-analytics";
 
 function NotFoundComponent() {
   return (
@@ -116,7 +119,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("naqya-theme");document.documentElement.classList.toggle("dark",t!=="light")}catch(e){}`,
+            __html: `try{var t=localStorage.getItem("naqya-theme"),l=localStorage.getItem("naqya-language");document.documentElement.classList.toggle("dark",t!=="light");if(l==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr"}}catch(e){}`,
           }}
         />
         <HeadContent />
@@ -133,15 +136,22 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  useEffect(() => {
+    if (pathname.startsWith("/admin") || pathname.startsWith("/auth")) return;
+    void recordDailyVisit();
+  }, [pathname]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AccountProvider>
+        <PreferencesProvider>
         <div
           className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}
         >
           {pathname === "/" && (
             <div className="absolute start-5 top-5 z-40 flex items-center gap-2">
               <ThemeToggle />
+              <LanguageToggle />
               <AccountMenu />
             </div>
           )}
@@ -158,6 +168,7 @@ function RootComponent() {
           )}
         </div>
         <Toaster theme="system" position="bottom-left" />
+        </PreferencesProvider>
       </AccountProvider>
     </QueryClientProvider>
   );

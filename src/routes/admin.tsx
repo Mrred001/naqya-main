@@ -14,9 +14,12 @@ import {
   ExternalLink,
   XCircle,
   BookOpen,
+  ChevronDown,
+  Activity,
+  ArrowLeft,
 } from "lucide-react";
 import { fcdsYearForSemester } from "@/lib/fcds";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useEffect,
@@ -41,6 +44,15 @@ import {
 import { cn } from "@/lib/utils";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchYouTubeMeta } from "@/lib/youtube.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -57,13 +69,13 @@ export const Route = createFileRoute("/admin")({
 });
 
 const field =
-  "w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-white/30";
+  "w-full rounded-xl border border-amber-200/15 bg-amber-100/[0.035] px-4 py-2.5 text-sm text-amber-50 outline-none transition-colors placeholder:text-amber-100/35 focus:border-amber-300/55 focus:ring-2 focus:ring-amber-300/10";
 
 const btn =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black transition-all hover:bg-white/90 disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 py-2.5 text-sm font-semibold text-[#17130a] transition-all hover:bg-amber-200 disabled:opacity-50";
 
 const ghost =
-  "inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs text-white/60 transition-colors hover:border-white/30 hover:text-white";
+  "inline-flex items-center gap-1.5 rounded-xl border border-amber-200/15 px-3 py-2 text-xs text-amber-50/65 transition-colors hover:border-amber-200/45 hover:text-amber-50";
 
 function Label({
   label,
@@ -76,7 +88,7 @@ function Label({
 }) {
   return (
     <label className={cn("block space-y-1.5", className)}>
-      <span className="text-xs uppercase tracking-[0.16em] text-white/40">
+      <span className="text-xs uppercase tracking-[0.16em] text-amber-100/50">
         {label}
       </span>
       {children}
@@ -117,9 +129,9 @@ function AdminPage() {
   });
 
   return (
-    <div className="min-h-[100dvh] bg-[#0a0a0a] text-white">
+    <div className="admin-theme min-h-[100dvh] bg-[#100e09] text-amber-50" dir="ltr">
       {!ready || (session && isLoading) ? (
-        <div className="flex min-h-[100dvh] items-center justify-center text-white/40">
+        <div className="flex min-h-[100dvh] items-center justify-center text-amber-50/40">
           Loading…
         </div>
       ) : !session ? (
@@ -128,7 +140,7 @@ function AdminPage() {
         <div className="mx-auto max-w-md px-5 py-24">
           <h1 className="text-4xl font-bold">Not a curator</h1>
 
-          <p className="mt-4 text-white/50">
+          <p className="mt-4 text-amber-50/50">
             This account doesn't have curator access.
           </p>
 
@@ -186,9 +198,9 @@ function SignIn() {
     <div className="flex min-h-[100dvh] items-center justify-center px-5">
       <form
         onSubmit={submit}
-        className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.03] p-8"
+        className="w-full max-w-sm rounded-3xl border border-amber-100/10 bg-amber-100/[0.03] p-8"
       >
-        <p className="text-xs tracking-[0.2em] text-white/40">
+        <p className="text-xs tracking-[0.2em] text-amber-50/40">
           NAQYA ADMIN
         </p>
 
@@ -196,7 +208,7 @@ function SignIn() {
           Curator
         </h1>
 
-        <p className="mt-3 text-sm text-white/40">
+        <p className="mt-3 text-sm text-amber-50/40">
           {mode === "in"
             ? "Sign in to manage NAQYA."
             : "Create curator account."}
@@ -237,7 +249,7 @@ function SignIn() {
 
           <button
             type="button"
-            className="w-full text-sm text-white/40 hover:text-white"
+            className="w-full text-sm text-amber-50/40 hover:text-amber-50"
             onClick={() =>
               setMode(mode === "in" ? "up" : "in")
             }
@@ -298,7 +310,7 @@ function Dashboard({ email }: { email: string }) {
 });
 
   const navItems = [
-    { id: "reports" as const, label: "البلاغات", icon: Inbox },
+    { id: "reports" as const, label: "Reports", icon: Inbox },
     {
       id: "overview" as const,
       label: "Overview",
@@ -337,11 +349,11 @@ function Dashboard({ email }: { email: string }) {
     <div className="min-h-[100dvh] lg:flex">
 
       {/* Sidebar */}
-      <aside className="border-b border-white/10 bg-[#111] lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
+      <aside className="border-b border-amber-100/10 bg-[#17140e] lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
         <div className="flex h-full flex-col p-5">
 
-          <div className="border-b border-white/10 pb-6">
-            <p className="text-xs tracking-[0.22em] text-white/30">
+          <div className="border-b border-amber-100/15 pb-6">
+            <p className="text-xs tracking-[0.22em] text-amber-100/45">
               NAQYA
             </p>
 
@@ -349,10 +361,15 @@ function Dashboard({ email }: { email: string }) {
               Admin Dashboard
             </h1>
 
-            <p className="mt-2 truncate text-xs text-white/30">
+            <p className="mt-2 truncate text-xs text-amber-100/45">
               {email}
             </p>
           </div>
+
+          <Link to="/" className={cn(ghost, "mt-5 justify-center")}>
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to library selection
+          </Link>
 
           <nav className="mt-6 space-y-1">
             {navItems.map((item) => {
@@ -366,8 +383,8 @@ function Dashboard({ email }: { email: string }) {
                   className={cn(
                     "flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm transition-colors",
                     tab === item.id
-                      ? "bg-white text-black"
-                      : "text-white/50 hover:bg-white/[0.05] hover:text-white",
+                      ? "bg-amber-300 text-[#17130a] shadow-[0_8px_24px_-12px_rgba(245,190,75,.8)]"
+                      : "text-amber-50/60 hover:bg-amber-100/[0.06] hover:text-amber-50",
                   )}
                 >
                   <span className="flex items-center gap-3">
@@ -381,8 +398,8 @@ function Dashboard({ email }: { email: string }) {
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-semibold",
                           tab === item.id
-                            ? "bg-black text-white"
-                            : "bg-white text-black",
+                            ? "bg-[#17130a] text-amber-200"
+                            : "bg-amber-200/15 text-amber-100",
                         )}
                       >
                         {item.count}
@@ -475,6 +492,22 @@ function Overview({
     },
   });
 
+  const visitsQuery = useQuery({
+    queryKey: ["admin-daily-visits", 7],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc(
+        "get_daily_site_visits",
+        { days: 7 },
+      );
+      if (error) throw error;
+      return (data ?? []) as { visit_date: string; total: number | string }[];
+    },
+  });
+
+  const visitRows = visitsQuery.data ?? [];
+  const todayVisits = Number(visitRows.at(-1)?.total ?? 0);
+  const peakVisits = Math.max(1, ...visitRows.map((row) => Number(row.total)));
+
   const cards = [
     {
       label: "General Library",
@@ -495,7 +528,7 @@ function Overview({
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         OVERVIEW
       </p>
 
@@ -510,21 +543,82 @@ function Overview({
           return (
             <div
               key={card.label}
-              className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"
+              className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
             >
-              <Icon className="h-5 w-5 text-white/40" />
+              <Icon className="h-5 w-5 text-amber-50/40" />
 
               <p className="mt-8 text-4xl font-bold">
                 {card.value}
               </p>
 
-              <p className="mt-2 text-sm text-white/40">
+              <p className="mt-2 text-sm text-amber-50/40">
                 {card.label}
               </p>
             </div>
           );
         })}
       </div>
+
+      <section className="mt-6 rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs tracking-[0.18em] text-amber-50/35">
+              SITE TRAFFIC
+            </p>
+            <h3 className="mt-2 flex items-center gap-2 text-xl font-semibold">
+              <Activity className="h-5 w-5 text-amber-300" />
+              Daily visitors
+            </h3>
+            <p className="mt-1 text-sm text-amber-50/45">
+              Unique browsers recorded per day · Khartoum time
+            </p>
+          </div>
+          <div className="min-w-28 rounded-xl border border-amber-200/15 bg-amber-300/[0.07] px-4 py-3 text-center">
+            <p className="text-3xl font-bold text-amber-200">
+              {visitsQuery.isPending ? "—" : todayVisits}
+            </p>
+            <p className="mt-1 text-xs text-amber-50/45">Today</p>
+          </div>
+        </div>
+
+        {visitsQuery.isError ? (
+          <p className="mt-6 rounded-xl border border-amber-100/10 bg-black/15 p-4 text-sm text-amber-50/55">
+            Daily analytics is not available yet. Apply the latest Supabase migration to enable it.
+          </p>
+        ) : (
+          <div
+            className="mt-7 grid grid-cols-7 items-end gap-2 sm:gap-4"
+            aria-label="Unique daily visitors for the last seven days"
+          >
+            {visitRows.map((row) => {
+              const amount = Number(row.total);
+              const label = new Intl.DateTimeFormat("en", {
+                weekday: "short",
+                timeZone: "Africa/Khartoum",
+              }).format(new Date(`${row.visit_date}T12:00:00`));
+              const day = row.visit_date.slice(-2);
+              return (
+                <div key={row.visit_date} className="flex min-w-0 flex-col items-center gap-2">
+                  <span className="text-xs tabular-nums text-amber-50/65">{amount}</span>
+                  <div className="flex h-28 w-full items-end overflow-hidden rounded-lg bg-black/20">
+                    <div
+                      className="w-full rounded-t-md bg-gradient-to-t from-amber-500/70 to-amber-200 transition-[height] duration-500"
+                      style={{ height: `${Math.max(amount > 0 ? 8 : 0, (amount / peakVisits) * 100)}%` }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <span className="text-center text-[11px] leading-tight text-amber-50/45">
+                    {label}<br />{day}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {visitsQuery.isPending && (
+          <p className="mt-5 text-sm text-amber-50/40">Loading analytics…</p>
+        )}
+      </section>
     </div>
   );
 }
@@ -935,7 +1029,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
 };
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         INBOX
       </p>
 
@@ -945,22 +1039,22 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
             Pending Suggestions
           </h2>
 
-          <p className="mt-3 text-sm text-white/40">
-            راجع الاقتراح وحدد يمشي للمكتبة العامة ولا FCDS.
+          <p className="mt-3 text-sm text-amber-50/40">
+            Review the suggestion and choose whether it belongs in the general library or FCDS.
           </p>
         </div>
 
-        <span className="text-sm text-white/30">
+        <span className="text-sm text-amber-50/30">
           {suggestions.length} pending
         </span>
       </div>
 
       {isLoading ? (
-        <p className="mt-10 text-white/40">
+        <p className="mt-10 text-amber-50/40">
           Loading...
         </p>
       ) : suggestions.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-white/10 p-10 text-center text-white/30">
+        <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
           No pending suggestions.
         </div>
       ) : (
@@ -968,29 +1062,29 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
           {suggestions.map((suggestion) => (
             <article
               key={suggestion.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"
+              className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
             >
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
 
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
 
-                    <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs text-white/50">
+                    <span className="rounded-full bg-amber-100/10 px-3 py-1 font-mono text-xs text-amber-50/50">
                       {suggestion.course_slug}
                     </span>
 
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
-                      {parseYouTube(suggestion.youtube_url)?.kind === "video" ? "فيديو" : "Playlist"}
+                    <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
+                      {parseYouTube(suggestion.youtube_url)?.kind === "video" ? "Video" : "Playlist"}
                     </span>
 
                     <span
-                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60"
+                      className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60"
                       dir="auto"
                     >
-                      {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "زائر"}
+                      {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "Guest"}
                     </span>
 
-                    <span className="text-xs text-white/25">
+                    <span className="text-xs text-amber-50/25">
                       {new Date(
                         suggestion.created_at,
                       ).toLocaleString()}
@@ -1002,14 +1096,14 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                     {suggestion.title}
                   </h3>
 
-                  <p className="mt-1 text-sm text-white/40">
+                  <p className="mt-1 text-sm text-amber-50/40">
                     {suggestion.channel ||
                       "Unknown channel"}
                   </p>
 
                   {suggestion.note && (
                     <p
-                      className="mt-4 max-w-2xl text-sm leading-6 text-white/50"
+                      className="mt-4 max-w-2xl text-sm leading-6 text-amber-50/50"
                       dir="auto"
                     >
                       {suggestion.note}
@@ -1022,7 +1116,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                     }
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 text-sm text-white/50 hover:text-white"
+                    className="mt-4 inline-flex items-center gap-2 text-sm text-amber-50/50 hover:text-amber-50"
                   >
                     Open YouTube
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -1065,7 +1159,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                     onClick={() =>
                       approveFcds(suggestion)
                     }
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-white/90 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-100/90 disabled:opacity-50"
                   >
                     <GraduationCap className="h-4 w-4" />
                     Add to FCDS
@@ -1081,7 +1175,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                         suggestion,
                       )
                     }
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/5 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-100/15 px-4 py-2.5 text-sm font-semibold text-amber-50 hover:bg-amber-100/5 disabled:opacity-50"
                   >
                     <Library className="h-4 w-4" />
                     Add to General
@@ -1112,7 +1206,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
   <section className="mt-14">
 
     <div className="mb-6">
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         GENERAL NAQYA
       </p>
 
@@ -1126,7 +1220,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
       {generalSuggestions.map((suggestion) => (
         <article
           key={suggestion.id}
-          className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"
+          className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
         >
           <div className="flex flex-col gap-6 lg:flex-row">
 
@@ -1142,20 +1236,20 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
 
               <div className="flex flex-wrap gap-2">
 
-                <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
                   GENERAL
                 </span>
 
-                <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
                   {suggestion.content_type}
                 </span>
 
-                <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/50">
+                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
                   {suggestion.language}
                 </span>
 
-                <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/60" dir="auto">
-                  {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "زائر"}
+                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60" dir="auto">
+                  {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "Guest"}
                 </span>
 
               </div>
@@ -1164,13 +1258,13 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                 {suggestion.title}
               </h3>
 
-              <p className="mt-1 text-sm text-white/40">
+              <p className="mt-1 text-sm text-amber-50/40">
                 {suggestion.channel || "Unknown channel"}
               </p>
 
               {suggestion.note && (
                 <p
-                  className="mt-4 text-sm leading-6 text-white/50"
+                  className="mt-4 text-sm leading-6 text-amber-50/50"
                   dir="auto"
                 >
                   {suggestion.note}
@@ -1181,7 +1275,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                 href={suggestion.youtube_url}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-4 inline-flex items-center gap-2 text-sm text-white/50 hover:text-white"
+                className="mt-4 inline-flex items-center gap-2 text-sm text-amber-50/50 hover:text-amber-50"
               >
                 Open YouTube
                 <ExternalLink className="h-3.5 w-3.5" />
@@ -1197,7 +1291,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                 onClick={() =>
                   approveGeneralSuggestion(suggestion)
                 }
-                className="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black hover:bg-white/90 disabled:opacity-50"
+                className="rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-100/90 disabled:opacity-50"
               >
                 Add to General
               </button>
@@ -1260,6 +1354,82 @@ type FcdsPlaylistDraft = {
   language: "Arabic" | "English";
   thumbnail_url: string;
 };
+
+export function CoursePicker({
+  courses,
+  value,
+  disabled,
+  onChange,
+}: {
+  courses: FcdsCourseRow[];
+  value: string;
+  disabled: boolean;
+  onChange: (slug: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = courses.find((course) => course.slug === value);
+  const selectedLabel = selected
+    ? `${selected.name} · ${selected.code}${selected.semester ? ` · Semester ${selected.semester}` : ""}`
+    : "Choose a course";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Choose a course"
+          className={`${field} flex min-h-11 items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-50`}
+        >
+          <span className={selected ? "truncate text-amber-50" : "text-amber-100/40"}>
+            {selectedLabel}
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-amber-200/65" aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        side="bottom"
+        sideOffset={6}
+        className="admin-theme w-[var(--radix-popover-trigger-width)] min-w-[min(24rem,calc(100vw-2.5rem))] border-amber-200/20 bg-[#1a170f] p-0 text-amber-50 shadow-[0_24px_70px_-24px_rgba(0,0,0,.9)]"
+      >
+        <Command className="bg-transparent text-amber-50" shouldFilter>
+          <CommandInput
+            placeholder="Search by course name, code, or semester…"
+            className="text-amber-50 placeholder:text-amber-100/35"
+          />
+          <CommandList className="max-h-64 p-1.5">
+            <CommandEmpty className="text-amber-100/55">No matching courses.</CommandEmpty>
+            <CommandGroup>
+              {courses.map((course) => {
+                const label = `${course.name} · ${course.code}${course.semester ? ` · Semester ${course.semester}` : " · No semester"}`;
+                return (
+                  <CommandItem
+                    key={course.slug}
+                    value={`${course.name} ${course.code} semester ${course.semester ?? "none"}`}
+                    onSelect={() => {
+                      onChange(course.slug);
+                      setOpen(false);
+                    }}
+                    className="min-h-10 cursor-pointer text-amber-50/85 data-[selected=true]:bg-amber-200/15 data-[selected=true]:text-amber-50"
+                  >
+                    <Check
+                      className={`h-4 w-4 shrink-0 text-amber-300 ${course.slug === value ? "opacity-100" : "opacity-0"}`}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const emptyFcdsDraft = (): FcdsPlaylistDraft => ({
   course_slug: "",
@@ -1381,7 +1551,7 @@ function FcdsLibraryAdmin() {
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         FCDS
       </p>
 
@@ -1392,8 +1562,8 @@ function FcdsLibraryAdmin() {
             FCDS Library
           </h2>
 
-          <p className="mt-3 text-sm text-white/40">
-            إدارة الـPlaylists والفيديوهات الخاصة بمكتبة الكلية.
+          <p className="mt-3 text-sm text-amber-50/40">
+            Manage playlists and videos in the FCDS library.
           </p>
         </div>
 
@@ -1414,15 +1584,15 @@ function FcdsLibraryAdmin() {
       </div>
 
       {isLoading ? (
-        <p className="mt-10 text-white/40">
+        <p className="mt-10 text-amber-50/40">
           Loading...
         </p>
       ) : playlists.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-white/10 p-10 text-center text-white/30">
+        <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
           No FCDS playlists yet.
         </div>
       ) : (
-        <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
+        <div className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
 
           {playlists.map((playlist) => {
             const course = courses.find(
@@ -1440,10 +1610,10 @@ function FcdsLibraryAdmin() {
                   <img
                     src={playlist.thumbnail_url}
                     alt=""
-                    className="hidden aspect-video w-32 shrink-0 rounded-lg bg-white/5 object-cover sm:block"
+                    className="hidden aspect-video w-32 shrink-0 rounded-lg bg-amber-100/5 object-cover sm:block"
                   />
                 ) : (
-                  <div className="hidden aspect-video w-32 shrink-0 rounded-lg bg-white/5 sm:block" />
+                  <div className="hidden aspect-video w-32 shrink-0 rounded-lg bg-amber-100/5 sm:block" />
                 )}
 
                 <div className="min-w-0 flex-1">
@@ -1452,22 +1622,22 @@ function FcdsLibraryAdmin() {
                     {playlist.title}
                   </p>
 
-                  <p className="mt-1 text-xs text-white/35">
+                  <p className="mt-1 text-xs text-amber-50/35">
                     {playlist.channel || "Unknown channel"}
                   </p>
 
                   <div className="mt-2 flex flex-wrap items-center gap-2">
 
-                    <span className="rounded-full border border-white/10 px-2.5 py-1 font-mono text-[11px] text-white/40">
+                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 font-mono text-[11px] text-amber-50/40">
                       {course?.name ??
                         playlist.course_slug}
                     </span>
 
-                    <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-white/40">
+                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
                       {parseYouTube(playlist.youtube_url)?.kind === "video" ? "Video" : "Playlist"}
                     </span>
 
-                    <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-white/40">
+                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
                       {playlist.language}
                     </span>
 
@@ -1480,7 +1650,7 @@ function FcdsLibraryAdmin() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label="Open YouTube"
-                  className="p-2 text-white/30 hover:text-white"
+                  className="p-2 text-amber-50/30 hover:text-amber-50"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </a>
@@ -1491,7 +1661,7 @@ function FcdsLibraryAdmin() {
                   onClick={() =>
                     editPlaylist(playlist)
                   }
-                  className="p-2 text-white/30 hover:text-white"
+                  className="p-2 text-amber-50/30 hover:text-amber-50"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -1500,7 +1670,7 @@ function FcdsLibraryAdmin() {
                   type="button"
                   aria-label="Delete source"
                   onClick={() => remove(playlist)}
-                  className="p-2 text-white/30 hover:text-red-400"
+                  className="p-2 text-amber-50/30 hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -1710,7 +1880,7 @@ function FcdsPlaylistForm({
       <div className="flex items-start justify-between gap-4">
 
         <div>
-          <p className="text-xs tracking-[0.2em] text-white/30">
+          <p className="text-xs tracking-[0.2em] text-amber-50/30">
             FCDS
           </p>
 
@@ -1759,42 +1929,22 @@ function FcdsPlaylistForm({
           />
 
           {fetching && (
-            <p className="text-xs text-white/30">
+            <p className="text-xs text-amber-50/30">
               Fetching YouTube details...
             </p>
           )}
         </Label>
 
         <Label label="Course">
-          <select
-            required
+          <CoursePicker
             disabled={coursesLoading || courses.length === 0}
-            className={field}
+            courses={courses}
             value={draft.course_slug}
-            onChange={(e) =>
-              update(
-                "course_slug",
-                e.target.value,
-              )
-            }
-          >
-            <option value="">
-              Choose course
-            </option>
-
-            {courses.map((course) => (
-              <option
-                key={course.slug}
-                value={course.slug}
-              >
-                {course.name} — {course.code}
-                {course.semester ? ` · سمستر ${course.semester}` : " · بدون سمستر"}
-              </option>
-            ))}
-          </select>
+            onChange={(slug) => update("course_slug", slug)}
+          />
           {!coursesLoading && courses.length === 0 && (
-            <p className="mt-2 text-xs text-amber-300">
-              ما في مواد مضافة لسه. أضف المواد أولاً من تبويب Courses.
+            <p className="mt-2 text-xs text-amber-200/75">
+              No courses have been added yet. Add courses from the Courses tab first.
             </p>
           )}
         </Label>
@@ -1870,7 +2020,7 @@ function FcdsPlaylistForm({
             <img
               src={draft.thumbnail_url}
               alt=""
-              className="aspect-video w-full max-w-sm rounded-xl border border-white/10 object-cover"
+              className="aspect-video w-full max-w-sm rounded-xl border border-amber-100/10 object-cover"
             />
           </div>
         )}
@@ -2037,7 +2187,7 @@ function ContentAdmin() {
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         GENERAL
       </p>
 
@@ -2060,7 +2210,7 @@ function ContentAdmin() {
         </button>
       </div>
 
-      <ul className="mt-10 divide-y divide-white/10 border-y border-white/10">
+      <ul className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
 
         {items.map((c) => (
           <li
@@ -2070,7 +2220,7 @@ function ContentAdmin() {
             <img
               src={c.thumbnail_url ?? ""}
               alt=""
-              className="hidden aspect-video w-28 shrink-0 rounded-lg bg-white/5 object-cover sm:block"
+              className="hidden aspect-video w-28 shrink-0 rounded-lg bg-amber-100/5 object-cover sm:block"
             />
 
             <div className="min-w-0 flex-1">
@@ -2078,7 +2228,7 @@ function ContentAdmin() {
                 {c.title}
               </p>
 
-              <p className="text-xs text-white/35">
+              <p className="text-xs text-amber-50/35">
                 {c.channel} ·{" "}
                 {c.category?.name ??
                   "Uncategorized"}{" "}
@@ -2099,7 +2249,7 @@ function ContentAdmin() {
                 "p-2",
                 c.featured
                   ? "text-yellow-400"
-                  : "text-white/30 hover:text-white",
+                  : "text-amber-50/30 hover:text-amber-50",
               )}
             >
               <Star
@@ -2119,7 +2269,7 @@ function ContentAdmin() {
                   draft: toDraft(c),
                 })
               }
-              className="p-2 text-white/30 hover:text-white"
+              className="p-2 text-amber-50/30 hover:text-amber-50"
             >
               <Pencil className="h-4 w-4" />
             </button>
@@ -2127,7 +2277,7 @@ function ContentAdmin() {
             <button
               aria-label="Delete"
               onClick={() => remove(c)}
-              className="p-2 text-white/30 hover:text-red-400"
+              className="p-2 text-amber-50/30 hover:text-red-400"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -2445,7 +2595,7 @@ function ContentForm({
         />
 
         {fetching && (
-          <p className="text-xs text-white/30">
+          <p className="text-xs text-amber-50/30">
             Fetching YouTube details...
           </p>
         )}
@@ -2685,6 +2835,16 @@ function courseSlugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+function courseYearLabel(year: string) {
+  const labels: Record<string, string> = {
+    "السنة الأولى": "Year One",
+    "السنة الثانية": "Year Two",
+    "السنة الثالثة": "Year Three",
+    "السنة الرابعة": "Year Four",
+  };
+  return labels[year] ?? year;
+}
+
 function CoursesAdmin() {
   const qc = useQueryClient();
 
@@ -2754,7 +2914,7 @@ function CoursesAdmin() {
 
     if ((count ?? 0) > 0) {
       toast.error(
-        "المادة دي عندها Playlists. انقل أو احذف الـPlaylists أولاً.",
+        "This course still has playlists. Move or delete them first.",
       );
       return;
     }
@@ -2792,7 +2952,7 @@ function CoursesAdmin() {
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         FCDS
       </p>
 
@@ -2802,8 +2962,8 @@ function CoursesAdmin() {
             Courses
           </h2>
 
-          <p className="mt-3 text-sm text-white/40">
-            إدارة مواد مكتبة FCDS.
+          <p className="mt-3 text-sm text-amber-50/40">
+            Manage courses in the FCDS library.
           </p>
         </div>
 
@@ -2823,15 +2983,15 @@ function CoursesAdmin() {
       </div>
 
       {isLoading ? (
-        <p className="mt-10 text-white/40">
+        <p className="mt-10 text-amber-50/40">
           Loading...
         </p>
       ) : courses.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-white/10 p-10 text-center text-white/30">
+        <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
           No courses yet.
         </div>
       ) : (
-        <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
+        <div className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
           {courses.map((course) => (
             <div
               key={course.id}
@@ -2842,16 +3002,16 @@ function CoursesAdmin() {
                   {course.name}
                 </p>
 
-                <p className="mt-1 text-xs text-white/35">
-                  {course.code} · {course.year}
-                  {course.semester ? ` · سمستر ${course.semester}` : " · بدون سمستر"} · /{course.slug}
+                <p className="mt-1 text-xs text-amber-50/35">
+                  {course.code} · {courseYearLabel(course.year)}
+                  {course.semester ? ` · Semester ${course.semester}` : " · No semester"} · /{course.slug}
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => editCourse(course)}
-                className="p-2 text-white/30 hover:text-white"
+                className="p-2 text-amber-50/30 hover:text-amber-50"
                 aria-label="Edit course"
               >
                 <Pencil className="h-4 w-4" />
@@ -2860,7 +3020,7 @@ function CoursesAdmin() {
               <button
                 type="button"
                 onClick={() => remove(course)}
-                className="p-2 text-white/30 hover:text-red-400"
+                className="p-2 text-amber-50/30 hover:text-red-400"
                 aria-label="Delete course"
               >
                 <Trash2 className="h-4 w-4" />
@@ -2921,7 +3081,7 @@ function CourseForm({
     }
 
     if (!draft.semester || draft.semester < 1 || draft.semester > 8) {
-      toast.error("حدد سمستر المادة من 1 إلى 8.");
+      toast.error("Choose a course semester from 1 to 8.");
       return;
     }
 
@@ -2969,7 +3129,7 @@ function CourseForm({
     <div className="max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs tracking-[0.2em] text-white/30">
+          <p className="text-xs tracking-[0.2em] text-amber-50/30">
             FCDS
           </p>
 
@@ -3025,19 +3185,19 @@ function CourseForm({
             }))}
           >
             <option value="السنة الأولى">
-              السنة الأولى
+              Year One
             </option>
 
             <option value="السنة الثانية">
-              السنة الثانية
+              Year Two
             </option>
 
             <option value="السنة الثالثة">
-              السنة الثالثة
+              Year Three
             </option>
 
             <option value="السنة الرابعة">
-              السنة الرابعة
+              Year Four
             </option>
           </select>
         </Label>
@@ -3056,15 +3216,15 @@ function CourseForm({
               }));
             }}
           >
-            <option value="">حدد السمستر</option>
+            <option value="">Choose semester</option>
             {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
               <option key={semester} value={semester}>
-                سمستر {semester}
+                Semester {semester}
               </option>
             ))}
           </select>
-          <p className="mt-2 text-xs text-white/40">
-            اختار سمستر المادة حسب الخطة الدراسية؛ السنة بتتحدد تلقائياً.
+          <p className="mt-2 text-xs text-amber-50/40">
+            Select the course semester from the study plan. The year is set automatically.
           </p>
         </Label>
 
@@ -3209,7 +3369,7 @@ function CategoryAdmin() {
 
   return (
     <div className="max-w-3xl">
-      <p className="text-xs tracking-[0.2em] text-white/30">
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">
         GENERAL
       </p>
 
@@ -3236,7 +3396,7 @@ function CategoryAdmin() {
         </button>
       </form>
 
-      <ul className="mt-8 divide-y divide-white/10 border-y border-white/10">
+      <ul className="mt-8 divide-y divide-amber-100/10 border-y border-amber-100/10">
 
         {categories.map((c) => (
           <li
@@ -3285,7 +3445,7 @@ function CategoryAdmin() {
               <>
                 <span className="flex-1">
                   {c.name}{" "}
-                  <span className="text-xs text-white/30">
+                  <span className="text-xs text-amber-50/30">
                     /{c.slug}
                   </span>
                 </span>
@@ -3298,7 +3458,7 @@ function CategoryAdmin() {
                       name: c.name,
                     })
                   }
-                  className="p-2 text-white/30 hover:text-white"
+                  className="p-2 text-amber-50/30 hover:text-amber-50"
                 >
                   <Pencil className="h-4 w-4" />
                 </button>
@@ -3308,7 +3468,7 @@ function CategoryAdmin() {
                   onClick={() =>
                     remove(c)
                   }
-                  className="p-2 text-white/30 hover:text-red-400"
+                  className="p-2 text-amber-50/30 hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

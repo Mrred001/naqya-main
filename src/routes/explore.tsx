@@ -6,6 +6,7 @@ import { categoriesQuery, contentQuery } from "@/lib/content";
 import { ContentCard } from "@/components/site/ContentCard";
 import { SearchBar } from "@/components/site/SearchBar";
 import { cn } from "@/lib/utils";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 type S = string | undefined;
 type Search = { q?: S; category?: S; language?: S; duration?: S; type?: S; sort?: S };
@@ -46,6 +47,9 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
 }
 
 function Explore() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/explore" });
   const { data: items } = useSuspenseQuery(contentQuery);
@@ -71,23 +75,23 @@ function Explore() {
   }, [items, search]);
 
   const groups: { label: string; key: keyof Search; options: [string, string][] }[] = [
-    { label: "اللغة", key: "language", options: languages.map((l) => [l, l]) },
-    { label: "المدة", key: "duration", options: [["short", "أقل من ١٥ دقيقة"], ["medium", "١٥–٦٠ دقيقة"], ["long", "أكثر من ساعة"]] },
-    { label: "النوع", key: "type", options: [["video", "فيديو"], ["playlist", "قائمة تشغيل"]] },
-    { label: "الترتيب", key: "sort", options: [["oldest", "الأقدم أولاً"]] },
+    { label: t("اللغة", "Language"), key: "language", options: languages.map((l) => [l, l]) },
+    { label: t("المدة", "Duration"), key: "duration", options: [["short", t("أقل من ١٥ دقيقة", "Under 15 minutes")], ["medium", t("١٥–٦٠ دقيقة", "15–60 minutes")], ["long", t("أكثر من ساعة", "Over an hour")]] },
+    { label: t("النوع", "Type"), key: "type", options: [["video", t("فيديو", "Video")], ["playlist", t("قائمة تشغيل", "Playlist")]] },
+    { label: t("الترتيب", "Sort"), key: "sort", options: [["oldest", t("الأقدم أولاً", "Oldest first")]] },
   ];
   const hasFilters = Object.values(search).some(Boolean);
 
   return (
     <div className="mx-auto max-w-7xl px-5 pt-12 md:px-8 md:pt-20">
-      <h1 className="text-5xl font-bold md:text-7xl">استكشف</h1>
-      <p className="mt-4 text-lg text-muted-foreground">اكتشف محتوى منتقى يستحق وقتك.</p>
+      <h1 className="text-5xl font-bold md:text-7xl">{t("استكشف", "Explore")}</h1>
+      <p className="mt-4 text-lg text-muted-foreground">{t("اكتشف محتوى منتقى يستحق وقتك.", "Discover carefully selected content worth your time.")}</p>
       <SearchBar initial={search.q ?? ""} onChange={(q) => set({ q: q || undefined })} className="mt-8 max-w-2xl" />
 
       <section className="mt-10">
-        <h2 className="text-xs font-medium tracking-[0.15em] text-muted-foreground">التصنيفات</h2>
+        <h2 className="text-xs font-medium tracking-[0.15em] text-muted-foreground">{t("التصنيفات", "Categories")}</h2>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1 md:flex-wrap">
-          <Chip active={!search.category} onClick={() => set({ category: undefined })}>الكل</Chip>
+          <Chip active={!search.category} onClick={() => set({ category: undefined })}>{t("الكل", "All")}</Chip>
           {categories.map((c) => (
             <Chip key={c.id} active={search.category === c.slug} onClick={() => toggle("category", c.slug)}>
               <span dir="auto">{c.name}</span>
@@ -98,7 +102,7 @@ function Explore() {
 
       <details className="group mt-6 border-y py-4">
         <summary className="cursor-pointer list-none text-sm text-muted-foreground hover:text-foreground">
-          تصفية إضافية <span className="inline-block transition-transform group-open:rotate-180">⌄</span>
+          {t("تصفية إضافية", "More filters")} <span className="inline-block transition-transform group-open:rotate-180">⌄</span>
         </summary>
         <div className="mt-5 space-y-4">
           {groups.map((g) => (
@@ -115,9 +119,9 @@ function Explore() {
       </details>
 
       <div className="mt-8 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{filtered.length} نتيجة</span>
+        <span>{filtered.length} {t("نتيجة", "results")}</span>
         {hasFilters && (
-          <button onClick={() => navigate({ search: {}, replace: true })} className="hover:text-foreground">مسح الكل</button>
+          <button onClick={() => navigate({ search: {}, replace: true })} className="hover:text-foreground">{t("مسح الكل", "Clear all")}</button>
         )}
       </div>
 
@@ -126,7 +130,7 @@ function Explore() {
           {filtered.map((i) => <ContentCard key={i.id} item={i} />)}
         </div>
       ) : (
-        <p className="py-24 text-center text-2xl text-muted-foreground">لا يوجد محتوى مطابق بعد.</p>
+        <p className="py-24 text-center text-2xl text-muted-foreground">{t("لا يوجد محتوى مطابق بعد.", "No matching content yet.")}</p>
       )}
     </div>
   );

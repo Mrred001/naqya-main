@@ -7,6 +7,7 @@ import { ContentCard } from "@/components/site/ContentCard";
 import { SaveButton } from "@/components/account/SaveButton";
 import { useAccount } from "@/components/account/AccountProvider";
 import { GoogleSignIn } from "@/components/account/GoogleSignIn";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export const Route = createFileRoute("/saved")({
   head: () => ({ meta: [{ title: "المحفوظات — نقيا ودرب" }, { name: "robots", content: "noindex" }] }),
@@ -24,6 +25,9 @@ const playlistsQuery = queryOptions({
   },
 });
 function Saved() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const { user, ready } = useAccount();
   const bookmarks = useQuery(bookmarksQuery(user?.id));
   const general = useQuery({ ...contentQuery, enabled: Boolean(user) });
@@ -33,18 +37,18 @@ function Saved() {
     !ready || Boolean(user && (bookmarks.isPending || general.isPending || fcds.isPending));
   return (
     <section className="mx-auto max-w-7xl space-y-6 px-5 py-12 md:px-8">
-      <h1 className="text-4xl font-bold">المحفوظات</h1>
-      <p className="text-muted-foreground">مصادرك من نقيا ودرب، محفوظة مع حسابك.</p>
+      <h1 className="text-4xl font-bold">{t("المحفوظات", "Saved items")}</h1>
+      <p className="text-muted-foreground">{t("مصادرك من نقيا ودرب، محفوظة مع حسابك.", "Your NAQYA and DARB resources, saved to your account.")}</p>
       {loading ? (
-        <p role="status">جاري التحميل…</p>
+        <p role="status">{t("جاري التحميل…", "Loading…")}</p>
       ) : !user ? (
         <div className="max-w-md space-y-4 rounded-2xl border p-6">
-          <p>سجّل دخولك عشان تفتح محفوظاتك. التصفّح والمشاهدة متاحين بدون حساب.</p>
+          <p>{t("سجّل دخولك عشان تفتح محفوظاتك. التصفّح والمشاهدة متاحين بدون حساب.", "Sign in to see your saved items. You can browse and watch without an account.")}</p>
           <GoogleSignIn />
         </div>
       ) : failed ? (
         <div role="alert">
-          <p>ما قدرنا نحمّل المحفوظات.</p>
+          <p>{t("ما قدرنا نحمّل المحفوظات.", "Could not load your saved items.")}</p>
           <button
             type="button"
             className="mt-3 text-primary"
@@ -54,18 +58,18 @@ function Saved() {
               void fcds.refetch();
             }}
           >
-            حاول تاني
+            {t("حاول تاني", "Try again")}
           </button>
         </div>
       ) : !bookmarks.data?.length ? (
         <div className="rounded-2xl border p-8">
-          <p>لسه ما حفظت مصادر. اضغط «احفظ لوقت لاحق» على المصدر البتهمك.</p>
+          <p>{t("لسه ما حفظت مصادر. اضغط «احفظ لوقت لاحق» على المصدر البتهمك.", "You have no saved resources yet. Use “Save for later” on anything you want to keep.")}</p>
           <div className="mt-4 flex gap-6">
             <Link to="/naqya" className="text-primary">
-              تصفّح نقيا
+              {t("تصفّح نقيا", "Browse NAQYA")}
             </Link>
             <Link to="/fcds" className="text-primary">
-              تصفّح الكلية
+              {t("تصفّح درب", "Browse DARB")}
             </Link>
           </div>
         </div>
@@ -92,11 +96,11 @@ function Saved() {
                       params={{ slug: playlist.course_slug }}
                       className="inline-block text-primary"
                     >
-                      افتح صفحة المادة
+                      {t("افتح صفحة المادة", "Open course page")}
                     </Link>
                   </div>
                 ) : (
-                  <p>المصدر ده ما متاح حالياً.</p>
+                  <p>{t("المصدر ده ما متاح حالياً.", "This resource is no longer available.")}</p>
                 )}
                 <SaveButton
                   kind={row.content_id ? "general" : "fcds"}

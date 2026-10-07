@@ -4,6 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { contentQuery, embedFor, formatDuration } from "@/lib/content";
 import { ContentCard, Pill } from "@/components/site/ContentCard";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export const Route = createFileRoute("/watch/$id")({
   loader: async ({ context, params }) => {
@@ -53,6 +54,9 @@ function WatchNotFound() {
 }
 
 function Watch() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const { id } = Route.useParams();
   const { data: items } = useSuspenseQuery(contentQuery);
   const item = items.find((i) => i.id === id)!;
@@ -72,7 +76,7 @@ function Watch() {
   const meta = [
     item.category?.name,
     formatDuration(item.duration_seconds),
-    item.content_type === "playlist" ? "قائمة تشغيل" : "فيديو",
+    item.content_type === "playlist" ? t("قائمة تشغيل", "Playlist") : t("فيديو", "Video"),
     item.language,
   ].filter(Boolean) as string[];
 
@@ -82,7 +86,7 @@ function Watch() {
         to="/explore"
         className="mx-5 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground md:mx-0"
       >
-        <ArrowRight className="h-4 w-4" /> العودة إلى المكتبة
+        <ArrowRight className="h-4 w-4" /> {t("العودة إلى المكتبة", "Back to library")}
       </Link>
       <div className="mt-4 aspect-video overflow-hidden bg-card md:rounded-2xl md:border">
         <iframe
@@ -117,7 +121,7 @@ function Watch() {
             rel="noreferrer"
             className="ms-auto inline-flex items-center gap-1.5 hover:text-primary"
           >
-            فتح في يوتيوب <ExternalLink className="h-3.5 w-3.5" />
+            {t("فتح في يوتيوب", "Open on YouTube")} <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
         {item.tags.length > 0 && (
@@ -132,7 +136,7 @@ function Watch() {
 
         {item.recommendation && (
           <section className="mt-8 rounded-2xl border border-primary/20 bg-primary-soft p-6 md:p-8">
-            <h2 className="text-sm font-semibold text-primary">لماذا يرشحه أحمد؟</h2>
+            <h2 className="text-sm font-semibold text-primary">{t("لماذا يرشحه أحمد؟", "Why Ahmed recommends it")}</h2>
             <p dir="auto" className="mt-3 text-lg leading-relaxed md:text-xl">
               {item.recommendation}
             </p>
@@ -152,7 +156,7 @@ function Watch() {
 
         {related.length > 0 && (
           <section className="mt-16 md:mt-20">
-            <h2 className="mb-6 text-2xl font-bold md:text-3xl">قد يعجبك أيضاً</h2>
+            <h2 className="mb-6 text-2xl font-bold md:text-3xl">{t("قد يعجبك أيضاً", "You may also like")}</h2>
             <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((i) => (
                 <ContentCard key={i.id} item={i} />

@@ -1,10 +1,12 @@
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { LanguageToggle } from "@/components/site/LanguageToggle";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { Search, Plus, BookOpen, X, Send, Loader2, Video } from "lucide-react";
+import { Search, Plus, BookOpen, X, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -38,6 +40,9 @@ type FcdsCourse = {
 };
 
 function FCDS() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const [search, setSearch] = useState("");
   const [selectedYear, setSelectedYear] = useState("كل السنوات");
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
@@ -114,9 +119,8 @@ function FCDS() {
     resetSuggestionForm();
   };
 
-  const openSuggest = (kind: "playlist" | "video") => {
+  const openSuggest = () => {
     resetSuggestionForm();
-    setSuggestKind(kind);
     setSuggestOpen(true);
   };
 
@@ -126,18 +130,18 @@ function FCDS() {
     const parsed = parseYouTube(url);
 
     if (!parsed) {
+      lastFetched.current = "";
+      setFetching(false);
       return;
     }
 
-    if (parsed.kind !== suggestKind) {
+    setSuggestKind(parsed.kind);
+    const requestKey = `${parsed.kind}:${parsed.id}`;
+    if (lastFetched.current === requestKey) {
       return;
     }
 
-    if (lastFetched.current === parsed.id) {
-      return;
-    }
-
-    lastFetched.current = parsed.id;
+    lastFetched.current = requestKey;
 
     setFetching(true);
 
@@ -149,8 +153,10 @@ function FCDS() {
         },
       });
 
+      if (lastFetched.current !== requestKey) return;
+
       if (!res.meta) {
-        toast.error(res.error ?? "ما قدرنا نجيب بيانات المحتوى.");
+        toast.error(res.error ?? t("ما قدرنا نجيب بيانات المحتوى.", "Could not fetch video details."));
 
         lastFetched.current = "";
         return;
@@ -161,15 +167,16 @@ function FCDS() {
       setSuggestTitle(meta.title || "");
       setSuggestChannel(meta.channel || "");
 
-      toast.success("تم جلب بيانات المحتوى تلقائياً");
+      toast.success(t("تم جلب بيانات المحتوى تلقائياً", "Video details loaded automatically."));
     } catch (error) {
+      if (lastFetched.current !== requestKey) return;
       console.error(error);
 
-      toast.error("حصلت مشكلة أثناء جلب بيانات YouTube.");
+      toast.error(t("حصلت مشكلة أثناء جلب بيانات YouTube.", "There was a problem fetching YouTube details."));
 
       lastFetched.current = "";
     } finally {
-      setFetching(false);
+      if (lastFetched.current === requestKey || lastFetched.current === "") setFetching(false);
     }
   };
 
@@ -177,28 +184,19 @@ function FCDS() {
     e.preventDefault();
 
     if (!suggestCourse) {
-      toast.error("اختار المادة.");
+      toast.error(t("اختار المادة.", "Choose a course."));
       return;
     }
 
     const parsed = parseYouTube(suggestUrl);
 
     if (!parsed) {
-      toast.error("الرابط ما ظاهر كرابط YouTube صحيح.");
-      return;
-    }
-
-    if (parsed.kind !== suggestKind) {
-      toast.error(
-        suggestKind === "video"
-          ? "الرابط لازم يكون فيديو YouTube مفرد."
-          : "الرابط لازم يكون YouTube Playlist.",
-      );
+      toast.error(t("الرابط ما ظاهر كرابط YouTube صحيح.", "Enter a valid YouTube link."));
       return;
     }
 
     if (!suggestTitle.trim()) {
-      toast.error(suggestKind === "video" ? "اسم الفيديو مطلوب." : "اسم الـPlaylist مطلوب.");
+      toast.error(suggestKind === "video" ? t("اسم الفيديو مطلوب.", "Video title is required.") : t("اسم الـPlaylist مطلوب.", "Playlist title is required."));
       return;
     }
 
@@ -217,12 +215,12 @@ function FCDS() {
 
     if (error) {
       console.error(error);
-      toast.error("حصلت مشكلة أثناء إرسال الاقتراح.");
+      toast.error(t("حصلت مشكلة أثناء إرسال الاقتراح.", "There was a problem submitting your suggestion."));
       return;
     }
 
     setSubmitted(true);
-    toast.success("تم إرسال الاقتراح");
+    toast.success(t("تم إرسال الاقتراح", "Suggestion submitted."));
   };
 
   if (pathname !== "/fcds") {
@@ -238,7 +236,7 @@ function FCDS() {
             <Link
               to="/"
               className="group flex items-center gap-3"
-              aria-label="العودة لاختيار المكتبة"
+              aria-label={t("العودة لاختيار المكتبة", "Back to library selection")}
             >
               <img
                 src="/naqya-fcds-logo.png"
@@ -258,6 +256,7 @@ function FCDS() {
 
           <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
+            <LanguageToggle />
             <AccountMenu />
             <AdminLink />
             {/* Home - Left */}
@@ -265,7 +264,7 @@ function FCDS() {
               to="/"
               className="text-sm text-muted-foreground transition-colors hover:text-primary"
             >
-              الرئيسية
+              {english ? "Home" : "الرئيسية"}
             </Link>
           </div>
         </div>
@@ -273,14 +272,14 @@ function FCDS() {
 
       <main className="mx-auto max-w-7xl px-5 pb-24 md:px-8">
         <section className="hero-surface mb-10 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
-          <h1 className="max-w-3xl text-5xl font-bold leading-tight md:text-7xl" dir="rtl">
-            كل مادة.
+          <h1 className="max-w-3xl text-5xl font-bold leading-tight md:text-7xl" dir={english ? "ltr" : "rtl"}>
+            {t("كل مادة.", "Every course.")}
             <br />
-            <span className="text-primary">مصادرها في مكان واحد.</span>
+            <span className="text-primary">{t("مصادرها في مكان واحد.", "Its resources in one place.")}</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-muted-foreground" dir="rtl">
-            ابحث عن مادتك وشوف الـPlaylists والفيديوهات المتاحة ليها.
+            {t("ابحث عن مادتك وشوف الـPlaylists والفيديوهات المتاحة ليها.", "Find your course and explore its playlists and videos.")}
           </p>
 
           <div className="mt-10 flex max-w-2xl items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 focus-within:border-primary/50">
@@ -290,14 +289,14 @@ function FCDS() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="اكتب اسم المادة أو كودها..."
-              dir="rtl"
+              placeholder={t("اكتب اسم المادة أو كودها...", "Search by course name or code…")}
+              dir={english ? "ltr" : "rtl"}
               className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
             />
           </div>
 
-          <div className="mt-6 space-y-4" dir="rtl">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="فلترة حسب السنة">
+          <div className={`mt-6 space-y-4 ${english ? "text-left" : "text-right"}`} dir={english ? "ltr" : "rtl"}>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={t("فلترة حسب السنة", "Filter by year")}>
               {["كل السنوات", ...fcdsYearOptions].map((year) => (
                 <button
                   key={year}
@@ -313,7 +312,7 @@ function FCDS() {
                       : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
                   }`}
                 >
-                  {year}
+                  {english ? ({ "كل السنوات": "All years", "السنة الأولى": "Year 1", "السنة الثانية": "Year 2", "السنة الثالثة": "Year 3", "السنة الرابعة": "Year 4" } as Record<string, string>)[year] ?? year : year}
                 </button>
               ))}
             </div>
@@ -321,14 +320,14 @@ function FCDS() {
             <div
               className="flex flex-wrap items-center gap-2"
               role="group"
-              aria-label="فلترة حسب السمستر"
+              aria-label={t("فلترة حسب السمستر", "Filter by semester")}
             >
-              <span className="ml-1 text-xs font-medium text-muted-foreground">السمستر</span>
+              <span className="ml-1 text-xs font-medium text-muted-foreground">{t("السمستر", "Semester")}</span>
               {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
                 <button
                   key={semester}
                   type="button"
-                  aria-label={`سمستر ${semester}`}
+                  aria-label={`${t("سمستر", "Semester")} ${semester}`}
                   aria-pressed={selectedSemester === semester}
                   onClick={() => {
                     setSelectedSemester(semester);
@@ -348,25 +347,36 @@ function FCDS() {
         </section>
 
         <section>
-          <div className="mb-8 flex items-end justify-between gap-4" dir="rtl">
+          <div className="mb-8 flex items-end justify-between gap-4" dir={english ? "ltr" : "rtl"}>
             <div>
               <p className="font-mono text-xs text-primary">COURSES</p>
 
-              <h2 className="mt-2 text-3xl font-bold">المواد</h2>
+              <h2 className="mt-2 text-3xl font-bold">{t("المواد", "Courses")}</h2>
             </div>
 
-            <p className="text-sm text-muted-foreground">{filteredCourses.length} مواد</p>
+            <p className="text-sm text-muted-foreground">{filteredCourses.length} {t("مواد", "courses")}</p>
+          </div>
+
+          <div className="mb-6" dir={english ? "ltr" : "rtl"}>
+            <button
+              type="button"
+              onClick={openSuggest}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-200/70 bg-gradient-to-r from-amber-300 to-yellow-200 px-6 py-3 text-sm font-bold text-amber-950 shadow-[0_6px_24px_-8px_rgba(245,158,11,0.6)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_28px_-8px_rgba(245,158,11,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none"
+            >
+              <Plus className="h-4 w-4" />
+              {t("اقترح مصدر", "Suggest a resource")}
+            </button>
           </div>
 
           {coursesLoading && (
             <div className="rounded-2xl border border-border p-10 text-center text-muted-foreground">
-              جاري تحميل المواد...
+              {t("جاري تحميل المواد...", "Loading courses…")}
             </div>
           )}
 
           {coursesError && (
             <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-10 text-center text-red-300">
-              حصلت مشكلة أثناء تحميل المواد.
+              {t("حصلت مشكلة أثناء تحميل المواد.", "There was a problem loading courses.")}
             </div>
           )}
 
@@ -381,34 +391,14 @@ function FCDS() {
           {!coursesLoading && !coursesError && filteredCourses.length === 0 && (
             <div
               className="rounded-2xl border border-border p-10 text-center text-muted-foreground"
-              dir="rtl"
+              dir={english ? "ltr" : "rtl"}
             >
               {selectedSemester === null
-                ? "ما لقينا مادة مطابقة للبحث."
-                : `ما لقينا مواد مسجلة لسمستر ${selectedSemester} لحدي هسي.`}
+                ? t("ما لقينا مادة مطابقة للبحث.", "No courses match your search.")
+                : t(`ما لقينا مواد مسجلة لسمستر ${selectedSemester} لحدي هسي.`, `No courses are listed for semester ${selectedSemester} yet.`)}
             </div>
           )}
-          <div
-            className="mt-8 flex flex-col items-end gap-3 pb-8 sm:flex-row sm:justify-end"
-            dir="rtl"
-          >
-            <button
-              type="button"
-              onClick={() => openSuggest("playlist")}
-              className="flex items-center gap-2 whitespace-nowrap rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
-            >
-              <Plus className="h-4 w-4" />
-              اقترح Playlist
-            </button>
-            <button
-              type="button"
-              onClick={() => openSuggest("video")}
-              className="flex items-center gap-2 whitespace-nowrap rounded-full border border-primary/40 bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-lg transition-colors hover:border-primary hover:text-primary"
-            >
-              <Video className="h-4 w-4" />
-              اقترح فيديو
-            </button>
-          </div>
+
         </section>
       </main>
 
@@ -416,26 +406,24 @@ function FCDS() {
         <Dialog open={suggestOpen} onOpenChange={(open) => !open && closeSuggest()}>
           <DialogContent className="fcds-theme text-foreground max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-xl overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl md:p-8 [&>button]:hidden">
             <div className="flex items-start justify-between gap-4">
-              <div dir="rtl">
+              <div dir={english ? "ltr" : "rtl"}>
                 <p className="font-mono text-xs text-primary">
-                  {suggestKind === "video" ? "SUGGEST VIDEO" : "SUGGEST PLAYLIST"}
+                  SUGGEST A RESOURCE
                 </p>
 
                 <DialogTitle className="mt-2 text-2xl font-bold">
-                  {suggestKind === "video" ? "اقترح فيديو" : "اقترح Playlist"}
+                  {t("اقترح مصدر", "Suggest a resource")}
                 </DialogTitle>
 
                 <DialogDescription className="mt-2 text-sm text-muted-foreground">
-                  {suggestKind === "video"
-                    ? "الصق رابط فيديو واحد وحنجيب بياناته تلقائياً."
-                    : "الصق رابط الـPlaylist وحنجيب بياناتها تلقائياً."}
+                  {t("الصق رابط فيديو أو Playlist، وحنحدد النوع ونجيب بياناته تلقائياً.", "Paste a video or playlist link. We’ll detect its type and fetch its details.")}
                 </DialogDescription>
               </div>
 
               <button
                 type="button"
                 onClick={closeSuggest}
-                aria-label="إغلاق الاقتراح"
+                aria-label={t("إغلاق الاقتراح", "Close suggestion form")}
                 className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
@@ -445,24 +433,24 @@ function FCDS() {
             {submitted ? (
               <div
                 className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center"
-                dir="rtl"
+                dir={english ? "ltr" : "rtl"}
               >
-                <p className="text-lg font-semibold text-primary">وصل الاقتراح 👌</p>
+                <p className="text-lg font-semibold text-primary">{t("وصل الاقتراح 👌", "Suggestion received 👌")}</p>
 
-                <p className="mt-2 text-sm text-muted-foreground">حنراجعه قبل إضافته للمكتبة.</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t("حنراجعه قبل إضافته للمكتبة.", "We’ll review it before adding it to the library.")}</p>
 
                 <button
                   type="button"
                   onClick={closeSuggest}
                   className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
                 >
-                  تمام
+                  {t("تمام", "Done")}
                 </button>
               </div>
             ) : (
-              <form onSubmit={submitSuggestion} className="mt-8 space-y-5" dir="rtl">
+              <form onSubmit={submitSuggestion} className="mt-8 space-y-5" dir={english ? "ltr" : "rtl"}>
                 <label className="block">
-                  <span className="mb-2 block text-sm text-muted-foreground">المادة *</span>
+                  <span className="mb-2 block text-sm text-muted-foreground">{t("المادة *", "Course *")}</span>
 
                   <select
                     value={suggestCourse}
@@ -470,7 +458,7 @@ function FCDS() {
                     required
                     className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50"
                   >
-                    <option value="">اختر المادة</option>
+                    <option value="">{t("اختر المادة", "Choose a course")}</option>
 
                     {courses.map((course) => (
                       <option key={course.id} value={course.slug}>
@@ -483,13 +471,13 @@ function FCDS() {
                 <label className="block">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <span className="text-sm text-muted-foreground">
-                      {suggestKind === "video" ? "رابط فيديو YouTube *" : "رابط YouTube Playlist *"}
+                      {t("رابط YouTube *", "YouTube URL *")}
                     </span>
 
                     {fetching && (
                       <span className="flex items-center gap-1.5 text-xs text-primary">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        جاري جلب البيانات...
+                        {t("جاري جلب البيانات...", "Fetching details…")}
                       </span>
                     )}
                   </div>
@@ -499,19 +487,20 @@ function FCDS() {
                     value={suggestUrl}
                     onChange={(e) => onSuggestUrl(e.target.value)}
                     required
-                    placeholder={
-                      suggestKind === "video"
-                        ? "https://youtube.com/watch?v=..."
-                        : "https://youtube.com/playlist?list=..."
-                    }
+                    placeholder="https://youtube.com/..."
                     dir="ltr"
                     className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
+                  {parseYouTube(suggestUrl) && (
+                    <p className="mt-2 text-xs font-medium text-primary" role="status">
+                      {suggestKind === "video" ? t("النوع: فيديو", "Detected: video") : t("النوع: Playlist", "Detected: playlist")}
+                    </p>
+                  )}
                 </label>
 
                 <label className="block">
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    {suggestKind === "video" ? "اسم الفيديو *" : "اسم الـPlaylist *"}
+                    {suggestKind === "video" ? t("اسم الفيديو *", "Video title *") : t("اسم الـPlaylist *", "Playlist title *")}
                   </span>
 
                   <input
@@ -519,20 +508,20 @@ function FCDS() {
                     value={suggestTitle}
                     onChange={(e) => setSuggestTitle(e.target.value)}
                     required
-                    placeholder="بيتعبّى تلقائياً"
+                    placeholder={t("بيتعبّى تلقائياً", "Filled automatically")}
                     dir="auto"
                     className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-sm text-muted-foreground">القناة</span>
+                  <span className="mb-2 block text-sm text-muted-foreground">{t("القناة", "Channel")}</span>
 
                   <input
                     type="text"
                     value={suggestChannel}
                     onChange={(e) => setSuggestChannel(e.target.value)}
-                    placeholder="بيتعبّى تلقائياً"
+                    placeholder={t("بيتعبّى تلقائياً", "Filled automatically")}
                     dir="auto"
                     className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
@@ -540,8 +529,8 @@ function FCDS() {
 
                 <label className="block">
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    ملاحظة
-                    <span className="mr-1 text-muted-foreground">(اختيارية)</span>
+                    {t("ملاحظة", "Note")}
+                    <span className="mx-1 text-muted-foreground">({t("اختيارية", "optional")})</span>
                   </span>
 
                   <textarea
@@ -550,8 +539,8 @@ function FCDS() {
                     onChange={(e) => setSuggestNote(e.target.value)}
                     placeholder={
                       suggestKind === "video"
-                        ? "ليه شايف الفيديو ده مفيد؟"
-                        : "ليه شايف الـPlaylist دي مفيدة؟"
+                        ? t("ليه شايف الفيديو ده مفيد؟", "Why do you think this video is useful?")
+                        : t("ليه شايف الـPlaylist دي مفيدة؟", "Why do you think this playlist is useful?")
                     }
                     className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
@@ -565,12 +554,12 @@ function FCDS() {
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      جاري الإرسال...
+                      {t("جاري الإرسال...", "Submitting…")}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      إرسال الاقتراح
+                      {t("إرسال الاقتراح", "Submit suggestion")}
                     </>
                   )}
                 </button>
@@ -584,7 +573,9 @@ function FCDS() {
 }
 
 function CourseCard({ course }: { course: FcdsCourse }) {
-  const { data: playlistCount = 0 } = useQuery({
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const { data: playlistCount, isSuccess: countReady } = useQuery({
     queryKey: ["fcds-course-count", course.slug],
 
     queryFn: async () => {
@@ -619,9 +610,15 @@ function CourseCard({ course }: { course: FcdsCourse }) {
       <h3 className="mt-10 text-2xl font-semibold">{course.name}</h3>
 
       <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
-        <span>{playlistCount} مصادر</span>
+        {countReady && playlistCount === 0 ? (
+          <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+            {english ? "No resources yet" : "ما عندها مصادر"}
+          </span>
+        ) : (
+          <span>{countReady ? playlistCount : "—"} {english ? "resources" : "مصادر"}</span>
+        )}
 
-        <span>{course.year}</span>
+        <span>{english ? ({ "السنة الأولى": "Year 1", "السنة الثانية": "Year 2", "السنة الثالثة": "Year 3", "السنة الرابعة": "Year 4" } as Record<string, string>)[course.year] ?? course.year : course.year}</span>
       </div>
     </Link>
   );

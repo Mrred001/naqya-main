@@ -1,8 +1,10 @@
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "./ThemeToggle";
+import { LanguageToggle } from "./LanguageToggle";
 import { CommunityFooter } from "./CommunityFooter";
 import { Link } from "@tanstack/react-router";
+import { useSitePreferences } from "./PreferencesProvider";
 import { Compass, Home, Menu } from "lucide-react";
 import { useState } from "react";
 
@@ -50,6 +52,8 @@ export function Logo() {
 }
 
 export function SiteHeader() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
   const [navOpen, setNavOpen] = useState(true);
   return (
     <header className="glass sticky top-0 z-40 border-b">
@@ -58,7 +62,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setNavOpen((open) => !open)}
-            aria-label={navOpen ? "إخفاء القائمة" : "إظهار القائمة"}
+            aria-label={navOpen ? (english ? "Hide menu" : "إخفاء القائمة") : (english ? "Show menu" : "إظهار القائمة")}
             aria-expanded={navOpen}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground hover:bg-secondary md:hidden"
           >
@@ -74,7 +78,7 @@ export function SiteHeader() {
         </div>
 
         <nav
-          aria-label="التنقل الرئيسي"
+          aria-label={english ? "Main navigation" : "التنقل الرئيسي"}
           dir="rtl"
           className={`${navOpen ? "flex" : "hidden"} min-h-12 flex-wrap items-center justify-center gap-2 border-t border-border/70 py-2 md:absolute md:start-1/2 md:top-1/2 md:min-h-0 md:-translate-x-1/2 md:-translate-y-1/2 md:gap-3 md:border-0 md:py-0`}
         >
@@ -84,7 +88,7 @@ export function SiteHeader() {
             activeProps={{ className: "nav-link nav-link-active" }}
           >
             <Home size={18} aria-hidden="true" />
-            الرئيسية
+            {english ? "Home" : "الرئيسية"}
           </Link>
           <Link
             to="/explore"
@@ -92,8 +96,9 @@ export function SiteHeader() {
             activeProps={{ className: "nav-link nav-link-active" }}
           >
             <Compass size={18} aria-hidden="true" />
-            استكشف
+            {english ? "Explore" : "استكشف"}
           </Link>
+          <LanguageToggle />
           <AdminLink />
         </nav>
       </div>

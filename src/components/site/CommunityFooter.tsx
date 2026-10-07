@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useSitePreferences } from "./PreferencesProvider";
 
 const intro =
   "ربنا أنعم علي وفهمت قاعدة بسيطة: الحاجة البتستهلكها هي في النهاية الحاجة البتنتجها. ومن وقتها بديت أحاول أركز على الحاجات البتنفع.";
@@ -15,6 +16,9 @@ const field =
   "mt-2 w-full rounded-xl border bg-background px-4 py-3 text-foreground outline-none focus:border-primary";
 
 export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -25,7 +29,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
     const form = new FormData(event.currentTarget);
     const details = String(form.get("details") || "").trim();
     if (details.length < 10) {
-      setError("اكتب تفاصيل المشكلة في ١٠ حروف على الأقل.");
+      setError(t("اكتب تفاصيل المشكلة في ١٠ حروف على الأقل.", "Please describe the issue in at least 10 characters."));
       return;
     }
     setBusy(true);
@@ -41,7 +45,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
       if (failure) throw failure;
       setSent(true);
     } catch {
-      setError("تعذّر إرسال البلاغ حالياً. جرّب تاني، أو تواصل معاي عبر إنستغرام.");
+      setError(t("تعذّر إرسال البلاغ حالياً. جرّب تاني، أو تواصل معاي عبر إنستغرام.", "Could not submit the report. Try again or contact me on Instagram."));
     } finally {
       setBusy(false);
     }
@@ -54,7 +58,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>
             <p className="font-semibold">
-              {fcds ? "درب FCDS — مصادر مادتك، بلا تشتت." : "نقيا — ما يستحق وقتك."}
+              {fcds ? t("درب FCDS — مصادر مادتك، بلا تشتت.", "DARB FCDS — course resources, without the clutter.") : t("نقيا — ما يستحق وقتك.", "NAQYA — worth your time.")}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">Created by visionwithahmed</p>
           </div>
@@ -63,38 +67,35 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
               <DialogTrigger asChild>
                 <button className={action}>
                   <UserRound size={16} />
-                  من أنا
+                  {t("من أنا", "About me")}
                 </button>
               </DialogTrigger>
               <DialogContent
                 className={`max-h-[85dvh] max-w-2xl overflow-y-auto rounded-3xl ${fcds ? "fcds-theme" : ""}`}
               >
-                <DialogTitle className="text-2xl">من أنا</DialogTitle>
-                <DialogDescription>أحمد أسامة · {fcds ? "درب FCDS" : "NAQYA"}</DialogDescription>
+                <DialogTitle className="text-2xl">{t("من أنا", "About me")}</DialogTitle>
+                <DialogDescription>Ahmed Osama · {fcds ? "DARB FCDS" : "NAQYA"}</DialogDescription>
                 <div className="space-y-5 text-base leading-loose">
                   <p>
-                    أنا أحمد أسامة،{" "}
-                    {fcds ? "طالب بالسنة الرابعة، وكاتب وصانع محتوى." : "كاتب وصانع محتوى."} بديت
-                    رحلة فهم الذات قبل ٤ سنوات، وحصلت تغييرات كتيرة في حياتي. ومن أهم أسباب
-                    التغييرات دي فضل الله، ثم المدخلات.
+                    {english ? (
+                      <>I’m Ahmed Osama, {fcds ? "a fourth-year student, writer, and content creator." : "a writer and content creator."} I started a journey of self-discovery four years ago, and it changed a lot in my life. By God’s grace, the things I take in have been a major part of that change.</>
+                    ) : (
+                      <>أنا أحمد أسامة، {fcds ? "طالب بالسنة الرابعة، وكاتب وصانع محتوى." : "كاتب وصانع محتوى."} بديت رحلة فهم الذات قبل ٤ سنوات، وحصلت تغييرات كتيرة في حياتي. ومن أهم أسباب التغييرات دي فضل الله، ثم المدخلات.</>
+                    )}
                   </p>
-                  <p>{intro}</p>
+                  <p>{english ? "God helped me understand a simple idea: what you consume is ultimately what you produce. Since then, I’ve tried to focus on things that are useful." : intro}</p>
                   {fcds ? (
                     <>
                       <p>
-                        جات فكرة درب FCDS لما لاحظت إن طلب روابط الـPlaylists بتكرر كل فترة، سواء
-                        من زملائي أو من الطلاب الجدد. ومن هنا سألت نفسي: ماذا لو في موقع يجمع قوائم
-                        الشرح الخاصة بكل مادة، بشكل مرتب وجميل وسهل الوصول؟
+                        {english ? "DARB FCDS came from noticing how often students ask for course playlist links. I wondered: what if there were one organized, easy-to-use place for every course’s learning resources?" : "جات فكرة درب FCDS لما لاحظت إن طلب روابط الـPlaylists بتكرر كل فترة، سواء من زملائي أو من الطلاب الجدد. ومن هنا سألت نفسي: ماذا لو في موقع يجمع قوائم الشرح الخاصة بكل مادة، بشكل مرتب وجميل وسهل الوصول؟"}
                       </p>
                       <p>
-                        وده البنسعى ليه هنا: تلقى مصادر مادتك في مكان واحد، وتوفر وقت البحث عشان
-                        تركز على التعلّم، والأهم نقلل التشتت.
+                        {english ? "That’s what we’re building: your course resources in one place, less time searching, and more time learning with fewer distractions." : "وده البنسعى ليه هنا: تلقى مصادر مادتك في مكان واحد، وتوفر وقت البحث عشان تركز على التعلّم، والأهم نقلل التشتت."}
                       </p>
                     </>
                   ) : (
                     <p>
-                      جات فكرة نقيا بسبب كثرة التشتت بين المصادر، وخصوصاً في ظل التأثير السلبي
-                      للسوشيال ميديا؛ عشان نجمع المحتوى البستحق وقتك في مكان واحد.
+                      {english ? "NAQYA was created to reduce the noise across online sources and social media by bringing together content that is worth your time." : "جات فكرة نقيا بسبب كثرة التشتت بين المصادر، وخصوصاً في ظل التأثير السلبي للسوشيال ميديا؛ عشان نجمع المحتوى البستحق وقتك في مكان واحد."}
                     </p>
                   )}
                 </div>
@@ -113,22 +114,22 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
               <DialogTrigger asChild>
                 <button className={action}>
                   <Flag size={16} />
-                  الإبلاغ عن مشكلة
+                  {t("الإبلاغ عن مشكلة", "Report a problem")}
                 </button>
               </DialogTrigger>
               <DialogContent className={`rounded-3xl ${fcds ? "fcds-theme" : ""}`}>
-                <DialogTitle>الإبلاغ عن مشكلة</DialogTitle>
+                <DialogTitle>{t("الإبلاغ عن مشكلة", "Report a problem")}</DialogTitle>
                 <DialogDescription>
-                  البلاغ بيوصل لأحمد في لوحة الإدارة. ما تكتب كلمات مرور أو معلومات حساسة.
+                  {t("البلاغ بيوصل لأحمد في لوحة الإدارة. ما تكتب كلمات مرور أو معلومات حساسة.", "Reports go to Ahmed’s admin dashboard. Don’t include passwords or sensitive information.")}
                 </DialogDescription>
                 {sent ? (
                   <p role="status" className="py-6 text-primary">
-                    شكراً ليك! بلاغك وصل، وحأراجعه.
+                    {t("شكراً ليك! بلاغك وصل، وحأراجعه.", "Thanks! Your report was sent and I’ll review it.")}
                   </p>
                 ) : (
                   <form onSubmit={submit} className="space-y-4">
                     <label className="block text-sm">
-                      تفاصيل المشكلة
+                      {t("تفاصيل المشكلة", "What happened?")}
                       <textarea
                         name="details"
                         required
@@ -136,7 +137,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
                         maxLength={2000}
                         rows={5}
                         className={field}
-                        placeholder="شنو الحصل؟ وكيف نقدر نكرر المشكلة؟"
+                        placeholder={t("شنو الحصل؟ وكيف نقدر نكرر المشكلة؟", "What happened, and how can we reproduce it?")}
                       />
                     </label>
                     {error ? (
@@ -149,7 +150,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
                       disabled={busy}
                       className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-50"
                     >
-                      {busy ? "جاري الإرسال…" : "إرسال البلاغ"}
+                      {busy ? t("جاري الإرسال…", "Sending…") : t("إرسال البلاغ", "Send report")}
                     </button>
                   </form>
                 )}
@@ -160,10 +161,10 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
               target="_blank"
               rel="noopener noreferrer"
               className={action}
-              aria-label="تواصل معي على إنستغرام visionwithahmed"
+              aria-label={t("تواصل معي على إنستغرام visionwithahmed", "Contact me on Instagram: visionwithahmed")}
             >
               <Instagram size={16} />
-              تواصل معي
+              {t("تواصل معي", "Contact me")}
             </a>
           </div>
         </div>

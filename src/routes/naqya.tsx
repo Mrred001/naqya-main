@@ -23,6 +23,7 @@ import { SearchBar } from "@/components/site/SearchBar";
 import { fetchYouTubeMeta } from "@/lib/youtube.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export const Route = createFileRoute("/naqya")({
   head: () => ({
@@ -58,10 +59,12 @@ function SectionHead({
   eyebrow,
   title,
   to,
+  english = false,
 }: {
   eyebrow: string;
   title: string;
   to?: boolean;
+  english?: boolean;
 }) {
   return (
     <div className="mb-8 flex items-end justify-between gap-4">
@@ -80,7 +83,7 @@ function SectionHead({
           to="/explore"
           className="group hidden items-center gap-1 text-sm text-muted-foreground hover:text-foreground md:flex"
         >
-          عرض الكل
+          {english ? "View all" : "عرض الكل"}
 
           <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         </Link>
@@ -90,6 +93,9 @@ function SectionHead({
 }
 
 function Home() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const { data: items } =
     useSuspenseQuery(contentQuery);
 
@@ -226,8 +232,7 @@ function Home() {
 
       if (!res.meta) {
         toast.error(
-          res.error ??
-            "ما قدرنا نجيب بيانات المحتوى.",
+          res.error ?? t("ما قدرنا نجيب بيانات المحتوى.", "Could not fetch video details."),
         );
 
         lastFetched.current = "";
@@ -249,13 +254,13 @@ function Home() {
       );
 
       toast.success(
-        "تم جلب بيانات المحتوى تلقائياً",
+        t("تم جلب بيانات المحتوى تلقائياً", "Video details loaded automatically."),
       );
     } catch (error) {
       console.error(error);
 
       toast.error(
-        "حصلت مشكلة أثناء جلب بيانات YouTube.",
+        t("حصلت مشكلة أثناء جلب بيانات YouTube.", "There was a problem fetching YouTube details."),
       );
 
       lastFetched.current = "";
@@ -274,14 +279,14 @@ function Home() {
 
     if (!parsed) {
       toast.error(
-        "أدخل رابط YouTube صحيح.",
+        t("أدخل رابط YouTube صحيح.", "Enter a valid YouTube link."),
       );
       return;
     }
 
     if (!suggestTitle.trim()) {
       toast.error(
-        "اسم المحتوى مطلوب.",
+        t("اسم المحتوى مطلوب.", "A title is required."),
       );
       return;
     }
@@ -329,7 +334,7 @@ function Home() {
       console.error(error);
 
       toast.error(
-        "حصلت مشكلة أثناء إرسال الاقتراح.",
+        t("حصلت مشكلة أثناء إرسال الاقتراح.", "There was a problem submitting your suggestion."),
       );
 
       return;
@@ -338,7 +343,7 @@ function Home() {
     setSubmitted(true);
 
     toast.success(
-      "تم إرسال الاقتراح",
+      t("تم إرسال الاقتراح", "Suggestion submitted."),
     );
   };
 
@@ -347,26 +352,26 @@ function Home() {
       <div className="mx-auto max-w-7xl px-5 md:px-8">
 
         {/* Hero */}
-        <section className="hero-surface mb-3 mt-4 rounded-3xl border px-5 pb-8 pt-9 sm:px-6 sm:pb-10 sm:pt-12 md:mb-4 md:mt-6 md:px-10 md:pb-14 md:pt-16">
+        <section className="hero-surface mb-4 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
 
           <div
-            dir="rtl"
-            lang="ar"
-            className="text-right"
+            dir={english ? "ltr" : "rtl"}
+            lang={language}
+            className={english ? "text-left" : "text-right"}
           >
             <p className="text-xs font-medium tracking-[0.15em] text-primary">
-              منتقى بيد إنسان، لا خوارزمية
+              {t("منتقى بيد إنسان، لا خوارزمية", "Curated by a person, not an algorithm")}
             </p>
 
             <h1 className="mt-4 text-4xl font-bold leading-[1.2] sm:text-5xl md:text-7xl lg:text-7xl">
-              ما يستحق{" "}
+              {t("ما يستحق", "Worth")}{" "}
               <span className="text-primary">
-                وقتك.
+                {t("وقتك.", "your time.")}
               </span>
             </h1>
 
             <p className="mt-6 max-w-xl text-lg text-muted-foreground md:text-xl">
-              محتوى منتقى بعناية، بدون موسيقى.
+              {t("محتوى منتقى بعناية، بدون موسيقى.", "Carefully selected content, without music.")}
             </p>
           </div>
 
@@ -400,8 +405,9 @@ function Home() {
         <section className="py-12">
 
           <SectionHead
-            eyebrow="جديد"
-            title="أضيف حديثاً"
+            eyebrow={t("جديد", "NEW")}
+            title={t("أضيف حديثاً", "Recently added")}
+            english={english}
             to
           />
 
@@ -422,8 +428,9 @@ function Home() {
         <section className="py-12">
 
           <SectionHead
-            eyebrow="التصنيفات"
-            title="مختارات نقيا"
+            eyebrow={t("التصنيفات", "CATEGORIES")}
+            title={t("مختارات نقيا", "NAQYA collections")}
+            english={english}
           />
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -468,7 +475,7 @@ function Home() {
                         collection.items
                           .length
                       }{" "}
-                      مختارات
+                      {t("مختارات", "items")}
                     </p>
 
                     <h3
@@ -499,7 +506,7 @@ function Home() {
         className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
       >
         <Plus className="h-4 w-4" />
-        اقترح محتوى
+        {t("اقترح محتوى", "Suggest content")}
       </button>
 
       {/* Suggest Modal */}
@@ -509,18 +516,18 @@ function Home() {
 
             <div className="flex items-start justify-between gap-4">
 
-              <div dir="rtl">
+              <div dir={english ? "ltr" : "rtl"}>
 
                 <p className="text-xs tracking-[0.15em] text-primary">
                   SUGGEST CONTENT
                 </p>
 
                 <DialogTitle className="mt-2 text-2xl font-bold">
-                  اقترح محتوى
+                  {t("اقترح محتوى", "Suggest content")}
                 </DialogTitle>
 
                 <p className="mt-2 text-sm text-muted-foreground">
-                  عندك فيديو أو Playlist تستحق تكون في نقيا؟
+                  {t("عندك فيديو أو Playlist تستحق تكون في نقيا؟", "Have a video or playlist that belongs on NAQYA?")}
                 </p>
 
               </div>
@@ -538,15 +545,15 @@ function Home() {
             {submitted ? (
               <div
                 className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center"
-                dir="rtl"
+                dir={english ? "ltr" : "rtl"}
               >
 
                 <p className="text-lg font-semibold text-primary">
-                  وصل الاقتراح 👌
+                  {t("وصل الاقتراح 👌", "Suggestion received 👌")}
                 </p>
 
                 <p className="mt-2 text-sm text-muted-foreground">
-                  حنراجع المحتوى قبل إضافته لمكتبة نقيا.
+                  {t("حنراجع المحتوى قبل إضافته لمكتبة نقيا.", "We’ll review it before adding it to NAQYA.")}
                 </p>
 
                 <button
@@ -554,7 +561,7 @@ function Home() {
                   onClick={closeSuggest}
                   className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
                 >
-                  تمام
+                  {t("تمام", "Done")}
                 </button>
 
               </div>
@@ -564,7 +571,7 @@ function Home() {
                   submitSuggestion
                 }
                 className="mt-8 space-y-5"
-                dir="rtl"
+                dir={english ? "ltr" : "rtl"}
               >
 
                 {/* YouTube URL */}
@@ -573,13 +580,13 @@ function Home() {
                   <div className="mb-2 flex items-center justify-between gap-3">
 
                     <span className="text-sm text-muted-foreground">
-                      رابط YouTube *
+                      {t("رابط YouTube *", "YouTube URL *")}
                     </span>
 
                     {fetching && (
                       <span className="flex items-center gap-1.5 text-xs text-primary">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        جاري جلب البيانات...
+                        {t("جاري جلب البيانات...", "Fetching details…")}
                       </span>
                     )}
 
@@ -606,7 +613,7 @@ function Home() {
                   <div className="flex items-center justify-between rounded-xl border bg-secondary/30 px-4 py-3">
 
                     <span className="text-sm text-muted-foreground">
-                      النوع
+                      {t("النوع", "Type")}
                     </span>
 
                     <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
@@ -623,7 +630,7 @@ function Home() {
                 <label className="block">
 
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    العنوان *
+                    {t("العنوان *", "Title *")}
                   </span>
 
                   <input
@@ -635,7 +642,7 @@ function Home() {
                       )
                     }
                     required
-                    placeholder="بيتعبّى تلقائياً"
+                    placeholder={t("بيتعبّى تلقائياً", "Filled automatically")}
                     dir="auto"
                     className="w-full rounded-xl border bg-background px-4 py-3 outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
                   />
@@ -646,7 +653,7 @@ function Home() {
                 <label className="block">
 
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    القناة
+                    {t("القناة", "Channel")}
                   </span>
 
                   <input
@@ -659,7 +666,7 @@ function Home() {
                         e.target.value,
                       )
                     }
-                    placeholder="بيتعبّى تلقائياً"
+                    placeholder={t("بيتعبّى تلقائياً", "Filled automatically")}
                     dir="auto"
                     className="w-full rounded-xl border bg-background px-4 py-3 outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
                   />
@@ -670,7 +677,7 @@ function Home() {
                 <label className="block">
 
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    اللغة
+                    {t("اللغة", "Language")}
                   </span>
 
                   <select
@@ -703,7 +710,7 @@ function Home() {
                   <div>
 
                     <p className="mb-2 text-sm text-muted-foreground">
-                      الصورة
+                      {t("الصورة", "Thumbnail")}
                     </p>
 
                     <img
@@ -721,9 +728,9 @@ function Home() {
                 <label className="block">
 
                   <span className="mb-2 block text-sm text-muted-foreground">
-                    ليه بترشح المحتوى ده؟
+                    {t("ليه بترشح المحتوى ده؟", "Why are you recommending this content?")}
                     <span className="mr-1 opacity-50">
-                      (اختياري)
+                      ({t("اختياري", "optional")})
                     </span>
                   </span>
 
@@ -737,7 +744,7 @@ function Home() {
                         e.target.value,
                       )
                     }
-                    placeholder="شنو الخلاك تشوف إنه يستحق يكون في نقيا؟"
+                    placeholder={t("شنو الخلاك تشوف إنه يستحق يكون في نقيا؟", "Why do you think this belongs on NAQYA?")}
                     className="w-full resize-none rounded-xl border bg-background px-4 py-3 outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/50"
                   />
 
@@ -754,12 +761,12 @@ function Home() {
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      جاري الإرسال...
+                      {t("جاري الإرسال...", "Submitting…")}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      إرسال الاقتراح
+                      {t("إرسال الاقتراح", "Submit suggestion")}
                     </>
                   )}
                 </button>

@@ -1,7 +1,10 @@
+import { ResourceProgress } from "@/components/account/ResourceProgress";
 import { SaveButton } from "@/components/account/SaveButton";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { LanguageToggle } from "@/components/site/LanguageToggle";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ExternalLink, Video } from "lucide-react";
@@ -35,6 +38,9 @@ type FcdsPlaylistRow = {
 };
 
 function CoursePage() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const { slug } = Route.useParams();
 
   const {
@@ -89,7 +95,7 @@ function CoursePage() {
   if (courseLoading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center fcds-theme bg-background text-muted-foreground">
-        جاري تحميل المادة...
+        {t("جاري تحميل المادة...", "Loading course…")}
       </div>
     );
   }
@@ -97,7 +103,7 @@ function CoursePage() {
   if (courseError) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center fcds-theme bg-background text-red-300">
-        حصلت مشكلة أثناء تحميل المادة.
+        {t("حصلت مشكلة أثناء تحميل المادة.", "There was a problem loading this course.")}
       </div>
     );
   }
@@ -105,7 +111,7 @@ function CoursePage() {
   if (!course) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center fcds-theme bg-background text-foreground">
-        المادة غير موجودة
+        {t("المادة غير موجودة", "Course not found")}
       </div>
     );
   }
@@ -115,6 +121,7 @@ function CoursePage() {
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
         <div className="mb-6 flex justify-end gap-3">
           <ThemeToggle />
+          <LanguageToggle />
           <AccountMenu />
           <AdminLink />
         </div>
@@ -123,7 +130,7 @@ function CoursePage() {
           to="/fcds"
           className="text-sm text-muted-foreground transition-colors hover:text-primary"
         >
-          ← العودة للمواد
+          {t("← العودة للمواد", "← Back to courses")}
         </Link>
 
         <section className="mt-16">
@@ -136,7 +143,7 @@ function CoursePage() {
 
             <span>•</span>
 
-            <span>{course.year}</span>
+            <span>{english ? ({ "السنة الأولى": "Year 1", "السنة الثانية": "Year 2", "السنة الثالثة": "Year 3", "السنة الرابعة": "Year 4" } as Record<string, string>)[course.year] ?? course.year : course.year}</span>
           </div>
         </section>
 
@@ -145,7 +152,7 @@ function CoursePage() {
             <div>
               <p className="font-mono text-xs text-primary">PLAYLISTS</p>
 
-              <h2 className="mt-2 text-3xl font-bold">المصادر المتاحة</h2>
+              <h2 className="mt-2 text-3xl font-bold">{t("المصادر المتاحة", "Available resources")}</h2>
             </div>
 
             <p className="text-sm text-muted-foreground">{playlists.length} Playlists</p>
@@ -153,22 +160,22 @@ function CoursePage() {
 
           {playlistsLoading && (
             <div className="rounded-2xl border border-border p-8 text-center text-muted-foreground">
-              جاري تحميل المصادر...
+              {t("جاري تحميل المصادر...", "Loading resources…")}
             </div>
           )}
 
           {playlistsError && (
             <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center text-red-300">
-              حصلت مشكلة أثناء تحميل الـPlaylists.
+              {t("حصلت مشكلة أثناء تحميل الـPlaylists.", "There was a problem loading playlists.")}
             </div>
           )}
 
           {!playlistsLoading && !playlistsError && sources.length === 0 && (
-            <div className="rounded-2xl border border-border bg-card p-10 text-center" dir="rtl">
-              <p className="text-lg font-semibold">ما في مصادر للمادة دي حالياً.</p>
+            <div className="rounded-2xl border border-border bg-card p-10 text-center" dir={english ? "ltr" : "rtl"}>
+              <p className="text-lg font-semibold">{t("ما في مصادر للمادة دي حالياً.", "There are no resources for this course yet.")}</p>
 
               <p className="mt-2 text-sm text-muted-foreground">
-                لو عندك فيديو أو Playlist مفيدة، اقترحها من صفحة درب FCDS.
+                {t("لو عندك فيديو أو Playlist مفيدة، اقترحها من صفحة درب FCDS.", "Have a useful video or playlist? Suggest it from the DARB FCDS page.")}
               </p>
             </div>
           )}
@@ -219,7 +226,10 @@ function CoursePage() {
                       </div>
                     </div>
                   </a>
-                  <SaveButton kind="fcds" id={playlist.id} />
+                  <div className="flex flex-wrap items-center gap-3" dir={english ? "ltr" : "rtl"}>
+                    <SaveButton kind="fcds" id={playlist.id} />
+                    <ResourceProgress id={playlist.id} />
+                  </div>
                 </article>
               ))}
             </div>
@@ -230,7 +240,7 @@ function CoursePage() {
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center gap-3" dir="rtl">
                   <Video className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">فيديوهات منفردة</span>
+              <span className="font-semibold">{t("فيديوهات منفردة", "Individual videos")}</span>
                   <span className="rounded-full bg-accent px-2.5 py-1 text-xs text-muted-foreground">
                     {videos.length}
                   </span>
@@ -241,7 +251,7 @@ function CoursePage() {
                 {videos.map((video) => (
                   <article
                     key={video.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center"
+                    className="flex flex-col gap-3 rounded-xl border border-border p-3 lg:flex-row lg:items-center"
                   >
                     <a
                       href={video.youtube_url}
@@ -273,7 +283,10 @@ function CoursePage() {
                       </span>
                       <ExternalLink className="h-4 w-4 shrink-0 text-primary" />
                     </a>
-                    <SaveButton kind="fcds" id={video.id} />
+                    <div className="flex shrink-0 flex-col items-start gap-2" dir={english ? "ltr" : "rtl"}>
+                      <SaveButton kind="fcds" id={video.id} />
+                      <ResourceProgress id={video.id} />
+                    </div>
                   </article>
                 ))}
               </div>

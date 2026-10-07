@@ -2,8 +2,12 @@ import { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ContentCard } from "./ContentCard";
 import type { ContentItem } from "@/lib/content";
+import { useSitePreferences } from "./PreferencesProvider";
 
 export function WeeklyPicks({ items }: { items: ContentItem[] }) {
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const start = useRef<number | null>(null);
   const index = Math.max(
@@ -17,16 +21,16 @@ export function WeeklyPicks({ items }: { items: ContentItem[] }) {
   }
   if (!selected) return null;
   return (
-    <section className="scroll-mt-28 py-10 md:py-12" aria-label="اختيارات هذا الأسبوع">
+    <section className="scroll-mt-28 py-10 md:py-12" aria-label={t("اختيارات هذا الأسبوع", "This week’s picks")}>
       <div className="mb-6 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs tracking-widest text-primary">مختارات</p>
-          <h2 className="mt-2 text-2xl font-bold sm:text-3xl md:text-4xl">اختيارات هذا الأسبوع</h2>
+          <p className="text-xs tracking-widest text-primary">{t("مختارات", "PICKS")}</p>
+          <h2 className="mt-2 text-2xl font-bold sm:text-3xl md:text-4xl">{t("اختيارات هذا الأسبوع", "This week’s picks")}</h2>
         </div>
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
             type="button"
-            aria-label="الاختيار السابق"
+            aria-label={t("الاختيار السابق", "Previous pick")}
             disabled={items.length < 2}
             onClick={() => move(-1)}
             className="pick-arrow"
@@ -38,7 +42,7 @@ export function WeeklyPicks({ items }: { items: ContentItem[] }) {
           </span>
           <button
             type="button"
-            aria-label="الاختيار التالي"
+            aria-label={t("الاختيار التالي", "Next pick")}
             disabled={items.length < 2}
             onClick={() => move(1)}
             className="pick-arrow"
@@ -66,12 +70,12 @@ export function WeeklyPicks({ items }: { items: ContentItem[] }) {
         </div>
         <div className="flex flex-col justify-center lg:col-span-2">
           <div key={selected.id} className="pick-description" aria-live="polite" aria-atomic="true">
-            <p className="mb-3 text-sm font-semibold text-primary">لماذا نرشحه؟</p>
+            <p className="mb-3 text-sm font-semibold text-primary">{t("لماذا نرشحه؟", "Why we picked it")}</p>
             <p dir="auto" className="text-lg leading-loose text-muted-foreground">
-              {selected.recommendation || "اختيار منتقى بعناية، يستحق وقتك."}
+              {selected.recommendation || t("اختيار منتقى بعناية، يستحق وقتك.", "Carefully selected, and worth your time.")}
             </p>
           </div>
-          <div className="mt-8 flex flex-wrap gap-2" aria-label="اختر محتوى الأسبوع">
+          <div className="mt-8 flex flex-wrap gap-2" aria-label={t("اختر محتوى الأسبوع", "Choose a weekly pick")}>
             {items.map((item, i) => (
               <button
                 type="button"

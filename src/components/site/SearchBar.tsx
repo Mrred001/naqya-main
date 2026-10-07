@@ -2,8 +2,11 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { useSitePreferences } from "./PreferencesProvider";
 
 export function SearchBar({ initial = "", onChange, className }: { initial?: string; onChange?: (q: string) => void; className?: string }) {
+  const { language } = useSitePreferences();
+  const english = language === "en";
   const [q, setQ] = useState(initial);
   const navigate = useNavigate();
   return (
@@ -21,7 +24,7 @@ export function SearchBar({ initial = "", onChange, className }: { initial?: str
           setQ(e.target.value);
           onChange?.(e.target.value);
         }}
-        placeholder="ابحث عن فيديو، قائمة تشغيل، قناة، أو موضوع..." aria-label="بحث"
+        placeholder={english ? "Search videos, playlists, channels, or topics…" : "ابحث عن فيديو، قائمة تشغيل، قناة، أو موضوع..."} aria-label={english ? "Search" : "بحث"}
         className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
       />
     </form>

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export function GoogleSignIn() {
+  const { language } = useSitePreferences();
+  const english = language === "en";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   async function signIn() {
@@ -30,11 +33,11 @@ export function GoogleSignIn() {
         className="flex w-full items-center justify-center gap-3 rounded-xl border bg-card px-4 py-3 font-semibold hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
         <GoogleMark />
-        <span>{busy ? "جاري فتح قوقل…" : "المتابعة باستخدام Google"}</span>
+        <span>{busy ? (english ? "Opening Google…" : "جاري فتح قوقل…") : (english ? "Continue with Google" : "المتابعة باستخدام Google")}</span>
       </button>
       {error && (
         <p role="alert" className="text-sm text-destructive">
-          ما قدرنا نبدأ تسجيل الدخول. جرّب تاني بعد شوية.
+          {english ? "Could not start sign-in. Please try again shortly." : "ما قدرنا نبدأ تسجيل الدخول. جرّب تاني بعد شوية."}
         </p>
       )}
     </div>

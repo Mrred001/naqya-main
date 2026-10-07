@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { ListVideo, Play } from "lucide-react";
 import { formatDuration, thumbFor, type ContentItem } from "@/lib/content";
 import { cn } from "@/lib/utils";
+import { useSitePreferences } from "./PreferencesProvider";
 
 export function Pill({
   children,
@@ -35,6 +36,9 @@ export function ContentCard({
   size?: "md" | "lg";
   showSave?: boolean;
 }) {
+  const { language } = useSitePreferences();
+  const playlistLabel = language === "en" ? "Playlist" : "قائمة تشغيل";
+  const videoLabel = language === "en" ? "Video" : "فيديو";
   const thumb = thumbFor(item);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   return (
@@ -61,7 +65,7 @@ export function ContentCard({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-70 transition-opacity duration-200 group-hover:opacity-90" />
           <div className="absolute left-3 top-3 flex gap-1.5">
-            {item.content_type === "playlist" && <Pill tone="primary">قائمة تشغيل</Pill>}
+            {item.content_type === "playlist" && <Pill tone="primary">{playlistLabel}</Pill>}
           </div>
           <span className="glass absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-[11px] font-medium">
             {formatDuration(item.duration_seconds)}
@@ -93,7 +97,7 @@ export function ContentCard({
                 <span dir="auto">{item.category.name}</span>
               </Pill>
             )}
-            <Pill>{item.content_type === "playlist" ? "قائمة تشغيل" : "فيديو"}</Pill>
+            <Pill>{item.content_type === "playlist" ? playlistLabel : videoLabel}</Pill>
           </div>
         </div>
       </Link>

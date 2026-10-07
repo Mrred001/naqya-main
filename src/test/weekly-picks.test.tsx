@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ContentItem } from "@/lib/content";
 import { WeeklyPicks } from "@/components/site/WeeklyPicks";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
+import { PreferencesProvider } from "@/components/site/PreferencesProvider";
+import { LanguageToggle } from "@/components/site/LanguageToggle";
 
 vi.mock("@/components/site/ContentCard", () => ({
   ContentCard: ({ item }: { item: ContentItem }) => (
@@ -48,11 +50,19 @@ describe("Weekly selections", () => {
 });
 it("persists the chosen theme and restores the control after remounting", () => {
   document.documentElement.classList.add("dark");
-  const view = render(<ThemeToggle />);
+  const view = render(<PreferencesProvider><ThemeToggle /></PreferencesProvider>);
   fireEvent.click(screen.getByRole("button", { name: "تفعيل الوضع الفاتح" }));
   expect(document.documentElement).not.toHaveClass("dark");
   expect(localStorage.getItem("naqya-theme")).toBe("light");
   view.unmount();
-  render(<ThemeToggle />);
+  render(<PreferencesProvider><ThemeToggle /></PreferencesProvider>);
   expect(screen.getByRole("button", { name: "تفعيل الوضع الداكن" })).toBeVisible();
+});
+
+it("persists language and updates document direction", () => {
+  render(<PreferencesProvider><LanguageToggle /></PreferencesProvider>);
+  fireEvent.click(screen.getByRole("button", { name: "Switch to English" }));
+  expect(localStorage.getItem("naqya-language")).toBe("en");
+  expect(document.documentElement).toHaveAttribute("lang", "en");
+  expect(document.documentElement).toHaveAttribute("dir", "ltr");
 });

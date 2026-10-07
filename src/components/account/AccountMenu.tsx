@@ -15,10 +15,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAccount } from "./AccountProvider";
 import { GoogleSignIn } from "./GoogleSignIn";
+import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export function AccountMenu() {
   const fcds = useRouterState({ select: (state) => state.location.pathname.startsWith("/fcds") });
   const { user, ready } = useAccount();
+  const { language } = useSitePreferences();
+  const english = language === "en";
+  const t = (ar: string, en: string) => (english ? en : ar);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const metadata = user?.user_metadata ?? {};
@@ -30,16 +34,16 @@ export function AccountMenu() {
     (typeof metadata["full_name"] === "string" && metadata["full_name"]) ||
     (typeof metadata["name"] === "string" && metadata["name"]) ||
     user?.email ||
-    "حسابي";
+    t("حسابي", "My account");
 
   async function signOut() {
     setBusy(true);
     try {
       const { error } = await supabase.auth.signOut({ scope: "local" });
-      if (error) toast.error("ما قدرنا نسجّل خروجك. جرّب تاني.");
+      if (error) toast.error(t("ما قدرنا نسجّل خروجك. جرّب تاني.", "Could not sign you out. Try again."));
       else setOpen(false);
     } catch {
-      toast.error("ما قدرنا نسجّل خروجك. جرّب تاني.");
+      toast.error(t("ما قدرنا نسجّل خروجك. جرّب تاني.", "Could not sign you out. Try again."));
     } finally {
       setBusy(false);
     }
@@ -51,7 +55,7 @@ export function AccountMenu() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="حسابي"
+            aria-label={t("حسابي", "My account")}
             title={avatarLabel}
             className="shrink-0 rounded-full ring-offset-background transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
@@ -75,7 +79,7 @@ export function AccountMenu() {
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5">
             <Link to="/saved">
-              <span>المحفوظات</span>
+              <span>{t("المحفوظات", "Saved items")}</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -87,7 +91,7 @@ export function AccountMenu() {
             className="cursor-pointer rounded-xl px-3 py-2.5 text-destructive focus:text-destructive"
           >
             <LogOut className="h-4 w-4" aria-hidden="true" />
-            <span>{busy ? "جاري الخروج…" : "تسجيل خروج من الجهاز ده"}</span>
+            <span>{busy ? t("جاري الخروج…", "Signing out…") : t("تسجيل خروج من الجهاز ده", "Sign out on this device")}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -102,12 +106,12 @@ export function AccountMenu() {
         onClick={() => setOpen(true)}
         className="shrink-0 rounded-xl border px-3 py-2 text-xs sm:text-sm hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
       >
-        دخول
+        {t("دخول", "Sign in")}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir="rtl" className={fcds ? "fcds-theme text-foreground" : undefined}>
-          <DialogTitle>احفظ المحتوى وارجع ليه</DialogTitle>
-          <DialogDescription>التسجيل اختياري. تقدر تتصفّح وتشاهد بدون حساب.</DialogDescription>
+        <DialogContent dir={english ? "ltr" : "rtl"} className={fcds ? "fcds-theme text-foreground" : undefined}>
+          <DialogTitle>{t("احفظ المحتوى وارجع ليه", "Save content and come back later")}</DialogTitle>
+          <DialogDescription>{t("التسجيل اختياري. تقدر تتصفّح وتشاهد بدون حساب.", "Sign in is optional. You can browse and watch without an account.")}</DialogDescription>
           <GoogleSignIn />
         </DialogContent>
       </Dialog>

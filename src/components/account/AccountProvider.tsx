@@ -56,6 +56,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         // Cancel and remove private data on every session change, including logout.
         void queryClient.cancelQueries({ queryKey: ["bookmarks"] });
         queryClient.removeQueries({ queryKey: ["bookmarks"] });
+        void queryClient.cancelQueries({ queryKey: ["resource-progress"] });
+        queryClient.removeQueries({ queryKey: ["resource-progress"] });
         setAccount({ user: session?.user ?? null, ready: true });
       }
     });

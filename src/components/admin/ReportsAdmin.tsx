@@ -41,52 +41,52 @@ export function ReportsAdmin() {
       if (error) throw error;
       await cache.invalidateQueries({ queryKey: ["site-reports"] });
     } catch {
-      setFailure("تعذّر تحديث حالة البلاغ.");
+      setFailure("Could not update the report status.");
     } finally {
       setBusy(null);
     }
   }
   return (
-    <section dir="rtl">
-      <h2 className="mb-3 text-3xl font-bold">البلاغات</h2>
-      <p className="mb-8 text-sm text-white/50">آخر ٢٠٠ بلاغ من نقيا والكلية.</p>
+    <section dir="ltr">
+      <h2 className="mb-3 text-3xl font-bold text-amber-100">Reports</h2>
+      <p className="mb-8 text-sm text-amber-100/50">The latest 200 reports from NAQYA and FCDS.</p>
       {failure ? <p role="alert">{failure}</p> : null}
       {isLoading ? (
-        <p>جاري التحميل…</p>
+        <p>Loading reports…</p>
       ) : error ? (
-        <p role="alert">تعذّر تحميل البلاغات. تأكد من إعداد جدول البلاغات وصلاحيات الإدارة.</p>
+        <p role="alert">Could not load reports. Check the reports table and admin permissions.</p>
       ) : data.length === 0 ? (
-        <p>ما في بلاغات حالياً.</p>
+        <p>No reports yet.</p>
       ) : (
         <div className="space-y-4">
           {data.map((report) => (
             <article
               key={report.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+              className="rounded-2xl border border-amber-200/15 bg-amber-100/[0.025] p-5"
             >
               <div className="flex flex-wrap justify-between gap-3 text-sm">
                 <span>
-                  {report.library === "fcds" ? "الكلية" : "نقيا العام"} ·{" "}
-                  {report.status === "new" ? "جديد" : "تم الحل"}
+                  {report.library === "fcds" ? "FCDS" : "NAQYA"} ·{" "}
+                  {report.status === "new" ? "New" : "Resolved"}
                 </span>
                 <time dateTime={report.created_at}>
-                  {new Date(report.created_at).toLocaleString("ar")}
+                  {new Date(report.created_at).toLocaleString("en")}
                 </time>
               </div>
               <p className="my-4 whitespace-pre-wrap break-words">{report.details}</p>
-              <p dir="ltr" className="break-all text-xs text-white/50">
+              <p dir="ltr" className="break-all text-xs text-amber-100/50">
                 {report.page_path}
               </p>
               <button
                 disabled={busy !== null}
                 onClick={() => change(report)}
-                className="mt-4 rounded-lg border border-white/20 px-4 py-2 text-sm disabled:opacity-50"
+                className="mt-4 rounded-lg border border-amber-200/25 px-4 py-2 text-sm text-amber-100 transition-colors hover:bg-amber-200/10 disabled:opacity-50"
               >
                 {busy === report.id
-                  ? "جاري الحفظ…"
+                  ? "Saving…"
                   : report.status === "new"
-                    ? "تم الحل"
-                    : "إعادة فتح"}
+                    ? "Mark resolved"
+                    : "Reopen"}
               </button>
             </article>
           ))}
