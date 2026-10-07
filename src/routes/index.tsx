@@ -26,11 +26,6 @@ function Gateway() {
         aria-label={english ? "Enter NAQYA" : "ادخل إلى نقيا"}
         className="gateway-panel gateway-naqya group"
       >
-        <img
-          src="/naqya-logo-icon.svg"
-          alt=""
-          className="h-16 w-16 object-contain md:h-[4.5rem] md:w-[4.5rem]"
-        />
         <div className="gateway-copy">
           <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-primary md:text-sm">
             {english ? "THE CURATED LIBRARY" : "مكتبة المحتوى المنتقى"}
@@ -57,11 +52,6 @@ function Gateway() {
         aria-label={english ? "Enter DARB FCDS" : "ادخل إلى درب FCDS"}
         className="gateway-panel gateway-darb group fcds-theme"
       >
-        <img
-          src="/naqya-fcds-logo.png"
-          alt=""
-          className="h-16 w-16 object-contain md:h-[4.5rem] md:w-[4.5rem]"
-        />
         <div className="gateway-copy">
           <p className="mb-2 text-xs font-semibold tracking-[0.2em] text-primary md:text-sm">
             {english ? "YOUR COLLEGE, IN ONE PLACE" : "مواد كليتك في مكان واحد"}
