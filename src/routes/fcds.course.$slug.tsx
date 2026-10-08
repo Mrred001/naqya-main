@@ -1,5 +1,6 @@
 import { ResourceProgress } from "@/components/account/ResourceProgress";
 import { SaveButton } from "@/components/account/SaveButton";
+import { SavedItemsLink } from "@/components/account/SavedItemsLink";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
@@ -120,7 +121,8 @@ function CoursePage() {
     <div className="min-h-[100dvh] fcds-theme bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
         <div className="mb-6 flex justify-end gap-3">
-          <ThemeToggle />
+          <SavedItemsLink />
+            <ThemeToggle />
           <LanguageToggle />
           <AccountMenu />
           <AdminLink />

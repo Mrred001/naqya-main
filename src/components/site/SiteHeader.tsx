@@ -1,3 +1,4 @@
+import { SavedItemsLink } from "@/components/account/SavedItemsLink";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "./ThemeToggle";
@@ -5,7 +6,7 @@ import { LanguageToggle } from "./LanguageToggle";
 import { CommunityFooter } from "./CommunityFooter";
 import { Link } from "@tanstack/react-router";
 import { useSitePreferences } from "./PreferencesProvider";
-import { Bookmark, Compass, Home, Menu } from "lucide-react";
+import { Compass, Home, Menu } from "lucide-react";
 import { useState } from "react";
 
 export function NaqyaMark({ className = "h-6 w-6" }: { className?: string }) {
@@ -73,14 +74,7 @@ export function SiteHeader() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <AccountMenu />
-            <Link
-              to="/saved"
-              aria-label={english ? "Saved items" : "المحفوظات"}
-              title={english ? "Saved items" : "المحفوظات"}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border bg-card text-foreground transition-colors hover:border-primary focus-visible:outline-2 focus-visible:outline-primary"
-            >
-              <Bookmark size={18} aria-hidden="true" />
-            </Link>
+            <SavedItemsLink />
             <ThemeToggle />
           </div>
         </div>

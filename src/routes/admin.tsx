@@ -18,7 +18,7 @@ import {
   Activity,
   ArrowLeft,
 } from "lucide-react";
-import { fcdsYearForSemester } from "@/lib/fcds";
+import { defaultFcdsSpecialization, fcdsSpecializations, normalizeFcdsSpecialization, type FcdsSpecialization, fcdsYearForSemester } from "@/lib/fcds";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -1332,6 +1332,7 @@ type FcdsCourseRow = {
   code: string;
   year: string;
   semester: number | null;
+  specialization?: FcdsSpecialization;
   created_at: string;
 };
 
@@ -2812,6 +2813,7 @@ function ContentForm({
 /* ------------------------------------------------ */
 
 type FcdsCourseDraft = {
+  specialization: FcdsSpecialization;
   name: string;
   code: string;
   year: string;
@@ -2820,6 +2822,7 @@ type FcdsCourseDraft = {
 };
 
 const emptyCourseDraft = (): FcdsCourseDraft => ({
+  specialization: defaultFcdsSpecialization,
   name: "",
   code: "",
   year: "السنة الأولى",
@@ -2893,6 +2896,7 @@ function CoursesAdmin() {
         code: course.code,
         year: course.year,
         semester: course.semester,
+        specialization: normalizeFcdsSpecialization(course.specialization),
         slug: course.slug,
       },
     });
@@ -3003,7 +3007,7 @@ function CoursesAdmin() {
                 </p>
 
                 <p className="mt-1 text-xs text-amber-50/35">
-                  {course.code} · {courseYearLabel(course.year)}
+                  {course.code} · {courseYearLabel(course.year)} · {fcdsSpecializations.find((option) => option.value === normalizeFcdsSpecialization(course.specialization))?.label}
                   {course.semester ? ` · Semester ${course.semester}` : " · No semester"} · /{course.slug}
                 </p>
               </div>
@@ -3097,6 +3101,7 @@ function CourseForm({
       code: draft.code.trim().toUpperCase(),
       year: draft.year,
       semester: draft.semester,
+      specialization: draft.specialization,
       slug: draft.slug.trim(),
     };
 
@@ -3172,6 +3177,19 @@ function CourseForm({
             }
             placeholder="CS201"
           />
+        </Label>
+
+        <Label label="Specialization">
+          <select
+            required
+            className={field}
+            value={draft.specialization}
+            onChange={(event) => update("specialization", event.target.value as FcdsSpecialization)}
+          >
+            {fcdsSpecializations.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
         </Label>
 
         <Label label="Year">

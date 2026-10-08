@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fcdsSemesterForTemporaryCode, fcdsYearForSemester } from "@/lib/fcds";
+import { defaultFcdsSpecialization, normalizeFcdsSpecialization, fcdsSemesterForTemporaryCode, fcdsYearForSemester } from "@/lib/fcds";
 
 describe("FCDS semester to year mapping", () => {
   it("maps every semester pair to the matching year", () => {
@@ -37,4 +37,13 @@ describe("FCDS semester to year mapping", () => {
     expect(fcdsSemesterForTemporaryCode("0")).toBeNull();
     expect(fcdsSemesterForTemporaryCode("37")).toBeNull();
   });
+});
+
+// Older course rows predate the specialization field.
+it("keeps existing courses in the default specialization and preserves assigned tracks", () => {
+  expect(normalizeFcdsSpecialization(undefined)).toBe(defaultFcdsSpecialization);
+  expect(normalizeFcdsSpecialization(null)).toBe(defaultFcdsSpecialization);
+  expect(normalizeFcdsSpecialization("ai")).toBe("ai");
+  expect(normalizeFcdsSpecialization("cyber-security")).toBe("cyber-security");
+  expect(normalizeFcdsSpecialization("healthcare")).toBe("healthcare");
 });

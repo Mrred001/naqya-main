@@ -1,3 +1,17 @@
+export const fcdsSpecializations = [
+  { value: "computer-data-science", label: "Computer & Data Science" },
+  { value: "ai", label: "AI" },
+  { value: "cyber-security", label: "Cyber Security" },
+  { value: "healthcare", label: "Healthcare" },
+] as const;
+
+export type FcdsSpecialization = (typeof fcdsSpecializations)[number]["value"];
+export const defaultFcdsSpecialization: FcdsSpecialization = "computer-data-science";
+
+export function normalizeFcdsSpecialization(value: string | null | undefined): FcdsSpecialization {
+  return fcdsSpecializations.find((option) => option.value === value)?.value ?? defaultFcdsSpecialization;
+}
+
 export const fcdsYearOptions = [
   "السنة الأولى",
   "السنة الثانية",

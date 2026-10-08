@@ -1,3 +1,4 @@
+import { SavedItemsLink } from "@/components/account/SavedItemsLink";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
@@ -11,7 +12,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
 import { parseYouTube } from "@/lib/content";
-import { fcdsYearForSemester, fcdsYearOptions } from "@/lib/fcds";
+import { defaultFcdsSpecialization, fcdsSpecializations, normalizeFcdsSpecialization, type FcdsSpecialization, fcdsYearForSemester, fcdsYearOptions } from "@/lib/fcds";
 import { fetchYouTubeMeta } from "@/lib/youtube.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -36,6 +37,7 @@ type FcdsCourse = {
   code: string;
   year: string;
   semester: number | null;
+  specialization?: FcdsSpecialization;
   created_at: string;
 };
 
@@ -44,6 +46,7 @@ function FCDS() {
   const english = language === "en";
   const t = (ar: string, en: string) => (english ? en : ar);
   const [search, setSearch] = useState("");
+  const [selectedSpecialization, setSelectedSpecialization] = useState<FcdsSpecialization>(defaultFcdsSpecialization);
   const [selectedYear, setSelectedYear] = useState("كل السنوات");
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
 
@@ -98,7 +101,8 @@ function FCDS() {
     const matchesYear = selectedYear === "كل السنوات" || course.year === selectedYear;
     const matchesSemester = selectedSemester === null || course.semester === selectedSemester;
 
-    return matchesSearch && matchesYear && matchesSemester;
+    const matchesSpecialization = normalizeFcdsSpecialization(course.specialization) === selectedSpecialization;
+    return matchesSearch && matchesYear && matchesSemester && matchesSpecialization;
   });
 
   const resetSuggestionForm = () => {
@@ -255,6 +259,7 @@ function FCDS() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <SavedItemsLink />
             <ThemeToggle />
             <LanguageToggle />
             <AccountMenu />
@@ -296,6 +301,22 @@ function FCDS() {
           </div>
 
           <div className={`mt-6 space-y-4 ${english ? "text-left" : "text-right"}`} dir={english ? "ltr" : "rtl"}>
+            <label className="flex max-w-md flex-col gap-2 text-sm font-medium">
+              {t("التخصص", "Specialization")}
+              <select
+                value={selectedSpecialization}
+                onChange={(event) => {
+                  setSelectedSpecialization(event.target.value as FcdsSpecialization);
+                  setSelectedYear("كل السنوات");
+                  setSelectedSemester(null);
+                }}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none focus:border-primary"
+              >
+                {fcdsSpecializations.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
             <div className="flex flex-wrap gap-2" role="group" aria-label={t("فلترة حسب السنة", "Filter by year")}>
               {["كل السنوات", ...fcdsYearOptions].map((year) => (
                 <button
