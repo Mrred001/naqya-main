@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountProvider, useAccount } from "@/components/account/AccountProvider";
 import { SaveButton } from "@/components/account/SaveButton";
 import { GoogleSignIn } from "@/components/account/GoogleSignIn";
-import { AccountMenu } from "@/components/account/AccountMenu";
+import { SiteHeader } from "@/components/site/SiteHeader";
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
   onAuthStateChange: vi.fn(),
@@ -179,7 +179,7 @@ describe("Account privacy and saved sources", () => {
     await act(async () => finish({ data: { session: { user: { id: "user-a" } } } }));
     expect(screen.getByText("user-b")).toBeVisible();
   });
-  it("opens the saved/sign-out menu from the account avatar without a centered dialog", async () => {
+  it("shows saved items as a header icon and keeps sign-out in the account menu", async () => {
     mocks.getSession.mockResolvedValue({
       data: {
         session: {
@@ -192,12 +192,15 @@ describe("Account privacy and saved sources", () => {
       },
     });
     mocks.signOut.mockResolvedValue({ error: null });
-    wrap(<AccountMenu />);
+    wrap(<SiteHeader />);
+
+    expect(await screen.findByRole("link", { name: "المحفوظات" })).toHaveAttribute("href", "/saved");
+    expect(screen.getByRole("button", { name: "تفعيل الوضع الفاتح" })).toBeVisible();
 
     const avatar = await screen.findByRole("button", { name: "حسابي" });
 
     fireEvent.keyDown(avatar, { key: "Enter" });
-    expect(await screen.findByRole("menuitem", { name: "المحفوظات" })).toBeVisible();
+    expect(screen.queryByRole("menuitem", { name: "المحفوظات" })).not.toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "تسجيل خروج من الجهاز ده" })).toBeVisible();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
