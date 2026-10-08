@@ -122,10 +122,10 @@ function CoursePage() {
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
         <div className="mb-6 flex justify-end gap-3">
           <SavedItemsLink />
-            <ThemeToggle />
-          <LanguageToggle />
-          <AccountMenu />
-          <AdminLink />
+          <ThemeToggle />
+          <LanguageToggle iconOnly />
+          <AccountMenu iconOnly />
+          <AdminLink iconOnly />
         </div>
 
         <Link

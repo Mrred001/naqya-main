@@ -272,3 +272,12 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
     background: linear-gradient(180deg, transparent, var(--primary), transparent);
   }
 }
+
+/* Keep DARB filters inside the card on narrow screens. */
+.darb-page { overflow-x: clip; }
+.darb-page .darb-hero { padding: 1.8rem 1rem 1.6rem; }
+.darb-hero > * { min-width: 0; }
+.darb-hero h1 { overflow-wrap: anywhere; }
+@media (min-width: 640px) {
+  .darb-page .darb-hero { padding: 2.5rem 1.5rem 2rem; }
+}

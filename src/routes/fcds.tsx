@@ -7,7 +7,7 @@ import { useSitePreferences } from "@/components/site/PreferencesProvider";
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { Search, Plus, BookOpen, X, Send, Loader2 } from "lucide-react";
+import { Search, Plus, BookOpen, X, Send, Loader2, Home, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -45,6 +45,7 @@ function FCDS() {
   const { language } = useSitePreferences();
   const english = language === "en";
   const t = (ar: string, en: string) => (english ? en : ar);
+  const [coursesVisible, setCoursesVisible] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedSpecialization, setSelectedSpecialization] = useState<FcdsSpecialization>(defaultFcdsSpecialization);
   const [selectedYear, setSelectedYear] = useState("كل السنوات");
@@ -232,9 +233,9 @@ function FCDS() {
   }
 
   return (
-    <div className="min-h-screen fcds-theme bg-background text-foreground">
+    <div className="min-h-screen darb-page fcds-theme bg-background text-foreground">
       <header className="border-b border-border">
-        <div className="mx-auto flex min-h-20 max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-3 md:px-8">
+        <div className="mx-auto flex min-h-20 max-w-7xl flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-3 px-4 py-3 md:px-8">
           <div className="flex items-center gap-2 sm:gap-3">
             {/* FCDS Logo - Right */}
             <Link
@@ -245,7 +246,7 @@ function FCDS() {
               <img
                 src="/naqya-fcds-logo.png"
                 alt="Darb FCDS"
-                className="h-16 w-16 object-contain transition-transform duration-200 group-hover:scale-105"
+                className="h-12 w-12 sm:h-16 sm:w-16 object-contain transition-transform duration-200 group-hover:scale-105"
               />
 
               <div className="leading-none">
@@ -258,36 +259,38 @@ function FCDS() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center self-end gap-1.5 sm:gap-3">
             <SavedItemsLink />
             <ThemeToggle />
-            <LanguageToggle />
-            <AccountMenu />
-            <AdminLink />
+            <LanguageToggle iconOnly />
+            <AccountMenu iconOnly />
+            <AdminLink iconOnly />
             {/* Home - Left */}
             <Link
               to="/"
-              className="text-sm text-muted-foreground transition-colors hover:text-primary"
+              aria-label={t("الرئيسية", "Home")}
+              title={t("الرئيسية", "Home")}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-primary"
             >
-              {english ? "Home" : "الرئيسية"}
+              <Home className="h-5 w-5" aria-hidden="true" />
             </Link>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-5 pb-24 md:px-8">
-        <section className="hero-surface mb-10 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
-          <h1 className="max-w-3xl text-5xl font-bold leading-tight md:text-7xl" dir={english ? "ltr" : "rtl"}>
+        <section className="hero-surface darb-hero mb-8 mt-6 rounded-3xl border px-6 pb-10 pt-12 md:px-10 md:pb-14 md:pt-16">
+          <h1 className="max-w-3xl text-[2.4rem] font-bold leading-tight md:text-[3.6rem]" dir={english ? "ltr" : "rtl"}>
             {t("كل مادة.", "Every course.")}
             <br />
             <span className="text-primary">{t("مصادرها في مكان واحد.", "Its resources in one place.")}</span>
           </h1>
 
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground" dir="rtl">
+          <p className="mt-4 max-w-xl text-base text-muted-foreground" dir="rtl">
             {t("ابحث عن مادتك وشوف الـPlaylists والفيديوهات المتاحة ليها.", "Find your course and explore its playlists and videos.")}
           </p>
 
-          <div className="mt-10 flex max-w-2xl items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 focus-within:border-primary/50">
+          <div className="mt-7 flex min-w-0 max-w-2xl items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 focus-within:border-primary/50">
             <Search className="h-5 w-5 shrink-0 text-primary" />
 
             <input
@@ -296,12 +299,12 @@ function FCDS() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("اكتب اسم المادة أو كودها...", "Search by course name or code…")}
               dir={english ? "ltr" : "rtl"}
-              className="w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
+              className="min-w-0 w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
             />
           </div>
 
           <div className={`mt-6 space-y-4 ${english ? "text-left" : "text-right"}`} dir={english ? "ltr" : "rtl"}>
-            <label className="flex max-w-md flex-col gap-2 text-sm font-medium">
+            <label className="flex min-w-0 max-w-md flex-col gap-2 text-sm font-medium">
               {t("التخصص", "Specialization")}
               <select
                 value={selectedSpecialization}
@@ -310,7 +313,7 @@ function FCDS() {
                   setSelectedYear("كل السنوات");
                   setSelectedSemester(null);
                 }}
-                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none focus:border-primary"
+                className="min-w-0 w-full max-w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none focus:border-primary"
               >
                 {fcdsSpecializations.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -378,7 +381,7 @@ function FCDS() {
             <p className="text-sm text-muted-foreground">{filteredCourses.length} {t("مواد", "courses")}</p>
           </div>
 
-          <div className="mb-6" dir={english ? "ltr" : "rtl"}>
+          <div className="mb-6 flex flex-col items-start gap-3" dir={english ? "ltr" : "rtl"}>
             <button
               type="button"
               onClick={openSuggest}
@@ -387,8 +390,19 @@ function FCDS() {
               <Plus className="h-4 w-4" />
               {t("اقترح مصدر", "Suggest a resource")}
             </button>
+            <button
+              type="button"
+              aria-expanded={coursesVisible}
+              aria-controls="darb-course-results"
+              onClick={() => setCoursesVisible((visible) => !visible)}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-400/30 bg-slate-500/10 px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+            >
+              {coursesVisible ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+              {coursesVisible ? t("إخفاء المواد", "Hide courses") : t("إظهار المواد", "Show courses")}
+            </button>
           </div>
 
+          <div id="darb-course-results" hidden={!coursesVisible}>
           {coursesLoading && (
             <div className="rounded-2xl border border-border p-10 text-center text-muted-foreground">
               {t("جاري تحميل المواد...", "Loading courses…")}
@@ -420,6 +434,7 @@ function FCDS() {
             </div>
           )}
 
+          </div>
         </section>
       </main>
 
@@ -477,7 +492,7 @@ function FCDS() {
                     value={suggestCourse}
                     onChange={(e) => setSuggestCourse(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50"
+                    className="min-w-0 w-full max-w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50"
                   >
                     <option value="">{t("اختر المادة", "Choose a course")}</option>
 
@@ -510,7 +525,7 @@ function FCDS() {
                     required
                     placeholder="https://youtube.com/..."
                     dir="ltr"
-                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
+                    className="min-w-0 w-full max-w-full rounded-xl border border-border bg-card px-4 py-3 text-left text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                   {parseYouTube(suggestUrl) && (
                     <p className="mt-2 text-xs font-medium text-primary" role="status">
@@ -531,7 +546,7 @@ function FCDS() {
                     required
                     placeholder={t("بيتعبّى تلقائياً", "Filled automatically")}
                     dir="auto"
-                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
+                    className="min-w-0 w-full max-w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 
@@ -544,7 +559,7 @@ function FCDS() {
                     onChange={(e) => setSuggestChannel(e.target.value)}
                     placeholder={t("بيتعبّى تلقائياً", "Filled automatically")}
                     dir="auto"
-                    className="w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
+                    className="min-w-0 w-full max-w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
                 </label>
 

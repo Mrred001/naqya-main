@@ -17,7 +17,7 @@ import { useAccount } from "./AccountProvider";
 import { GoogleSignIn } from "./GoogleSignIn";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
-export function AccountMenu() {
+export function AccountMenu({ iconOnly = false }: { iconOnly?: boolean }) {
   const fcds = useRouterState({ select: (state) => state.location.pathname.startsWith("/fcds") });
   const { user, ready } = useAccount();
   const { language } = useSitePreferences();
@@ -99,9 +99,11 @@ export function AccountMenu() {
         type="button"
         disabled={!ready}
         onClick={() => setOpen(true)}
-        className="shrink-0 rounded-xl border px-3 py-2 text-xs sm:text-sm hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={t("دخول", "Sign in")}
+        title={t("دخول", "Sign in")}
+        className={`shrink-0 border hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring ${iconOnly ? "grid h-10 w-10 place-items-center rounded-full bg-card" : "rounded-xl px-3 py-2 text-xs sm:text-sm"}`}
       >
-        {t("دخول", "Sign in")}
+        {iconOnly ? <UserRound className="h-5 w-5" aria-hidden="true" /> : t("دخول", "Sign in")}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent dir={english ? "ltr" : "rtl"} className={fcds ? "fcds-theme text-foreground" : undefined}>
