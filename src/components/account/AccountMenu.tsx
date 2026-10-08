@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { LogOut, UserRound } from "lucide-react";
 import { toast } from "sonner";
@@ -77,11 +77,6 @@ export function AccountMenu() {
             {avatarLabel}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="cursor-pointer rounded-xl px-3 py-2.5">
-            <Link to="/saved">
-              <span>{t("المحفوظات", "Saved items")}</span>
-            </Link>
-          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={busy}
             onSelect={(event) => {
