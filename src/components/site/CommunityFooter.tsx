@@ -53,7 +53,7 @@ export function CommunityFooter({ fcds = false }: { fcds?: boolean }) {
   const action =
     "inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm transition-colors hover:border-primary hover:text-primary";
   return (
-    <footer className={`${fcds ? "fcds-theme" : ""} mt-20 border-t bg-card/40`}>
+    <footer className={`${fcds ? "fcds-theme darb-footer" : ""} mt-20 border-t bg-card/40`}>
       <div className="mx-auto max-w-7xl px-5 py-10 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div>

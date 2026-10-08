@@ -302,3 +302,25 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
 @media (min-width: 640px) {
   .darb-page .darb-hero { padding: 2.5rem 1.5rem 2rem; }
 }
+
+@media (min-width: 768px) {
+  .gateway-panel {
+    min-height: min(72svh, 42rem);
+    max-height: 42rem;
+    padding: 2.5rem 2rem;
+  }
+}
+
+/* Let the DARB page and footer collapse naturally when its course list is hidden. */
+@media (max-width: 767px) {
+  body:has(#darb-course-results[hidden]) .grain,
+  .darb-page:has(#darb-course-results[hidden]) {
+    min-height: 0;
+  }
+  .darb-page:has(#darb-course-results[hidden]) > main {
+    padding-bottom: .75rem;
+  }
+  .grain:has(#darb-course-results[hidden]) > .page-enter + .darb-footer {
+    margin-top: .75rem;
+  }
+}
