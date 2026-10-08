@@ -234,9 +234,9 @@ function FCDS() {
 
   return (
     <div className="min-h-screen darb-page fcds-theme bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex min-h-20 max-w-7xl flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-3 px-4 py-3 md:px-8">
-          <div className="flex items-center gap-2 sm:gap-3">
+      <header className="border-b border-border" dir="ltr">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-2 px-4 py-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center md:px-8">
+          <div className="justify-self-end lg:col-start-3 lg:row-start-1" dir="rtl">
             {/* FCDS Logo - Right */}
             <Link
               to="/"
@@ -249,21 +249,21 @@ function FCDS() {
                 className="h-12 w-12 sm:h-16 sm:w-16 object-contain transition-transform duration-200 group-hover:scale-105"
               />
 
-              <div className="leading-none">
+              <div className="flex items-baseline gap-2 whitespace-nowrap leading-none" dir="ltr">
                 <p className="text-base font-bold tracking-[0.12em] transition-colors group-hover:text-primary">
                   DARB
                 </p>
 
-                <p className="mt-1 font-mono text-xs tracking-[0.18em] text-primary">FCDS</p>
+                <p className="font-mono text-xs tracking-[0.18em] text-primary">FCDS</p>
               </div>
             </Link>
           </div>
 
-          <div className="flex items-center self-end gap-1.5 sm:gap-3">
+          <div className="flex items-center justify-center gap-1.5 justify-self-center lg:col-start-2 lg:row-start-1 sm:gap-2" dir="ltr">
+            <AccountMenu iconOnly />
             <SavedItemsLink />
             <ThemeToggle />
             <LanguageToggle iconOnly />
-            <AccountMenu iconOnly />
             <AdminLink iconOnly />
             {/* Home - Left */}
             <Link

@@ -120,11 +120,11 @@ function CoursePage() {
   return (
     <div className="min-h-[100dvh] fcds-theme bg-background text-foreground">
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
-        <div className="mb-6 flex justify-end gap-3">
+        <div className="mb-6 flex justify-center gap-2" dir="ltr">
+          <AccountMenu iconOnly />
           <SavedItemsLink />
           <ThemeToggle />
           <LanguageToggle iconOnly />
-          <AccountMenu iconOnly />
           <AdminLink iconOnly />
         </div>
 

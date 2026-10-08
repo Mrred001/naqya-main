@@ -6,8 +6,7 @@ import { LanguageToggle } from "./LanguageToggle";
 import { CommunityFooter } from "./CommunityFooter";
 import { Link } from "@tanstack/react-router";
 import { useSitePreferences } from "./PreferencesProvider";
-import { Compass, Home, Menu } from "lucide-react";
-import { useState } from "react";
+import { Compass, Home } from "lucide-react";
 
 export function NaqyaMark({ className = "h-6 w-6" }: { className?: string }) {
   // Several paths converge into one: abundance → curation → clarity
@@ -55,53 +54,40 @@ export function Logo() {
 export function SiteHeader() {
   const { language } = useSitePreferences();
   const english = language === "en";
-  const [navOpen, setNavOpen] = useState(true);
   return (
-    <header className="glass sticky top-0 z-40 border-b">
-      <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div dir="ltr" className="flex h-[4.25rem] items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setNavOpen((open) => !open)}
-            aria-label={navOpen ? (english ? "Hide menu" : "إخفاء القائمة") : (english ? "Show menu" : "إظهار القائمة")}
-            aria-expanded={navOpen}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-foreground hover:bg-secondary md:hidden"
-          >
-            <Menu size={22} />
-          </button>
-          <div className="flex min-w-0 flex-1 justify-center md:flex-none md:justify-start">
-            <Logo />
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <AccountMenu />
-            <SavedItemsLink />
-            <ThemeToggle />
-          </div>
+    <header className="glass sticky top-0 z-40 border-b" dir="ltr">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-2 px-2 py-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center md:px-8">
+        <div className="justify-self-end px-2 lg:col-start-3 lg:row-start-1 md:px-0">
+          <Logo />
         </div>
-
         <nav
           aria-label={english ? "Main navigation" : "التنقل الرئيسي"}
-          dir="rtl"
-          className={`${navOpen ? "flex" : "hidden"} min-h-12 flex-wrap items-center justify-center gap-2 border-t border-border/70 py-2 md:absolute md:start-1/2 md:top-1/2 md:min-h-0 md:-translate-x-1/2 md:-translate-y-1/2 md:gap-3 md:border-0 md:py-0`}
+          className="flex items-center justify-center gap-1 justify-self-center sm:gap-2 lg:col-start-2 lg:row-start-1"
+          dir="ltr"
         >
+          <AccountMenu iconOnly />
+          <SavedItemsLink />
+          <ThemeToggle />
+          <LanguageToggle iconOnly />
+          <AdminLink iconOnly />
           <Link
             to="/naqya"
-            className="nav-link"
-            activeProps={{ className: "nav-link nav-link-active" }}
+            aria-label={english ? "Home" : "الرئيسية"}
+            title={english ? "Home" : "الرئيسية"}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-primary"
+            activeProps={{ className: "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary bg-primary/10 text-primary" }}
           >
             <Home size={18} aria-hidden="true" />
-            {english ? "Home" : "الرئيسية"}
           </Link>
           <Link
             to="/explore"
-            className="nav-link"
-            activeProps={{ className: "nav-link nav-link-active" }}
+            aria-label={english ? "Explore" : "استكشف"}
+            title={english ? "Explore" : "استكشف"}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-primary"
+            activeProps={{ className: "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary bg-primary/10 text-primary" }}
           >
             <Compass size={18} aria-hidden="true" />
-            {english ? "Explore" : "استكشف"}
           </Link>
-          <LanguageToggle />
-          <AdminLink />
         </nav>
       </div>
     </header>
