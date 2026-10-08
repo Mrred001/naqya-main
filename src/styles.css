@@ -192,6 +192,27 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   text-align: center;
   transition: background-color 180ms ease;
 }
+.gateway-copy { width: 100%; text-align: center; }
+.gateway-copy > p { margin-inline: auto; }
+.gateway-copy .gateway-cta { align-self: center; }
+@media (min-width: 768px) {
+  .gateway-grid {
+    grid-template-columns: repeat(2, minmax(0, 34rem));
+    place-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+  }
+  .gateway-panel {
+    width: 100%;
+    min-height: min(76svh, 46rem);
+    max-height: 46rem;
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    padding: 2.5rem 2rem;
+  }
+}
+
 .gateway-naqya {
   background: radial-gradient(ellipse at 50% 0%, var(--primary-soft), transparent 58%), var(--background);
 }
