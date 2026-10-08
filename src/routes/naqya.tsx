@@ -401,6 +401,17 @@ function Home() {
 
         <WeeklyPicks items={featured} />
 
+        <div className="mb-2" dir={english ? "ltr" : "rtl"}>
+          <button
+            type="button"
+            onClick={() => setSuggestOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-200/70 bg-gradient-to-r from-amber-300 to-yellow-200 px-6 py-3 text-sm font-bold text-amber-950 shadow-[0_6px_24px_-8px_rgba(245,158,11,0.6)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_28px_-8px_rgba(245,158,11,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transform-none"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {t("اقترح محتوى", "Suggest content")}
+          </button>
+        </div>
+
         {/* Recent */}
         <section className="py-12">
 
@@ -496,18 +507,6 @@ function Home() {
         </section>
 
       </div>
-
-      {/* Suggest Content Button */}
-      <button
-        type="button"
-        onClick={() =>
-          setSuggestOpen(true)
-        }
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-colors hover:opacity-90"
-      >
-        <Plus className="h-4 w-4" />
-        {t("اقترح محتوى", "Suggest content")}
-      </button>
 
       {/* Suggest Modal */}
       {suggestOpen && (
