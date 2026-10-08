@@ -57,7 +57,7 @@ export function SiteHeader() {
   return (
     <header className="glass sticky top-0 z-40 border-b" dir="ltr">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-2 px-2 py-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center md:px-8">
-        <div className="justify-self-end px-2 lg:col-start-3 lg:row-start-1 md:px-0">
+        <div className="justify-self-center px-2 lg:col-start-3 lg:row-start-1 lg:justify-self-end md:px-0">
           <Logo />
         </div>
         <nav

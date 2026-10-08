@@ -236,7 +236,7 @@ function FCDS() {
     <div className="min-h-screen darb-page fcds-theme bg-background text-foreground">
       <header className="border-b border-border" dir="ltr">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-2 px-4 py-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center md:px-8">
-          <div className="justify-self-end lg:col-start-3 lg:row-start-1" dir="rtl">
+          <div className="justify-self-center lg:col-start-3 lg:row-start-1 lg:justify-self-end" dir="rtl">
             {/* FCDS Logo - Right */}
             <Link
               to="/"
