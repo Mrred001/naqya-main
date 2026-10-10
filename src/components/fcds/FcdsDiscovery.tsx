@@ -34,7 +34,7 @@ export function FcdsDiscovery() {
       </div>
       <Dialog open={active !== null} onOpenChange={(open) => { if (!open) setActive(null); }}>
         <DialogContent className="fcds-theme max-h-[85dvh] overflow-y-auto rounded-2xl bg-background sm:max-w-xl" dir={english ? "ltr" : "rtl"}>
-          <DialogTitle className="pe-6 text-xl">{title}</DialogTitle>
+          <DialogTitle className="px-6 text-xl">{title}</DialogTitle>
           <DialogDescription>{active === "popular"
             ? t("حسب فتح الفيديوهات من درب، مع احتساب الرجوع لها لاحقاً.", "Based on video opens from DARB, including later return visits.")
             : t("آخر الإضافات من كل مواد درب، فيديوهات وقوائم تشغيل.", "The latest videos and playlists across all DARB courses.")}</DialogDescription>
@@ -49,8 +49,7 @@ export function FcdsDiscovery() {
                   onClick={() => { void recordFcdsOpen(resource.id); }}
                   onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(resource.id); }}
                   className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                  {thumbnail ? <img src={thumbnail} alt="" loading="lazy" className="aspect-video w-24 shrink-0 rounded-lg object-cover sm:w-32" />
-                    : <span className="grid aspect-video w-24 shrink-0 place-items-center rounded-lg bg-accent sm:w-32"><ListVideo className="h-6 w-6 text-primary" /></span>}
+                  <ResourceThumbnail url={thumbnail} />
                   <span className="min-w-0 flex-1"><span dir="auto" className="line-clamp-2 block text-sm font-semibold leading-6">{resource.title}</span><span dir="auto" className="mt-1 block truncate text-xs text-muted-foreground">{resource.channel || "YouTube"}</span><span className="mt-2 inline-flex items-center gap-1 text-xs text-primary"><Video className="h-3 w-3" />{parsed?.kind === "playlist" ? t("قائمة تشغيل", "Playlist") : t("شاهد الفيديو", "Watch video")}</span></span>
                 </a>
                 <div className="mt-3"><SaveButton kind="fcds" id={resource.id} /></div>
@@ -59,5 +58,16 @@ export function FcdsDiscovery() {
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+function ResourceThumbnail({ url }: { url: string | null }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="grid aspect-video w-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-accent sm:w-32">
+      {url && !failed
+        ? <img src={url} alt="" loading="lazy" onError={() => setFailed(true)} className="h-full w-full object-cover" />
+        : <ListVideo className="h-6 w-6 text-primary" aria-hidden="true" />}
+    </span>
   );
 }
