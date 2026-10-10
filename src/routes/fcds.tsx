@@ -1,3 +1,5 @@
+import { FcdsDiscovery } from "@/components/fcds/FcdsDiscovery";
+import { checkSuggestionLink, duplicateSuggestionMessage } from "@/lib/suggestion-links";
 import { SavedItemsLink } from "@/components/account/SavedItemsLink";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { AdminLink } from "@/components/account/AdminLink";
@@ -207,6 +209,19 @@ function FCDS() {
 
     setSubmitting(true);
 
+    try {
+      const duplicate = await checkSuggestionLink(suggestUrl);
+      if (duplicate) {
+        toast.error(duplicateSuggestionMessage(duplicate, english));
+        setSubmitting(false);
+        return;
+      }
+    } catch {
+      toast.error(t("ما قدرنا نتحقق من الرابط. جرّب تاني.", "Could not check this link. Please try again."));
+      setSubmitting(false);
+      return;
+    }
+
     const { error } = await supabase.from("fcds_playlist_suggestions").insert({
       course_slug: suggestCourse,
       youtube_url: suggestUrl.trim(),
@@ -219,6 +234,13 @@ function FCDS() {
     setSubmitting(false);
 
     if (error) {
+      const duplicate = error.message?.includes("resource_already_exists") ? "existing"
+        : error.message?.includes("resource_already_suggested") ? "pending" : null;
+      if (duplicate) {
+        toast.error(duplicateSuggestionMessage(duplicate, english));
+        return;
+      }
+
       console.error(error);
       toast.error(t("حصلت مشكلة أثناء إرسال الاقتراح.", "There was a problem submitting your suggestion."));
       return;
@@ -369,6 +391,8 @@ function FCDS() {
             </div>
           </div>
         </section>
+
+        <FcdsDiscovery />
 
         <section>
           <div className="mb-8 flex items-end justify-between gap-4" dir={english ? "ltr" : "rtl"}>

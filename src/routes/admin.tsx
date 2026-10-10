@@ -775,7 +775,7 @@ function SuggestionsAdmin() {
         title: suggestion.title,
         channel: suggestion.channel,
         language:
-          languages[suggestion.id] ?? "English",
+          languages[suggestion.id] ?? "Arabic",
         thumbnail_url: thumbnailUrl,
       });
 
@@ -894,7 +894,7 @@ function SuggestionsAdmin() {
 
         language:
           languages[suggestion.id] ??
-          "English",
+          "Arabic",
 
         music_status: "no_music",
 
@@ -1129,7 +1129,7 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                     value={
                       languages[
                         suggestion.id
-                      ] ?? "English"
+                      ] ?? "Arabic"
                     }
                     onChange={(e) =>
                       setLanguages((prev) => ({
@@ -1437,7 +1437,7 @@ const emptyFcdsDraft = (): FcdsPlaylistDraft => ({
   youtube_url: "",
   title: "",
   channel: "",
-  language: "English",
+  language: "Arabic",
   thumbnail_url: "",
 });
 
@@ -2076,7 +2076,7 @@ const emptyDraft = (): Draft => ({
   content_type: "video",
   category_id: "",
   tags: "",
-  language: "English",
+  language: "Arabic",
   music_status: "no_music",
   recommendation: "",
   featured: false,

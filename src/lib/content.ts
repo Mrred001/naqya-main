@@ -66,9 +66,12 @@ export function formatDuration(s: number) {
 export function parseYouTube(url: string): { id: string; kind: ContentKind } | null {
   try {
     const u = new URL(url.trim());
+    if (!["http:", "https:"].includes(u.protocol)) return null;
+    const host = u.hostname.toLowerCase();
+    if (!["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be", "youtube-nocookie.com", "www.youtube-nocookie.com"].includes(host)) return null;
     const list = u.searchParams.get("list");
     if (u.pathname.includes("playlist") && list) return { id: list, kind: "playlist" };
-    if (u.hostname.includes("youtu.be")) return { id: u.pathname.slice(1).split("/")[0] ?? "", kind: "video" };
+    if (["youtu.be", "www.youtu.be"].includes(host)) return { id: u.pathname.slice(1).split("/")[0] ?? "", kind: "video" };
     const v = u.searchParams.get("v");
     if (v) return { id: v, kind: "video" };
     const m = u.pathname.match(/\/(embed|shorts|live)\/([\w-]+)/);

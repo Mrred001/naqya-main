@@ -1,3 +1,4 @@
+import { recordFcdsOpen } from "@/lib/fcds-discovery";
 import { ResourceProgress } from "@/components/account/ResourceProgress";
 import { SaveButton } from "@/components/account/SaveButton";
 import { SavedItemsLink } from "@/components/account/SavedItemsLink";
@@ -188,6 +189,8 @@ function CoursePage() {
                 <article key={playlist.id} className="space-y-3">
                   <a
                     href={playlist.youtube_url}
+                    onClick={() => { void recordFcdsOpen(playlist.id); }}
+                    onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(playlist.id); }}
                     target="_blank"
                     rel="noreferrer"
                     className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:bg-primary/[0.03] md:flex"
@@ -257,6 +260,8 @@ function CoursePage() {
                   >
                     <a
                       href={video.youtube_url}
+                      onClick={() => { void recordFcdsOpen(video.id); }}
+                      onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(video.id); }}
                       target="_blank"
                       rel="noreferrer"
                       className="flex min-w-0 flex-1 items-center gap-3"

@@ -1,3 +1,4 @@
+import { checkSuggestionLink, duplicateSuggestionMessage } from "@/lib/suggestion-links";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
@@ -293,6 +294,19 @@ function Home() {
 
     setSubmitting(true);
 
+    try {
+      const duplicate = await checkSuggestionLink(suggestUrl);
+      if (duplicate) {
+        toast.error(duplicateSuggestionMessage(duplicate, english));
+        setSubmitting(false);
+        return;
+      }
+    } catch {
+      toast.error(t("ما قدرنا نتحقق من الرابط. جرّب تاني.", "Could not check this link. Please try again."));
+      setSubmitting(false);
+      return;
+    }
+
     const { error } = await supabase
       .from(
         "general_content_suggestions",
@@ -331,6 +345,13 @@ function Home() {
     setSubmitting(false);
 
     if (error) {
+      const duplicate = error.message?.includes("resource_already_exists") ? "existing"
+        : error.message?.includes("resource_already_suggested") ? "pending" : null;
+      if (duplicate) {
+        toast.error(duplicateSuggestionMessage(duplicate, english));
+        return;
+      }
+
       console.error(error);
 
       toast.error(
