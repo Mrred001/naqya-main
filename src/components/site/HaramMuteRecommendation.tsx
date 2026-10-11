@@ -15,8 +15,8 @@ export function HaramMuteRecommendation() {
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
         {english
-          ? "HaramMute is an external service for supported YouTube videos. Its site explains how to use the browser extension or mobile app. Audio separation results vary by video. Try the available free use first; if it helps and you need more time, review its current paid plans in the app."
-          : "HaramMute خدمة خارجية للفيديوهات المدعومة على YouTube. موقعهم بشرح طريقة استخدام إضافة المتصفح أو تطبيق الجوال. نتيجة عزل الموسيقى بتختلف من فيديو للتاني. جرّب الاستخدام المجاني المتاح؛ ولو الخدمة نفعتك واحتجت استخداماً أطول، راجع خطط الاشتراك الحالية داخل التطبيق."}
+          ? "HaramMute is an external service for supported YouTube videos. Its site explains how to use the browser extension or mobile app. Audio separation results vary by video. Try the available free use first; if you find it useful, consider a paid plan that fits your needs, especially if you need longer usage."
+          : "HaramMute خدمة خارجية للفيديوهات المدعومة على YouTube. موقعهم بشرح طريقة استخدام إضافة المتصفح أو تطبيق الجوال. نتيجة عزل الموسيقى بتختلف من فيديو للتاني. جرّب الاستخدام المجاني المتاح؛ ولو استفدت منها، أنصحك بالاشتراك في الخطة المدفوعة المناسبة، خاصة لو بتحتاج استخداماً أطول."}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <a href={HARAMMUTE_AR} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
