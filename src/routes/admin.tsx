@@ -463,41 +463,40 @@ function Overview({
 }: {
   pendingCount: number;
 }) {
+  const [days, setDays] = useState<7 | 30>(7);
   const { data } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: async () => {
-      const [
-        general,
-        fcds,
-      ] = await Promise.all([
+      const [general, fcds, popular] = await Promise.all([
         supabase
           .from("content")
-          .select("*", {
-            count: "exact",
-            head: true,
-          }),
+          .select("id,title,music_status,date_added")
+          .order("date_added", { ascending: false }),
 
         supabase
           .from("fcds_playlists")
-          .select("*", {
-            count: "exact",
-            head: true,
-          }),
+          .select("id,title,music_status,created_at")
+          .order("created_at", { ascending: false }),
+        (supabase as any).rpc("get_top_fcds_videos"),
       ]);
+      if (general.error) throw general.error;
+      if (fcds.error) throw fcds.error;
+      if (popular.error) throw popular.error;
 
       return {
-        general: general.count ?? 0,
-        fcds: fcds.count ?? 0,
+        general: general.data ?? [],
+        fcds: fcds.data ?? [],
+        popular: (popular.data ?? []) as { id: string; title: string; course_slug: string; total_opens: number }[],
       };
     },
   });
 
   const visitsQuery = useQuery({
-    queryKey: ["admin-daily-visits", 7],
+    queryKey: ["admin-daily-visits", days],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc(
         "get_daily_site_visits",
-        { days: 7 },
+        { days },
       );
       if (error) throw error;
       return (data ?? []) as { visit_date: string; total: number | string }[];
@@ -507,22 +506,32 @@ function Overview({
   const visitRows = visitsQuery.data ?? [];
   const todayVisits = Number(visitRows.at(-1)?.total ?? 0);
   const peakVisits = Math.max(1, ...visitRows.map((row) => Number(row.total)));
+  const totalVisits = visitRows.reduce((total, row) => total + Number(row.total), 0);
+  const noMusicCount = (data?.general ?? []).filter((item: any) => item.music_status === "no_music").length + (data?.fcds ?? []).filter((item: any) => item.music_status === "no_music").length;
+  const minimalMusicCount = (data?.general ?? []).filter((item: any) => item.music_status === "minimal_music").length + (data?.fcds ?? []).filter((item: any) => item.music_status === "minimal_music").length;
+  const hasMusicCount = (data?.general ?? []).filter((item: any) => item.music_status === "has_music").length + (data?.fcds ?? []).filter((item: any) => item.music_status === "has_music").length;
+  const totalLibraryCount = (data?.general.length ?? 0) + (data?.fcds.length ?? 0);
 
   const cards = [
     {
       label: "General Library",
-      value: data?.general ?? 0,
+      value: data?.general.length ?? 0,
       icon: Library,
     },
     {
       label: "FCDS Playlists",
-      value: data?.fcds ?? 0,
+      value: data?.fcds.length ?? 0,
       icon: GraduationCap,
     },
     {
       label: "Pending Suggestions",
       value: pendingCount,
       icon: Inbox,
+    },
+    {
+      label: "Minimal Music Flagged",
+      value: minimalMusicCount,
+      icon: Activity,
     },
   ];
 
@@ -536,7 +545,7 @@ function Overview({
         Dashboard
       </h2>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => {
           const Icon = card.icon;
 
@@ -572,12 +581,21 @@ function Overview({
             <p className="mt-1 text-sm text-amber-50/45">
               Unique browsers recorded per day · Khartoum time
             </p>
+            <div className="mt-4 flex gap-2">
+              {([7, 30] as const).map((range) => (
+                <button key={range} type="button" aria-pressed={days === range} onClick={() => setDays(range)} className={cn("rounded-lg border px-3 py-1.5 text-xs", days === range ? "border-amber-300/50 bg-amber-300/10 text-amber-100" : "border-amber-100/10 text-amber-50/45 hover:text-amber-50")}>{range} days</button>
+              ))}
+            </div>
           </div>
           <div className="min-w-28 rounded-xl border border-amber-200/15 bg-amber-300/[0.07] px-4 py-3 text-center">
             <p className="text-3xl font-bold text-amber-200">
               {visitsQuery.isPending ? "—" : todayVisits}
             </p>
             <p className="mt-1 text-xs text-amber-50/45">Today</p>
+          </div>
+          <div className="min-w-28 rounded-xl border border-amber-100/10 px-4 py-3 text-center">
+            <p className="text-3xl font-bold">{visitsQuery.isPending ? "—" : totalVisits}</p>
+            <p className="mt-1 text-xs text-amber-50/45">In {days} days</p>
           </div>
         </div>
 
@@ -586,9 +604,10 @@ function Overview({
             Daily analytics is not available yet. Apply the latest Supabase migration to enable it.
           </p>
         ) : (
+          <div className="mt-7 overflow-x-auto">
           <div
-            className="mt-7 grid grid-cols-7 items-end gap-2 sm:gap-4"
-            aria-label="Unique daily visitors for the last seven days"
+            className={cn("grid min-w-[560px] items-end gap-2 sm:gap-4", days === 7 ? "grid-cols-7" : "grid-cols-[repeat(30,minmax(36px,1fr))]")}
+            aria-label={`Unique daily visitors for the last ${days} days`}
           >
             {visitRows.map((row) => {
               const amount = Number(row.total);
@@ -614,11 +633,41 @@ function Overview({
               );
             })}
           </div>
+          </div>
         )}
         {visitsQuery.isPending && (
           <p className="mt-5 text-sm text-amber-50/40">Loading analytics…</p>
         )}
       </section>
+
+      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+        <section className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs tracking-[0.18em] text-amber-50/35">CONTENT QUALITY</p>
+              <h3 className="mt-2 text-xl font-semibold">Music status across both libraries</h3>
+            </div>
+            <span className="text-sm tabular-nums text-amber-50/45">{totalLibraryCount} total</span>
+          </div>
+          <div className="mt-6 space-y-4">
+            {[{ label: "No music", value: noMusicCount, color: "bg-emerald-300" }, { label: "Minimal music", value: minimalMusicCount, color: "bg-amber-300" }, { label: "Has music", value: hasMusicCount, color: "bg-rose-300" }].map((item) => (
+              <div key={item.label}>
+                <div className="mb-2 flex justify-between text-sm"><span className="text-amber-50/65">{item.label}</span><span className="tabular-nums">{item.value} · {totalLibraryCount ? Math.round(item.value / totalLibraryCount * 100) : 0}%</span></div>
+                <div className="h-2 overflow-hidden rounded-full bg-black/30"><div className={cn("h-full rounded-full", item.color)} style={{ width: `${totalLibraryCount ? item.value / totalLibraryCount * 100 : 0}%` }} /></div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-xs leading-5 text-amber-50/35">{data?.general.length ?? 0} NAQYA items and {data?.fcds.length ?? 0} Darb resources included.</p>
+        </section>
+
+        <section className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6">
+          <div>
+            <p className="text-xs tracking-[0.18em] text-amber-50/35">DARB ENGAGEMENT</p>
+            <h3 className="mt-2 text-xl font-semibold">Most opened videos</h3>
+          </div>
+          {data?.popular.length ? <ol className="mt-5 space-y-3">{data.popular.map((item, index) => <li key={item.id} className="flex items-center gap-3 rounded-xl border border-amber-100/10 px-4 py-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-300/10 text-sm font-semibold text-amber-200">{index + 1}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{item.title}</p><p className="mt-1 truncate text-xs text-amber-50/40">{item.course_slug}</p></div><span className="shrink-0 text-xs tabular-nums text-amber-50/55">{Number(item.total_opens)} opens</span></li>)}</ol> : <p className="mt-5 rounded-xl border border-amber-100/10 p-4 text-sm text-amber-50/45">No video opens have been recorded yet.</p>}
+        </section>
+      </div>
     </div>
   );
 }
@@ -634,6 +683,7 @@ type Suggestion = {
   title: string;
   channel: string | null;
   note: string | null;
+  music_status: "no_music" | "minimal_music";
   status: string;
   created_at: string;
   user_id: string | null;
@@ -650,6 +700,7 @@ type GeneralSuggestion = {
   thumbnail_url: string | null;
   content_type: string;
   language: string;
+  music_status: "no_music" | "minimal_music";
   note: string | null;
   status: string;
   created_at: string;
@@ -704,6 +755,7 @@ function SuggestionsAdmin() {
   const [languages, setLanguages] = useState<
     Record<string, "Arabic" | "English">
   >({});
+  const [musicStatuses, setMusicStatuses] = useState<Record<string, "no_music" | "minimal_music">>({});
 
   const { data: suggestions = [], isLoading } = useQuery({
     queryKey: ["fcds-suggestions"],
@@ -777,7 +829,8 @@ function SuggestionsAdmin() {
         language:
           languages[suggestion.id] ?? "Arabic",
         thumbnail_url: thumbnailUrl,
-      });
+        music_status: musicStatuses[suggestion.id] ?? suggestion.music_status ?? "no_music",
+      } as never);
 
     if (error) {
       setBusyId(null);
@@ -896,7 +949,7 @@ function SuggestionsAdmin() {
           languages[suggestion.id] ??
           "Arabic",
 
-        music_status: "no_music",
+        music_status: musicStatuses[suggestion.id] ?? suggestion.music_status ?? "no_music",
 
         recommendation:
           suggestion.note || null,
@@ -977,7 +1030,7 @@ const approveGeneralSuggestion = async (suggestion: any) => {
       content_type: suggestion.content_type,
       category_id: null,
       language: suggestion.language || "English",
-      music_status: "no_music",
+      music_status: musicStatuses[suggestion.id] ?? suggestion.music_status ?? "no_music",
       recommendation: suggestion.note || null,
       featured: false,
       date_added: new Date().toISOString(),
@@ -1076,6 +1129,9 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                     <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
                       {parseYouTube(suggestion.youtube_url)?.kind === "video" ? "Video" : "Playlist"}
                     </span>
+                    <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60">
+                      {(musicStatuses[suggestion.id] ?? suggestion.music_status) === "minimal_music" ? "Minimal music" : "No music"}
+                    </span>
 
                     <span
                       className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60"
@@ -1124,6 +1180,14 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                 </div>
 
                 <div className="w-full shrink-0 space-y-3 xl:w-64">
+
+                  <label className="block space-y-1.5 text-xs text-amber-100/50">
+                    Music status
+                    <select className={field} value={musicStatuses[suggestion.id] ?? suggestion.music_status ?? "no_music"} onChange={(e) => setMusicStatuses((prev) => ({ ...prev, [suggestion.id]: e.target.value as "no_music" | "minimal_music" }))}>
+                      <option value="no_music">No music</option>
+                      <option value="minimal_music">Minimal music</option>
+                    </select>
+                  </label>
 
                   <select
                     value={
@@ -1248,6 +1312,10 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                   {suggestion.language}
                 </span>
 
+                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60">
+                  {(musicStatuses[suggestion.id] ?? suggestion.music_status) === "minimal_music" ? "Minimal music" : "No music"}
+                </span>
+
                 <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60" dir="auto">
                   {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "Guest"}
                 </span>
@@ -1284,6 +1352,14 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
             </div>
 
             <div className="flex shrink-0 flex-col gap-3 lg:w-52">
+
+              <label className="block space-y-1.5 text-xs text-amber-100/50">
+                Music status
+                <select className={field} value={musicStatuses[suggestion.id] ?? suggestion.music_status ?? "no_music"} onChange={(e) => setMusicStatuses((prev) => ({ ...prev, [suggestion.id]: e.target.value as "no_music" | "minimal_music" }))}>
+                  <option value="no_music">No music</option>
+                  <option value="minimal_music">Minimal music</option>
+                </select>
+              </label>
 
               <button
                 type="button"
@@ -1344,6 +1420,7 @@ type FcdsPlaylistRow = {
   channel: string | null;
   language: string;
   thumbnail_url: string | null;
+  music_status: MusicStatus;
   created_at: string;
 };
 
@@ -1354,6 +1431,7 @@ type FcdsPlaylistDraft = {
   channel: string;
   language: "Arabic" | "English";
   thumbnail_url: string;
+  music_status: MusicStatus;
 };
 
 export function CoursePicker({
@@ -1439,10 +1517,12 @@ const emptyFcdsDraft = (): FcdsPlaylistDraft => ({
   channel: "",
   language: "Arabic",
   thumbnail_url: "",
+  music_status: "no_music",
 });
 
 function FcdsLibraryAdmin() {
   const qc = useQueryClient();
+  const [musicFilter, setMusicFilter] = useState<"all" | MusicStatus>("all");
 
   const [editing, setEditing] = useState<{
     id: string | null;
@@ -1506,6 +1586,7 @@ function FcdsLibraryAdmin() {
             ? "Arabic"
             : "English",
         thumbnail_url: playlist.thumbnail_url ?? "",
+        music_status: playlist.music_status ?? "no_music",
       },
     });
   };
@@ -1584,6 +1665,17 @@ function FcdsLibraryAdmin() {
 
       </div>
 
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <label htmlFor="darb-music-filter" className="text-sm text-amber-50/55">Music status</label>
+        <select id="darb-music-filter" className={field} value={musicFilter} onChange={(e) => setMusicFilter(e.target.value as "all" | MusicStatus)}>
+          <option value="all">All music statuses</option>
+          <option value="no_music">No music</option>
+          <option value="minimal_music">Minimal music</option>
+          <option value="has_music">Has music</option>
+        </select>
+        <span className="text-xs text-amber-50/35">{playlists.filter((item) => musicFilter === "all" || item.music_status === musicFilter).length} items</span>
+      </div>
+
       {isLoading ? (
         <p className="mt-10 text-amber-50/40">
           Loading...
@@ -1595,7 +1687,7 @@ function FcdsLibraryAdmin() {
       ) : (
         <div className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
 
-          {playlists.map((playlist) => {
+          {playlists.filter((item) => musicFilter === "all" || item.music_status === musicFilter).map((playlist) => {
             const course = courses.find(
               (course) =>
                 course.slug === playlist.course_slug,
@@ -1640,6 +1732,9 @@ function FcdsLibraryAdmin() {
 
                     <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
                       {playlist.language}
+                    </span>
+                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/60">
+                      {playlist.music_status === "no_music" ? "No music" : playlist.music_status === "minimal_music" ? "Minimal music" : "Has music"}
                     </span>
 
                   </div>
@@ -1846,16 +1941,17 @@ function FcdsPlaylistForm({
       thumbnail_url:
         draft.thumbnail_url.trim() ||
         null,
+      music_status: draft.music_status,
     };
 
     const result = id
       ? await supabase
           .from("fcds_playlists")
-          .update(row)
+          .update(row as never)
           .eq("id", id)
       : await supabase
           .from("fcds_playlists")
-          .insert(row);
+          .insert(row as never);
 
     setSaving(false);
 
@@ -2000,6 +2096,14 @@ function FcdsPlaylistForm({
           />
         </Label>
 
+        <Label label="Music status">
+          <select className={field} value={draft.music_status} onChange={(e) => update("music_status", e.target.value as MusicStatus)}>
+            <option value="no_music">No music</option>
+            <option value="minimal_music">Minimal music</option>
+            <option value="has_music">Has music</option>
+          </select>
+        </Label>
+
         <Label
           label="Thumbnail URL"
           className="md:col-span-2"
@@ -2122,6 +2226,7 @@ function ContentAdmin() {
       id: string | null;
       draft: Draft;
     } | null>(null);
+  const [musicFilter, setMusicFilter] = useState<"all" | MusicStatus>("all");
 
   const refresh = () => {
     qc.invalidateQueries({
@@ -2211,9 +2316,20 @@ function ContentAdmin() {
         </button>
       </div>
 
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <label className="text-sm text-amber-50/55" htmlFor="general-music-filter">Music status</label>
+        <select id="general-music-filter" className={field} value={musicFilter} onChange={(e) => setMusicFilter(e.target.value as "all" | MusicStatus)}>
+          <option value="all">All music statuses</option>
+          <option value="no_music">No music</option>
+          <option value="minimal_music">Minimal music</option>
+          <option value="has_music">Has music</option>
+        </select>
+        <span className="text-xs text-amber-50/35">{items.filter((item) => musicFilter === "all" || item.music_status === musicFilter).length} items</span>
+      </div>
+
       <ul className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
 
-        {items.map((c) => (
+        {items.filter((item) => musicFilter === "all" || item.music_status === musicFilter).map((c) => (
           <li
             key={c.id}
             className="flex items-center gap-4 py-4"
@@ -2238,6 +2354,7 @@ function ContentAdmin() {
                   c.duration_seconds,
                 )}{" "}
                 · {c.content_type}
+                · {c.music_status === "no_music" ? "No music" : c.music_status === "minimal_music" ? "Minimal music" : "Has music"}
               </p>
             </div>
 
@@ -2740,6 +2857,14 @@ function ContentForm({
           <option value="Arabic">
             Arabic
           </option>
+        </select>
+      </Label>
+
+      <Label label="Music status">
+        <select className={field} value={draft.music_status} onChange={(e) => up("music_status", e.target.value as MusicStatus)}>
+          <option value="no_music">No music</option>
+          <option value="minimal_music">Minimal music</option>
+          <option value="has_music">Has music</option>
         </select>
       </Label>
 

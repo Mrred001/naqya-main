@@ -9,6 +9,7 @@ import { LanguageToggle } from "@/components/site/LanguageToggle";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { ChevronDown, ExternalLink, Video } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ type FcdsPlaylistRow = {
   id: string;
   course_slug: string;
   youtube_url: string;
+  music_status: "no_music" | "minimal_music" | "has_music";
   title: string;
   channel: string | null;
   language: string;
@@ -44,6 +46,13 @@ function CoursePage() {
   const english = language === "en";
   const t = (ar: string, en: string) => (english ? en : ar);
   const { slug } = Route.useParams();
+  const [musicNoticeResource, setMusicNoticeResource] = useState<FcdsPlaylistRow | null>(null);
+
+  const openResource = (resource: FcdsPlaylistRow) => {
+    void recordFcdsOpen(resource.id);
+    window.open(resource.youtube_url, "_blank", "noopener,noreferrer");
+    setMusicNoticeResource(null);
+  };
 
   const {
     data: course,
@@ -120,6 +129,21 @@ function CoursePage() {
 
   return (
     <div className="min-h-[100dvh] fcds-theme bg-background text-foreground">
+      {musicNoticeResource && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setMusicNoticeResource(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="darb-music-notice-title" className="w-full max-w-lg rounded-2xl border border-amber-500/30 bg-card p-6 shadow-2xl">
+            <h2 id="darb-music-notice-title" className="text-xl font-semibold">{t("تنبيه: في أجزاء من الفيديو فيها موسيقى", "Notice: this video contains music in some sections")}</h2>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("تقدر تتجاوز الأجزاء دي، أو تكتم الصوت خلالها وتشغّل الترجمة إذا كانت متوفرة. الترجمة ما مضمونة في كل الفيديوهات.", "You can skip those sections, or mute the audio during them and turn on captions if available. Captions may not be available for every video.")}</p>
+            <p className="mt-3 text-sm font-medium" dir="auto">{musicNoticeResource.title}</p>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">{t("ممكن تستخدم خدمة خارجية لعزل موسيقى الخلفية، لكن النتيجة بتختلف حسب الفيديو. دليل الاستخدام وخيارات الاشتراك:", "An external service can help reduce background music, though results vary by video. See the setup guide and current plans:")}</p>
+            <a href="https://haram-mute.com/ar/" target="_blank" rel="noreferrer" className="mt-2 inline-flex text-sm font-semibold text-primary underline underline-offset-4">HaramMute — {t("طريقة الاستخدام والاشتراك", "how it works and plans")}</a>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button type="button" onClick={() => setMusicNoticeResource(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm">{t("رجوع", "Go back")}</button>
+              <button type="button" onClick={() => openResource(musicNoticeResource)} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">{t("فتح الفيديو", "Open video")}</button>
+            </div>
+          </section>
+        </div>
+      )}
       <main className="mx-auto max-w-7xl px-5 py-16 md:px-8">
         <div className="mb-6 flex justify-center gap-2" dir="ltr">
           <AccountMenu iconOnly />
@@ -189,8 +213,20 @@ function CoursePage() {
                 <article key={playlist.id} className="space-y-3">
                   <a
                     href={playlist.youtube_url}
-                    onClick={() => { void recordFcdsOpen(playlist.id); }}
-                    onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(playlist.id); }}
+                    onClick={(event) => {
+                      if (playlist.music_status === "minimal_music") {
+                        event.preventDefault();
+                        setMusicNoticeResource(playlist);
+                        return;
+                      }
+                      void recordFcdsOpen(playlist.id);
+                    }}
+                    onAuxClick={(event) => {
+                      if (playlist.music_status === "minimal_music") {
+                        event.preventDefault();
+                        setMusicNoticeResource(playlist);
+                      } else if (event.button === 1) void recordFcdsOpen(playlist.id);
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:bg-primary/[0.03] md:flex"
@@ -260,8 +296,20 @@ function CoursePage() {
                   >
                     <a
                       href={video.youtube_url}
-                      onClick={() => { void recordFcdsOpen(video.id); }}
-                      onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(video.id); }}
+                      onClick={(event) => {
+                        if (video.music_status === "minimal_music") {
+                          event.preventDefault();
+                          setMusicNoticeResource(video);
+                          return;
+                        }
+                        void recordFcdsOpen(video.id);
+                      }}
+                      onAuxClick={(event) => {
+                        if (video.music_status === "minimal_music") {
+                          event.preventDefault();
+                          setMusicNoticeResource(video);
+                        } else if (event.button === 1) void recordFcdsOpen(video.id);
+                      }}
                       target="_blank"
                       rel="noreferrer"
                       className="flex min-w-0 flex-1 items-center gap-3"
