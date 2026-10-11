@@ -165,6 +165,9 @@ function Home() {
   const [suggestNote, setSuggestNote] =
     useState("");
 
+  const [suggestMusicStatus, setSuggestMusicStatus] =
+    useState<"no_music" | "minimal_music">("no_music");
+
   const [fetching, setFetching] =
     useState(false);
 
@@ -187,6 +190,7 @@ function Home() {
     setSuggestLanguage("English");
     setSuggestType(null);
     setSuggestNote("");
+    setSuggestMusicStatus("no_music");
     setFetching(false);
     setSubmitting(false);
     setSubmitted(false);
@@ -332,6 +336,8 @@ function Home() {
         content_type:
           parsed.kind,
 
+        music_status: suggestMusicStatus,
+
         language:
           suggestLanguage,
 
@@ -340,7 +346,7 @@ function Home() {
           null,
 
         status: "pending",
-      });
+      } as never);
 
     setSubmitting(false);
 
@@ -743,6 +749,20 @@ function Home() {
 
                   </div>
                 )}
+
+                <label className="block">
+                  <span className="mb-2 block text-sm text-muted-foreground">
+                    {t("حالة الموسيقى", "Music status")}
+                  </span>
+                  <select
+                    value={suggestMusicStatus}
+                    onChange={(e) => setSuggestMusicStatus(e.target.value as "no_music" | "minimal_music")}
+                    className="w-full rounded-xl border bg-background px-4 py-3 outline-none transition-colors focus:border-primary/50"
+                  >
+                    <option value="no_music">{t("بدون موسيقى", "No music")}</option>
+                    <option value="minimal_music">{t("موسيقى في أجزاء محدودة", "Minimal music")}</option>
+                  </select>
+                </label>
 
                 {/* Note */}
                 <label className="block">

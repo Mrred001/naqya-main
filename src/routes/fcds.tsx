@@ -60,6 +60,7 @@ function FCDS() {
   const [suggestTitle, setSuggestTitle] = useState("");
   const [suggestChannel, setSuggestChannel] = useState("");
   const [suggestNote, setSuggestNote] = useState("");
+  const [suggestMusicStatus, setSuggestMusicStatus] = useState<"no_music" | "minimal_music">("no_music");
 
   const [fetching, setFetching] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -115,6 +116,7 @@ function FCDS() {
     setSuggestTitle("");
     setSuggestChannel("");
     setSuggestNote("");
+    setSuggestMusicStatus("no_music");
     setFetching(false);
     setSubmitting(false);
     setSubmitted(false);
@@ -227,9 +229,10 @@ function FCDS() {
       youtube_url: suggestUrl.trim(),
       title: suggestTitle.trim(),
       channel: suggestChannel.trim() || null,
+      music_status: suggestMusicStatus,
       note: suggestNote.trim() || null,
       status: "pending",
-    });
+    } as never);
 
     setSubmitting(false);
 
@@ -585,6 +588,18 @@ function FCDS() {
                     dir="auto"
                     className="min-w-0 w-full max-w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/50"
                   />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-sm text-muted-foreground">{t("حالة الموسيقى", "Music status")}</span>
+                  <select
+                    value={suggestMusicStatus}
+                    onChange={(e) => setSuggestMusicStatus(e.target.value as "no_music" | "minimal_music")}
+                    className="min-w-0 w-full rounded-xl border border-border bg-card px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/50"
+                  >
+                    <option value="no_music">{t("بدون موسيقى", "No music")}</option>
+                    <option value="minimal_music">{t("موسيقى في أجزاء محدودة", "Minimal music")}</option>
+                  </select>
                 </label>
 
                 <label className="block">

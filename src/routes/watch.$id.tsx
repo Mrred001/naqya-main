@@ -1,10 +1,12 @@
 import { SaveButton } from "@/components/account/SaveButton";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { contentQuery, embedFor, formatDuration } from "@/lib/content";
 import { ContentCard, Pill } from "@/components/site/ContentCard";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
+import { HaramMuteRecommendation } from "@/components/site/HaramMuteRecommendation";
 
 export const Route = createFileRoute("/watch/$id")({
   loader: async ({ context, params }) => {
@@ -54,6 +56,7 @@ function WatchNotFound() {
 }
 
 function Watch() {
+  const [musicNoticeAccepted, setMusicNoticeAccepted] = useState(false);
   const { language } = useSitePreferences();
   const english = language === "en";
   const t = (ar: string, en: string) => (english ? en : ar);
@@ -88,15 +91,27 @@ function Watch() {
       >
         <ArrowRight className="h-4 w-4" /> {t("العودة إلى المكتبة", "Back to library")}
       </Link>
-      <div className="mt-4 aspect-video overflow-hidden bg-card md:rounded-2xl md:border">
-        <iframe
-          src={embedFor(item)}
-          title={item.title}
-          className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
+      {item.music_status === "minimal_music" && !musicNoticeAccepted ? (
+        <section className="mx-5 mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 md:mx-0 md:p-7" aria-labelledby="music-notice-title">
+          <h2 id="music-notice-title" className="text-lg font-semibold">{t("تنبيه: في أجزاء من الفيديو فيها موسيقى", "Notice: this video contains music in some sections")}</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+            {t("تقدر تتجاوز الأجزاء دي، أو تكتم الصوت خلالها وتشغّل الترجمة إذا كانت متوفرة. الترجمة ما مضمونة في كل الفيديوهات.", "You can skip those sections, or mute the audio during them and turn on captions if available. Captions may not be available for every video.")}
+          </p>
+          <button type="button" onClick={() => setMusicNoticeAccepted(true)} className="mt-5 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">
+            {t("متابعة بعد قراءة التنبيه", "Continue after reading")}
+          </button>
+        </section>
+      ) : (
+        <div className="mt-4 aspect-video overflow-hidden bg-card md:rounded-2xl md:border">
+          <iframe
+            src={item.music_status === "minimal_music" ? `${embedFor(item)}&cc_load_policy=1` : embedFor(item)}
+            title={item.title}
+            className="h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      )}
 
       <div className="px-5 md:px-0">
         <h1 dir="auto" className="mt-6 text-3xl font-bold leading-tight md:text-4xl">
@@ -133,6 +148,8 @@ function Watch() {
             ))}
           </div>
         )}
+
+        {item.music_status === "minimal_music" && musicNoticeAccepted && <HaramMuteRecommendation />}
 
         {item.recommendation && (
           <section className="mt-8 rounded-2xl border border-primary/20 bg-primary-soft p-6 md:p-8">
