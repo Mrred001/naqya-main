@@ -160,6 +160,19 @@ function AdminPage() {
   );
 }
 
+function requestMusicReview(youtubeUrl: string): { music_status: MusicStatus; music_skip_ranges: string | null } | null {
+  const choice = window.prompt("Review audio first. Enter 1 for No Music, or 2 for Minimal Music (skippable intro/outro). Cancel to keep the suggestion pending.");
+  if (choice !== "1" && choice !== "2") return null;
+  const status: MusicStatus = choice === "1" ? "no_music" : "minimal_music";
+  const isVideo = parseYouTube(youtubeUrl)?.kind === "video";
+  const ranges = status === "minimal_music" && isVideo
+    ? window.prompt("Enter every music segment as MM:SS-MM:SS, one per line. Cancel to keep pending.") : "";
+  if (ranges === null) return null;
+  const error = validateMusicSelection(status, ranges ?? "", isVideo);
+  if (error) { toast.error(error); return null; }
+  return { music_status: status, music_skip_ranges: status === "minimal_music" ? (ranges?.trim() || null) : null };
+}
+
 function SignIn() {
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
@@ -748,6 +761,8 @@ function SuggestionsAdmin() {
   const approveFcds = async (
     suggestion: Suggestion,
   ) => {
+    const musicReview = requestMusicReview(suggestion.youtube_url);
+    if (!musicReview) return;
     setBusyId(suggestion.id);
 
     const parsed = parseYouTube(
@@ -782,6 +797,7 @@ function SuggestionsAdmin() {
         language:
           languages[suggestion.id] ?? "Arabic",
         thumbnail_url: thumbnailUrl,
+        ...musicReview,
       });
 
     if (error) {
@@ -836,6 +852,8 @@ function SuggestionsAdmin() {
   const approveGeneral = async (
     suggestion: Suggestion,
   ) => {
+    const musicReview = requestMusicReview(suggestion.youtube_url);
+    if (!musicReview) return;
     setBusyId(suggestion.id);
 
     const parsed = parseYouTube(
@@ -901,7 +919,7 @@ function SuggestionsAdmin() {
           languages[suggestion.id] ??
           "Arabic",
 
-        music_status: "no_music",
+        ...musicReview,
 
         recommendation:
           suggestion.note || null,
@@ -968,7 +986,9 @@ function SuggestionsAdmin() {
 };
 
 const approveGeneralSuggestion = async (suggestion: any) => {
-  setBusyId(suggestion.id);
+  const musicReview = requestMusicReview(suggestion.youtube_url);
+    if (!musicReview) return;
+    setBusyId(suggestion.id);
 
   const { error } = await supabase
     .from("content")
@@ -982,7 +1002,7 @@ const approveGeneralSuggestion = async (suggestion: any) => {
       content_type: suggestion.content_type,
       category_id: null,
       language: suggestion.language || "English",
-      music_status: "no_music",
+      ...musicReview,
       recommendation: suggestion.note || null,
       featured: false,
       date_added: new Date().toISOString(),
