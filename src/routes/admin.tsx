@@ -1,4 +1,5 @@
 import { ReportsAdmin } from "@/components/admin/ReportsAdmin";
+import { useMusicReview } from "@/components/admin/useMusicReview";
 import { MusicFields } from "@/components/admin/MusicFields";
 import { validateMusicSelection } from "@/lib/music";
 import {
@@ -149,36 +150,6 @@ function AdminPage() {
       )}
     </div>
   );
-}
-
-function requestMusicReview(youtubeUrl: string): {
-  music_status: MusicStatus;
-  music_skip_ranges: string | null;
-  music_reviewed_at: string;
-} | null {
-  const choice = window.prompt(
-    "Review audio first. Enter 1 for No Music, or 2 for Minimal Music (skippable intro/outro). Cancel to keep the suggestion pending.",
-  );
-  if (choice !== "1" && choice !== "2") return null;
-  const status: MusicStatus = choice === "1" ? "no_music" : "minimal_music";
-  const isVideo = parseYouTube(youtubeUrl)?.kind === "video";
-  const ranges =
-    status === "minimal_music" && isVideo
-      ? window.prompt(
-          "Enter every music segment as MM:SS-MM:SS, one per line. Cancel to keep pending.",
-        )
-      : "";
-  if (ranges === null) return null;
-  const error = validateMusicSelection(status, ranges ?? "", isVideo);
-  if (error) {
-    toast.error(error);
-    return null;
-  }
-  return {
-    music_reviewed_at: new Date().toISOString(),
-    music_status: status,
-    music_skip_ranges: status === "minimal_music" ? ranges?.trim() || null : null,
-  };
 }
 
 function SignIn() {
@@ -641,6 +612,7 @@ async function addSubmitterUsernames<T extends SuggestionOwner>(rows: T[]) {
 }
 
 function SuggestionsAdmin() {
+  const { requestMusicReview, musicReviewDialog } = useMusicReview();
   const { data: generalSuggestions = [] } = useQuery({
     queryKey: ["general-suggestions"],
     queryFn: async () => {
@@ -700,7 +672,7 @@ function SuggestionsAdmin() {
   };
 
   const approveFcds = async (suggestion: Suggestion) => {
-    const musicReview = requestMusicReview(suggestion.youtube_url);
+    const musicReview = await requestMusicReview(suggestion.youtube_url, suggestion.title);
     if (!musicReview) return;
     setBusyId(suggestion.id);
 
@@ -784,7 +756,7 @@ function SuggestionsAdmin() {
   };
 
   const approveGeneral = async (suggestion: Suggestion) => {
-    const musicReview = requestMusicReview(suggestion.youtube_url);
+    const musicReview = await requestMusicReview(suggestion.youtube_url, suggestion.title);
     if (!musicReview) return;
     setBusyId(suggestion.id);
 
@@ -895,7 +867,7 @@ function SuggestionsAdmin() {
   };
 
   const approveGeneralSuggestion = async (suggestion: GeneralSuggestion) => {
-    const musicReview = requestMusicReview(suggestion.youtube_url);
+    const musicReview = await requestMusicReview(suggestion.youtube_url, suggestion.title);
     if (!musicReview) return;
     setBusyId(suggestion.id);
 
@@ -961,6 +933,7 @@ function SuggestionsAdmin() {
   };
   return (
     <div>
+      {musicReviewDialog}
       <p className="text-xs tracking-[0.2em] text-amber-50/30">INBOX</p>
 
       <div className="mt-2 flex items-end justify-between gap-4">
