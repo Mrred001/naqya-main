@@ -39,17 +39,12 @@ export async function recordDailyVisit(): Promise<void> {
 
   try {
     // Write before awaiting the network so rapid route changes can't double count.
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ date: today, key: visitorKey }),
-    );
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: today, key: visitorKey }));
   } catch {
     return;
   }
 
-  const { error } = await supabase
-    .from("site_visits")
-    .insert({ visitor_key: visitorKey } as never);
+  const { error } = await supabase.from("site_visits").insert({ visitor_key: visitorKey } as never);
 
   if (error && error.code !== "23505") {
     try {

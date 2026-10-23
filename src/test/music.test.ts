@@ -3,8 +3,12 @@ import { parseMusicSkipRanges, validateMusicSelection } from "@/lib/music";
 
 describe("curated music classification", () => {
   it("parses one or multiple timestamp ranges", () => {
-    expect(parseMusicSkipRanges("00:00-00:18\n12:40-13:05")?.map(({ start, end }) => [start, end]))
-      .toEqual([[0, 18], [760, 785]]);
+    expect(
+      parseMusicSkipRanges("00:00-00:18\n12:40-13:05")?.map(({ start, end }) => [start, end]),
+    ).toEqual([
+      [0, 18],
+      [760, 785],
+    ]);
   });
   it("rejects invalid timestamps or reversed ranges", () => {
     expect(parseMusicSkipRanges("00:40-00:20")).toBeNull();

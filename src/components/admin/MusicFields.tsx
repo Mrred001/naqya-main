@@ -35,7 +35,9 @@ export function MusicFields({
           <option value="">Choose after reviewing the audio</option>
           <option value="no_music">No Music — no instrumental music detected</option>
           <option value="minimal_music">Minimal Music — short, skippable parts only</option>
-          {status === "has_music" && <option value="has_music">Has Music (legacy classification — review required)</option>}
+          {status === "has_music" && (
+            <option value="has_music">Has Music (legacy classification — review required)</option>
+          )}
         </select>
       </label>
       {status === "minimal_music" && (
@@ -48,7 +50,9 @@ export function MusicFields({
           </p>
           {kind === "video" && (
             <label className="block space-y-1.5">
-              <span className="text-xs uppercase tracking-[0.16em] text-amber-100/60">Music timestamps *</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-amber-100/60">
+                Music timestamps *
+              </span>
               <textarea
                 className={field}
                 rows={3}
@@ -58,7 +62,8 @@ export function MusicFields({
                 aria-describedby="music-ranges-help"
               />
               <span id="music-ranges-help" className="block text-xs text-amber-100/50">
-                One range per line, MM:SS-MM:SS. These are curator-confirmed timings, not automatic detection.
+                One range per line, MM:SS-MM:SS. These are curator-confirmed timings, not automatic
+                detection.
               </span>
             </label>
           )}

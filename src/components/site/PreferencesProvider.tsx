@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccount } from "@/components/account/AccountProvider";
 
@@ -46,35 +39,36 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     storedValue("naqya-theme", ["dark", "light"], "dark"),
   );
 
-  const persist = useCallback(async (nextLanguage: SiteLanguage, nextTheme: SiteTheme) => {
-    try {
-      localStorage.setItem("naqya-language", nextLanguage);
-      localStorage.setItem("naqya-theme", nextTheme);
-    } catch {
-      // Keep the current session usable when browser storage is unavailable.
-    }
-    if (user) {
+  const persist = useCallback(
+    async (nextLanguage: SiteLanguage, nextTheme: SiteTheme) => {
       try {
-        const { error } = await supabase.auth.updateUser({
-          data: { naqya_language: nextLanguage, naqya_theme: nextTheme },
-        });
-        if (error) console.warn("Could not save account display preferences.", error);
-      } catch (error) {
-        console.warn("Could not save account display preferences.", error);
+        localStorage.setItem("naqya-language", nextLanguage);
+        localStorage.setItem("naqya-theme", nextTheme);
+      } catch {
+        // Keep the current session usable when browser storage is unavailable.
       }
-    }
-  }, [user]);
+      if (user) {
+        try {
+          const { error } = await supabase.auth.updateUser({
+            data: { naqya_language: nextLanguage, naqya_theme: nextTheme },
+          });
+          if (error) console.warn("Could not save account display preferences.", error);
+        } catch (error) {
+          console.warn("Could not save account display preferences.", error);
+        }
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     const metadata = user?.user_metadata ?? {};
     const savedLanguage = metadata["naqya_language"];
     const savedTheme = metadata["naqya_theme"];
-    const nextLanguage: SiteLanguage = savedLanguage === "en" || savedLanguage === "ar"
-      ? savedLanguage
-      : language;
-    const nextTheme: SiteTheme = savedTheme === "light" || savedTheme === "dark"
-      ? savedTheme
-      : theme;
+    const nextLanguage: SiteLanguage =
+      savedLanguage === "en" || savedLanguage === "ar" ? savedLanguage : language;
+    const nextTheme: SiteTheme =
+      savedTheme === "light" || savedTheme === "dark" ? savedTheme : theme;
     setLanguage(nextLanguage);
     setTheme(nextTheme);
     try {
@@ -89,8 +83,8 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     if (user && (savedLanguage == null || savedTheme == null)) {
       void persist(nextLanguage, nextTheme);
     }
-  // Account changes are the point at which preferences are restored.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Account changes are the point at which preferences are restored.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   useEffect(() => {

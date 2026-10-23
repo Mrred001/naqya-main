@@ -50,17 +50,29 @@ describe("Weekly selections", () => {
 });
 it("persists the chosen theme and restores the control after remounting", () => {
   document.documentElement.classList.add("dark");
-  const view = render(<PreferencesProvider><ThemeToggle /></PreferencesProvider>);
+  const view = render(
+    <PreferencesProvider>
+      <ThemeToggle />
+    </PreferencesProvider>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "تفعيل الوضع الفاتح" }));
   expect(document.documentElement).not.toHaveClass("dark");
   expect(localStorage.getItem("naqya-theme")).toBe("light");
   view.unmount();
-  render(<PreferencesProvider><ThemeToggle /></PreferencesProvider>);
+  render(
+    <PreferencesProvider>
+      <ThemeToggle />
+    </PreferencesProvider>,
+  );
   expect(screen.getByRole("button", { name: "تفعيل الوضع الداكن" })).toBeVisible();
 });
 
 it("persists language and updates document direction", () => {
-  render(<PreferencesProvider><LanguageToggle /></PreferencesProvider>);
+  render(
+    <PreferencesProvider>
+      <LanguageToggle />
+    </PreferencesProvider>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Switch to English" }));
   expect(localStorage.getItem("naqya-language")).toBe("en");
   expect(document.documentElement).toHaveAttribute("lang", "en");

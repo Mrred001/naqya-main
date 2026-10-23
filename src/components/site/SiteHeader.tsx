@@ -75,7 +75,10 @@ export function SiteHeader() {
             aria-label={english ? "Home" : "الرئيسية"}
             title={english ? "Home" : "الرئيسية"}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-primary"
-            activeProps={{ className: "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary bg-primary/10 text-primary" }}
+            activeProps={{
+              className:
+                "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary bg-primary/10 text-primary",
+            }}
           >
             <Home size={18} aria-hidden="true" />
           </Link>
@@ -84,7 +87,10 @@ export function SiteHeader() {
             aria-label={english ? "Explore" : "استكشف"}
             title={english ? "Explore" : "استكشف"}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-primary"
-            activeProps={{ className: "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary bg-primary/10 text-primary" }}
+            activeProps={{
+              className:
+                "grid h-10 w-10 shrink-0 place-items-center rounded-full border border-primary bg-primary/10 text-primary",
+            }}
           >
             <Compass size={18} aria-hidden="true" />
           </Link>

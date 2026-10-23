@@ -38,7 +38,9 @@ const courses = [
 
 it("searches courses by code and selects the matching semester entry", async () => {
   const onChange = vi.fn();
-  const view = render(<CoursePicker courses={courses} value="" disabled={false} onChange={onChange} />);
+  const view = render(
+    <CoursePicker courses={courses} value="" disabled={false} onChange={onChange} />,
+  );
 
   fireEvent.click(screen.getByRole("combobox", { name: "Choose a course" }));
   fireEvent.change(screen.getByPlaceholderText("Search by course name, code, or semester…"), {
@@ -51,6 +53,13 @@ it("searches courses by code and selects the matching semester entry", async () 
   fireEvent.click(option);
 
   await waitFor(() => expect(onChange).toHaveBeenCalledWith("probability-statistics-ii"));
-  view.rerender(<CoursePicker courses={courses} value="probability-statistics-ii" disabled={false} onChange={onChange} />);
+  view.rerender(
+    <CoursePicker
+      courses={courses}
+      value="probability-statistics-ii"
+      disabled={false}
+      onChange={onChange}
+    />,
+  );
   expect(screen.getByRole("combobox")).toHaveTextContent("STAT 13 · Semester 3");
 });

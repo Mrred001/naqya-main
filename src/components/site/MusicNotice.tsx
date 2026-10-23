@@ -12,9 +12,10 @@ export function MusicNotice({
   skipRanges?: string | null | undefined;
 }) {
   const { language } = useSitePreferences();
-  if (!status || status === "no_music") return null;
+  if (status === "no_music") return null;
   const english = language === "en";
   const minimal = status === "minimal_music";
+  const unreviewed = !status;
   const segments = parseMusicSkipRanges(skipRanges ?? "");
   return (
     <aside
@@ -26,22 +27,30 @@ export function MusicNotice({
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
         <div>
           <p className="font-semibold">
-            {minimal
+            {unreviewed
               ? english
-                ? "Music notice"
-                : "تنبيه: موسيقى محدودة"
-              : english
-                ? "Music present"
-                : "تنبيه: يوجد موسيقى في المحتوى"}
+                ? "Audio not reviewed"
+                : "الصوت لم تتم مراجعته بعد"
+              : minimal
+                ? english
+                  ? "Music notice"
+                  : "تنبيه: موسيقى محدودة"
+                : english
+                  ? "Music present"
+                  : "تنبيه: يوجد موسيقى في المحتوى"}
           </p>
           <p className="mt-1 text-muted-foreground">
-            {minimal
+            {unreviewed
               ? english
-                ? "This resource contains music in short sections only. Please skip the parts containing music."
-                : "المحتوى ده فيه موسيقى في أجزاء محدودة. بنوصيك تتخطى الأجزاء الفيها موسيقى."
-              : english
-                ? "This resource was previously marked as containing music. Please review before watching."
-                : "المصدر ده كان مصنّف سابقاً إنو فيه موسيقى. راجعه قبل المشاهدة."}
+                ? "This resource has not been checked for music yet. Please review before watching."
+                : "المصدر ده لسه ما اتراجع من ناحية الموسيقى. اتأكد من الصوت قبل المشاهدة."
+              : minimal
+                ? english
+                  ? "This resource contains music in short sections only. Please skip the parts containing music."
+                  : "المحتوى ده فيه موسيقى في أجزاء محدودة. بنوصيك تتخطى الأجزاء الفيها موسيقى."
+                : english
+                  ? "This resource was previously marked as containing music. Please review before watching."
+                  : "المصدر ده كان مصنّف سابقاً إنو فيه موسيقى. راجعه قبل المشاهدة."}
           </p>
           {minimal && segments && segments.length > 0 && (
             <p className="mt-2 font-medium">

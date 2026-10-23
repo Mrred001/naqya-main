@@ -8,7 +8,7 @@ export type Bookmark = {
   created_at: string;
 };
 export type BookmarkTarget = { kind: "general" | "fcds"; id: string };
-export const bookmarkColumn = (kind: BookmarkTarget["kind"]) =>
+export const bookmarkColumn = (kind: BookmarkTarget["kind"]): "content_id" | "fcds_playlist_id" =>
   kind === "general" ? "content_id" : "fcds_playlist_id";
 export const bookmarksQuery = (userId: string | undefined) =>
   queryOptions({
