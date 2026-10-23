@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Clock3, TrendingUp, ArrowUpRight, Video, ListVideo } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 import { SaveButton } from "@/components/account/SaveButton";
 import { parseYouTube } from "@/lib/content";
-import { popularFcdsQuery, recentFcdsQuery, recordFcdsOpen } from "@/lib/fcds-discovery";
+import { popularFcdsQuery, recentFcdsQuery } from "@/lib/fcds-discovery";
 
 export function FcdsDiscovery() {
   const { language } = useSitePreferences();
@@ -45,13 +46,11 @@ export function FcdsDiscovery() {
               const parsed = parseYouTube(resource.youtube_url);
               const thumbnail = resource.thumbnail_url || (parsed?.kind === "video" ? `https://i.ytimg.com/vi/${parsed.id}/hqdefault.jpg` : null);
               return <article key={resource.id} className="rounded-xl border border-border p-3">
-                <a href={resource.youtube_url} target="_blank" rel="noopener noreferrer"
-                  onClick={() => { void recordFcdsOpen(resource.id); }}
-                  onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(resource.id); }}
+                <Link to="/fcds/course/$slug" params={{ slug: resource.course_slug }}
                   className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                   <ResourceThumbnail url={thumbnail} />
-                  <span className="min-w-0 flex-1"><span dir="auto" className="line-clamp-2 block text-sm font-semibold leading-6">{resource.title}</span><span dir="auto" className="mt-1 block truncate text-xs text-muted-foreground">{resource.channel || "YouTube"}</span><span className="mt-2 inline-flex items-center gap-1 text-xs text-primary"><Video className="h-3 w-3" />{parsed?.kind === "playlist" ? t("قائمة تشغيل", "Playlist") : t("شاهد الفيديو", "Watch video")}</span></span>
-                </a>
+                  <span className="min-w-0 flex-1"><span dir="auto" className="line-clamp-2 block text-sm font-semibold leading-6">{resource.title}</span><span dir="auto" className="mt-1 block truncate text-xs text-muted-foreground">{resource.channel || "YouTube"}</span><span className="mt-2 inline-flex items-center gap-1 text-xs text-primary"><Video className="h-3 w-3" />{parsed?.kind === "playlist" ? t("عرض قائمة التشغيل", "View playlist") : t("عرض الفيديو", "View video")}</span></span>
+                </Link>
                 <div className="mt-3"><SaveButton kind="fcds" id={resource.id} /></div>
               </article>;
             })}</div>}
