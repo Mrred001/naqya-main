@@ -305,7 +305,7 @@ function Home() {
             </h1>
 
             <p className="mt-6 max-w-xl text-lg text-muted-foreground md:text-xl">
-              {t("محتوى منتقى بعناية، بدون موسيقى.", "Carefully selected content, without music.")}
+              {t("محتوى منتقى بعناية، مع توضيح حالة الموسيقى.", "Carefully selected content, with music review notices.")}
             </p>
           </div>
 
