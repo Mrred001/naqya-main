@@ -1,4 +1,6 @@
 import { ReportsAdmin } from "@/components/admin/ReportsAdmin";
+import { MusicFields } from "@/components/admin/MusicFields";
+import { validateMusicSelection } from "@/lib/music";
 import {
   Pencil,
   Star,
@@ -269,6 +271,7 @@ type AdminTab =
   | "general"
   | "fcds"
   | "courses"
+  | "playlist-per-courses"
   | "suggestions"
   | "categories"
   | "reports";
@@ -331,6 +334,7 @@ function Dashboard({ email }: { email: string }) {
     label: "Courses",
     icon: BookOpen,
   },
+    { id: "playlist-per-courses" as const, label: "Playlist per Courses", icon: GraduationCap },
     {
       id: "suggestions" as const,
       label: "Pending Suggestions",
@@ -442,6 +446,7 @@ function Dashboard({ email }: { email: string }) {
 {tab === "courses" && (
   <CoursesAdmin />
 )}
+{tab === "playlist-per-courses" && <CourseCoverageAdmin onOpenLibrary={() => setTab("fcds")} />}
 
 {tab === "suggestions" && (
   <SuggestionsAdmin />
@@ -1354,6 +1359,8 @@ type FcdsPlaylistDraft = {
   channel: string;
   language: "Arabic" | "English";
   thumbnail_url: string;
+  music_status: MusicStatus | "";
+  music_skip_ranges: string;
 };
 
 export function CoursePicker({
@@ -1439,6 +1446,8 @@ const emptyFcdsDraft = (): FcdsPlaylistDraft => ({
   channel: "",
   language: "Arabic",
   thumbnail_url: "",
+  music_status: "",
+  music_skip_ranges: "",
 });
 
 function FcdsLibraryAdmin() {
@@ -1506,6 +1515,8 @@ function FcdsLibraryAdmin() {
             ? "Arabic"
             : "English",
         thumbnail_url: playlist.thumbnail_url ?? "",
+        music_status: playlist.music_status ?? "",
+        music_skip_ranges: playlist.music_skip_ranges ?? "",
       },
     });
   };
@@ -1819,11 +1830,11 @@ function FcdsPlaylistForm({
     }
 
     if (!draft.title.trim()) {
-      toast.error(
-        "Source title is required.",
-      );
+      toast.error("Source title is required.");
       return;
     }
+    const musicError = validateMusicSelection(draft.music_status, draft.music_skip_ranges, parsed.kind === "video");
+    if (musicError) { toast.error(musicError); return; }
 
     setSaving(true);
 
@@ -1846,6 +1857,8 @@ function FcdsPlaylistForm({
       thumbnail_url:
         draft.thumbnail_url.trim() ||
         null,
+      music_status: draft.music_status || null,
+      music_skip_ranges: draft.music_status === "minimal_music" ? draft.music_skip_ranges.trim() || null : null,
     };
 
     const result = id
@@ -1950,6 +1963,13 @@ function FcdsPlaylistForm({
           )}
         </Label>
 
+        <MusicFields
+          status={draft.music_status}
+          ranges={draft.music_skip_ranges}
+          kind={parseYouTube(draft.youtube_url)?.kind ?? "playlist"}
+          onStatusChange={(value) => update("music_status", value)}
+          onRangesChange={(value) => update("music_skip_ranges", value)}
+        />
         <Label label="Language">
           <select
             className={field}
@@ -2061,7 +2081,8 @@ type Draft = {
   category_id: string;
   tags: string;
   language: string;
-  music_status: MusicStatus;
+  music_status: MusicStatus | "";
+  music_skip_ranges: string;
   recommendation: string;
   featured: boolean;
   date_added: string;
@@ -2077,7 +2098,8 @@ const emptyDraft = (): Draft => ({
   category_id: "",
   tags: "",
   language: "Arabic",
-  music_status: "no_music",
+  music_status: "",
+  music_skip_ranges: "",
   recommendation: "",
   featured: false,
   date_added: new Date()
@@ -2102,6 +2124,7 @@ const toDraft = (
   tags: c.tags.join(", "),
   language: c.language,
   music_status: c.music_status,
+  music_skip_ranges: c.music_skip_ranges ?? "",
   recommendation:
     c.recommendation ?? "",
   featured: c.featured,
@@ -2423,6 +2446,8 @@ function ContentForm({
       return;
     }
 
+    const musicError = validateMusicSelection(d.music_status, d.music_skip_ranges, parsed.kind === "video");
+    if (musicError) { toast.error(musicError); return; }
     setBusy(true);
 
     const row = {
@@ -2457,7 +2482,8 @@ function ContentForm({
         "English",
 
       music_status:
-        d.music_status,
+        d.music_status as MusicStatus,
+      music_skip_ranges: d.music_status === "minimal_music" ? d.music_skip_ranges.trim() || null : null,
 
       recommendation:
         d.recommendation.trim() ||
@@ -2743,6 +2769,13 @@ function ContentForm({
         </select>
       </Label>
 
+      <MusicFields
+        status={d.music_status}
+        ranges={d.music_skip_ranges}
+        kind={d.content_type}
+        onStatusChange={(value) => up("music_status", value)}
+        onRangesChange={(value) => up("music_skip_ranges", value)}
+      />
       <Label
         label="Why I recommend this"
         className="md:col-span-2"
@@ -3497,5 +3530,87 @@ function CategoryAdmin() {
 
       </ul>
     </div>
+  );
+}
+
+/* ------------------------------------------------ */
+/* Darb course resource coverage — live DB counts */
+/* ------------------------------------------------ */
+function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
+  const [search, setSearch] = useState("");
+  const [year, setYear] = useState("all");
+  const [specialization, setSpecialization] = useState("all");
+  const [visibility, setVisibility] = useState("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const { data, isPending, error } = useQuery({
+    queryKey: ["admin-course-coverage"],
+    queryFn: async () => {
+      const [coursesResult, resourceResult] = await Promise.all([
+        supabase.from("fcds_courses").select("*").order("semester", { ascending: true }),
+        supabase.from("fcds_playlists").select("id,course_slug,title,youtube_url"),
+      ]);
+      if (coursesResult.error) throw coursesResult.error;
+      if (resourceResult.error) throw resourceResult.error;
+      return { courses: (coursesResult.data ?? []) as FcdsCourseRow[], resources: resourceResult.data ?? [] };
+    },
+  });
+  const courses = data?.courses ?? [];
+  const resources = data?.resources ?? [];
+  const byCourse = new Map<string, typeof resources>();
+  resources.forEach((resource) => byCourse.set(resource.course_slug, [...(byCourse.get(resource.course_slug) ?? []), resource]));
+  const covered = courses.filter((c) => (byCourse.get(c.slug)?.length ?? 0) > 0).length;
+  const total = courses.length;
+  const filtered = courses.filter((c) => {
+    const n = byCourse.get(c.slug)?.length ?? 0;
+    return (year === "all" || c.year === year)
+      && (specialization === "all" || normalizeFcdsSpecialization(c.specialization) === specialization)
+      && (visibility === "all" || (visibility === "empty" ? n === 0 : n > 0))
+      && `${c.name} ${c.code}`.toLowerCase().includes(search.toLowerCase());
+  });
+  return (
+    <section className="space-y-6">
+      <div><p className="text-xs tracking-[0.2em] text-amber-50/35">DARB / COVERAGE</p>
+        <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Playlist per Courses</h2>
+        <p className="mt-2 text-sm text-amber-50/50">See exactly which courses have video or playlist resources.</p>
+      </div>
+      {error && <p role="alert" className="text-red-300">Couldn't load course coverage. {error.message}</p>}
+      {isPending ? <p className="text-amber-50/55">Loading coverage…</p> : <>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            ["Covered courses", `${covered} / ${total}`],
+            ["Uncovered courses", String(total - covered)],
+            ["All resources", String(resources.length)],
+            ["Coverage", total ? `${Math.round(covered / total * 100)}%` : "0%"],
+          ].map(([label, value]) => <div key={label} className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.03] p-4"><p className="text-2xl font-bold text-amber-200">{value}</p><p className="mt-1 text-xs text-amber-50/55">{label}</p></div>)}
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-amber-100/10"><div className="h-full rounded-full bg-amber-300" style={{ width: `${total ? covered / total * 100 : 0}%` }} /></div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <input className={field} placeholder="Search course or code" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search courses" />
+          <select className={field} value={year} onChange={e => setYear(e.target.value)} aria-label="Year"><option value="all">All years</option>{["السنة الأولى","السنة الثانية","السنة الثالثة","السنة الرابعة"].map(y => <option key={y} value={y}>{courseYearLabel(y)}</option>)}</select>
+          <select className={field} value={specialization} onChange={e => setSpecialization(e.target.value)} aria-label="Specialization"><option value="all">All specializations</option>{fcdsSpecializations.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
+          <select className={field} value={visibility} onChange={e => setVisibility(e.target.value)} aria-label="Coverage"><option value="all">All courses</option><option value="filled">With resources</option><option value="empty">Without resources</option></select>
+        </div>
+        <p className="text-xs text-amber-50/40">Showing {filtered.length} of {total} courses. Playlist and video counts are separate.</p>
+        <div className="divide-y divide-amber-100/10 rounded-2xl border border-amber-100/10">
+          {filtered.map(c => {
+            const items = byCourse.get(c.slug) ?? [];
+            const playlistCount = items.filter(i => parseYouTube(i.youtube_url)?.kind === "playlist").length;
+            const videoCount = items.length - playlistCount;
+            return <div key={c.id} className="p-4">
+              <button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setExpanded(expanded === c.slug ? null : c.slug)} aria-expanded={expanded === c.slug}>
+                <span className="min-w-0"><span className="block font-medium">{c.name}</span><span className="block text-xs text-amber-50/45">{c.code} · {courseYearLabel(c.year)} · Semester {c.semester ?? "—"}</span></span>
+                <span className="shrink-0 text-right text-xs text-amber-100/75">{playlistCount} playlists · {videoCount} videos</span>
+                <ChevronDown className={cn("h-4 w-4 shrink-0 text-amber-50/50", expanded === c.slug && "rotate-180")} />
+              </button>
+              {expanded === c.slug && <div className="mt-4 space-y-2 border-t border-amber-100/10 pt-4">
+                {items.length ? items.map(i => <a key={i.id} href={i.youtube_url} target="_blank" rel="noreferrer" className="block truncate text-sm text-amber-200 hover:underline">{i.title} ↗</a>) : <p className="text-sm text-amber-50/50">No resources for this course yet.</p>}
+                <button type="button" className={ghost} onClick={onOpenLibrary}>Manage in FCDS Library</button>
+              </div>}
+            </div>;
+          })}
+          {!filtered.length && <p className="p-5 text-sm text-amber-50/50">No matching courses.</p>}
+        </div>
+      </>}
+    </section>
   );
 }
