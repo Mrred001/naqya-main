@@ -143,27 +143,27 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AccountProvider>
         <PreferencesProvider>
-        <div
-          className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}
-        >
-          {pathname === "/" && (
-            <div className="absolute start-5 top-5 z-40 flex items-center gap-2">
-              <ThemeToggle />
-            </div>
-          )}
-          {pathname !== "/" && !pathname.startsWith("/fcds") && !pathname.startsWith("/admin") && (
-            <SiteHeader />
-          )}
-          <main key={pathname} className="page-enter">
-            <Outlet />
-          </main>
-          {pathname.startsWith("/fcds") && <CommunityFooter fcds />}
+          <div
+            className={`grain min-h-screen ${pathname.startsWith("/fcds") ? "fcds-theme bg-background text-foreground" : ""}`}
+          >
+            {pathname === "/" && (
+              <div className="absolute start-5 top-5 z-40 flex items-center gap-2">
+                <ThemeToggle />
+              </div>
+            )}
+            {pathname !== "/" &&
+              !pathname.startsWith("/fcds") &&
+              !pathname.startsWith("/admin") && <SiteHeader />}
+            <main key={pathname} className="page-enter">
+              <Outlet />
+            </main>
+            {pathname.startsWith("/fcds") && <CommunityFooter fcds />}
 
-          {pathname !== "/" && !pathname.startsWith("/fcds") && !pathname.startsWith("/admin") && (
-            <SiteFooter />
-          )}
-        </div>
-        <Toaster theme="system" position="bottom-left" />
+            {pathname !== "/" &&
+              !pathname.startsWith("/fcds") &&
+              !pathname.startsWith("/admin") && <SiteFooter />}
+          </div>
+          <Toaster theme="system" position="bottom-left" />
         </PreferencesProvider>
       </AccountProvider>
     </QueryClientProvider>

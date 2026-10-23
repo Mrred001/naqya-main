@@ -1,7 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type Category = { id: string; name: string; slug: string; description: string | null; sort_order: number };
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort_order: number;
+};
 export type MusicStatus = "no_music" | "minimal_music" | "has_music";
 export type ContentKind = "video" | "playlist";
 export type ContentItem = {
@@ -16,6 +22,8 @@ export type ContentItem = {
   category_id: string | null;
   language: string;
   music_status: MusicStatus;
+  music_reviewed_at?: string | null;
+  music_skip_ranges?: string | null;
   recommendation: string | null;
   featured: boolean;
   date_added: string;
@@ -28,13 +36,20 @@ const SELECT = "*, category:categories(id,name,slug), content_tags(tags(name))";
 type Row = Omit<ContentItem, "tags"> & { content_tags: { tags: { name: string } | null }[] };
 const normalize = (r: Row): ContentItem => {
   const { content_tags, ...rest } = r;
-  return { ...rest, tags: (content_tags ?? []).map((t) => t.tags?.name).filter(Boolean) as string[] };
+  return {
+    ...rest,
+    tags: (content_tags ?? []).map((t) => t.tags?.name).filter(Boolean) as string[],
+  };
 };
 
 export const categoriesQuery = queryOptions({
   queryKey: ["categories"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("categories").select("*").order("sort_order").order("name");
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .order("sort_order")
+      .order("name");
     if (error) throw error;
     return data as Category[];
   },
@@ -43,7 +58,10 @@ export const categoriesQuery = queryOptions({
 export const contentQuery = queryOptions({
   queryKey: ["content"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("content").select(SELECT).order("date_added", { ascending: false });
+    const { data, error } = await supabase
+      .from("content")
+      .select(SELECT)
+      .order("date_added", { ascending: false });
     if (error) throw error;
     return (data as unknown as Row[]).map(normalize);
   },
@@ -68,10 +86,23 @@ export function parseYouTube(url: string): { id: string; kind: ContentKind } | n
     const u = new URL(url.trim());
     if (!["http:", "https:"].includes(u.protocol)) return null;
     const host = u.hostname.toLowerCase();
-    if (!["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be", "youtube-nocookie.com", "www.youtube-nocookie.com"].includes(host)) return null;
+    if (
+      ![
+        "youtube.com",
+        "www.youtube.com",
+        "m.youtube.com",
+        "music.youtube.com",
+        "youtu.be",
+        "www.youtu.be",
+        "youtube-nocookie.com",
+        "www.youtube-nocookie.com",
+      ].includes(host)
+    )
+      return null;
     const list = u.searchParams.get("list");
     if (u.pathname.includes("playlist") && list) return { id: list, kind: "playlist" };
-    if (["youtu.be", "www.youtu.be"].includes(host)) return { id: u.pathname.slice(1).split("/")[0] ?? "", kind: "video" };
+    if (["youtu.be", "www.youtu.be"].includes(host))
+      return { id: u.pathname.slice(1).split("/")[0] ?? "", kind: "video" };
     const v = u.searchParams.get("v");
     if (v) return { id: v, kind: "video" };
     const m = u.pathname.match(/\/(embed|shorts|live)\/([\w-]+)/);
@@ -84,7 +115,8 @@ export function parseYouTube(url: string): { id: string; kind: ContentKind } | n
 }
 
 export const thumbFor = (c: Pick<ContentItem, "thumbnail_url" | "youtube_id" | "content_type">) =>
-  c.thumbnail_url || (c.content_type === "video" ? `https://i.ytimg.com/vi/${c.youtube_id}/hqdefault.jpg` : "");
+  c.thumbnail_url ||
+  (c.content_type === "video" ? `https://i.ytimg.com/vi/${c.youtube_id}/hqdefault.jpg` : "");
 
 export const embedFor = (c: Pick<ContentItem, "youtube_id" | "content_type">) =>
   c.content_type === "playlist"

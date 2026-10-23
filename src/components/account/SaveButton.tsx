@@ -29,13 +29,19 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
             .delete()
             .eq("id", saved.id)
             .eq("user_id", activeUser.id)
-        : await supabase.from("user_bookmarks").insert({ user_id: activeUser.id, [column]: id });
+        : await supabase.from("user_bookmarks").insert({
+            user_id: activeUser.id,
+            ...(kind === "general" ? { content_id: id } : { fcds_playlist_id: id }),
+          });
       if (result.error && result.error.code !== "23505") throw result.error;
     },
     onSuccess: (_data, activeUser) => {
       void client.invalidateQueries({ queryKey: ["bookmarks", activeUser.id] });
     },
-    onError: () => toast.error(t("ما قدرنا نغيّر المحفوظات. جرّب تاني.", "Could not update saved items. Try again.")),
+    onError: () =>
+      toast.error(
+        t("ما قدرنا نغيّر المحفوظات. جرّب تاني.", "Could not update saved items. Try again."),
+      ),
   });
   const handleSave = async () => {
     let activeUser = user;
@@ -44,7 +50,9 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
       const session = await refreshSession();
       setCheckingSession(false);
       if (session.error) {
-        toast.error(t("ما قدرنا نتحقق من حسابك. جرّب تاني.", "Could not verify your account. Try again."));
+        toast.error(
+          t("ما قدرنا نتحقق من حسابك. جرّب تاني.", "Could not verify your account. Try again."),
+        );
         return;
       }
       activeUser = session.user;
@@ -86,9 +94,14 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent dir={english ? "ltr" : "rtl"}>
-          <DialogTitle>{t("محفوظاتك معاك في أي جهاز", "Your saved items on every device")}</DialogTitle>
+          <DialogTitle>
+            {t("محفوظاتك معاك في أي جهاز", "Your saved items on every device")}
+          </DialogTitle>
           <DialogDescription>
-            {t("سجّل بقوقل، وبعد الرجوع اضغط حفظ على المصدر البتختاره. المشاهدة ما بتحتاج حساب.", "Sign in with Google, then save any resource to your account. Watching does not require an account.")}
+            {t(
+              "سجّل بقوقل، وبعد الرجوع اضغط حفظ على المصدر البتختاره. المشاهدة ما بتحتاج حساب.",
+              "Sign in with Google, then save any resource to your account. Watching does not require an account.",
+            )}
           </DialogDescription>
           <GoogleSignIn />
         </DialogContent>

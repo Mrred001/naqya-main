@@ -40,7 +40,8 @@ export function AccountMenu({ iconOnly = false }: { iconOnly?: boolean }) {
     setBusy(true);
     try {
       const { error } = await supabase.auth.signOut({ scope: "local" });
-      if (error) toast.error(t("ما قدرنا نسجّل خروجك. جرّب تاني.", "Could not sign you out. Try again."));
+      if (error)
+        toast.error(t("ما قدرنا نسجّل خروجك. جرّب تاني.", "Could not sign you out. Try again."));
       else setOpen(false);
     } catch {
       toast.error(t("ما قدرنا نسجّل خروجك. جرّب تاني.", "Could not sign you out. Try again."));
@@ -86,7 +87,11 @@ export function AccountMenu({ iconOnly = false }: { iconOnly?: boolean }) {
             className="cursor-pointer rounded-xl px-3 py-2.5 text-destructive focus:text-destructive"
           >
             <LogOut className="h-4 w-4" aria-hidden="true" />
-            <span>{busy ? t("جاري الخروج…", "Signing out…") : t("تسجيل خروج من الجهاز ده", "Sign out on this device")}</span>
+            <span>
+              {busy
+                ? t("جاري الخروج…", "Signing out…")
+                : t("تسجيل خروج من الجهاز ده", "Sign out on this device")}
+            </span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -106,9 +111,19 @@ export function AccountMenu({ iconOnly = false }: { iconOnly?: boolean }) {
         {iconOnly ? <UserRound className="h-5 w-5" aria-hidden="true" /> : t("دخول", "Sign in")}
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir={english ? "ltr" : "rtl"} className={fcds ? "fcds-theme text-foreground" : undefined}>
-          <DialogTitle>{t("احفظ المحتوى وارجع ليه", "Save content and come back later")}</DialogTitle>
-          <DialogDescription>{t("التسجيل اختياري. تقدر تتصفّح وتشاهد بدون حساب.", "Sign in is optional. You can browse and watch without an account.")}</DialogDescription>
+        <DialogContent
+          dir={english ? "ltr" : "rtl"}
+          className={fcds ? "fcds-theme text-foreground" : undefined}
+        >
+          <DialogTitle>
+            {t("احفظ المحتوى وارجع ليه", "Save content and come back later")}
+          </DialogTitle>
+          <DialogDescription>
+            {t(
+              "التسجيل اختياري. تقدر تتصفّح وتشاهد بدون حساب.",
+              "Sign in is optional. You can browse and watch without an account.",
+            )}
+          </DialogDescription>
           <GoogleSignIn />
         </DialogContent>
       </Dialog>

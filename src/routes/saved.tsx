@@ -10,7 +10,9 @@ import { GoogleSignIn } from "@/components/account/GoogleSignIn";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
 export const Route = createFileRoute("/saved")({
-  head: () => ({ meta: [{ title: "المحفوظات — نقيا ودرب" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "المحفوظات — نقيا ودرب" }, { name: "robots", content: "noindex" }],
+  }),
   component: Saved,
 });
 type Playlist = { id: string; course_slug: string; title: string; channel: string | null };
@@ -38,12 +40,22 @@ function Saved() {
   return (
     <section className="mx-auto max-w-7xl space-y-6 px-5 py-12 md:px-8">
       <h1 className="text-4xl font-bold">{t("المحفوظات", "Saved items")}</h1>
-      <p className="text-muted-foreground">{t("مصادرك من نقيا ودرب، محفوظة مع حسابك.", "Your NAQYA and DARB resources, saved to your account.")}</p>
+      <p className="text-muted-foreground">
+        {t(
+          "مصادرك من نقيا ودرب، محفوظة مع حسابك.",
+          "Your NAQYA and DARB resources, saved to your account.",
+        )}
+      </p>
       {loading ? (
         <p role="status">{t("جاري التحميل…", "Loading…")}</p>
       ) : !user ? (
         <div className="max-w-md space-y-4 rounded-2xl border p-6">
-          <p>{t("سجّل دخولك عشان تفتح محفوظاتك. التصفّح والمشاهدة متاحين بدون حساب.", "Sign in to see your saved items. You can browse and watch without an account.")}</p>
+          <p>
+            {t(
+              "سجّل دخولك عشان تفتح محفوظاتك. التصفّح والمشاهدة متاحين بدون حساب.",
+              "Sign in to see your saved items. You can browse and watch without an account.",
+            )}
+          </p>
           <GoogleSignIn />
         </div>
       ) : failed ? (
@@ -63,7 +75,12 @@ function Saved() {
         </div>
       ) : !bookmarks.data?.length ? (
         <div className="rounded-2xl border p-8">
-          <p>{t("لسه ما حفظت مصادر. اضغط «احفظ لوقت لاحق» على المصدر البتهمك.", "You have no saved resources yet. Use “Save for later” on anything you want to keep.")}</p>
+          <p>
+            {t(
+              "لسه ما حفظت مصادر. اضغط «احفظ لوقت لاحق» على المصدر البتهمك.",
+              "You have no saved resources yet. Use “Save for later” on anything you want to keep.",
+            )}
+          </p>
           <div className="mt-4 flex gap-6">
             <Link to="/naqya" className="text-primary">
               {t("تصفّح نقيا", "Browse NAQYA")}

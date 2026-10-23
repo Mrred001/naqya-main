@@ -9,7 +9,9 @@ export type FcdsSpecialization = (typeof fcdsSpecializations)[number]["value"];
 export const defaultFcdsSpecialization: FcdsSpecialization = "computer-data-science";
 
 export function normalizeFcdsSpecialization(value: string | null | undefined): FcdsSpecialization {
-  return fcdsSpecializations.find((option) => option.value === value)?.value ?? defaultFcdsSpecialization;
+  return (
+    fcdsSpecializations.find((option) => option.value === value)?.value ?? defaultFcdsSpecialization
+  );
 }
 
 export const fcdsYearOptions = [

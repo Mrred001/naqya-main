@@ -1,4 +1,5 @@
 import { SaveButton } from "@/components/account/SaveButton";
+import { MusicNotice } from "@/components/site/MusicNotice";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, ExternalLink } from "lucide-react";
@@ -88,6 +89,12 @@ function Watch() {
       >
         <ArrowRight className="h-4 w-4" /> {t("العودة إلى المكتبة", "Back to library")}
       </Link>
+      <div className="mx-5 mt-4 md:mx-0">
+        <MusicNotice
+          status={item.music_reviewed_at ? item.music_status : null}
+          skipRanges={item.music_skip_ranges}
+        />
+      </div>
       <div className="mt-4 aspect-video overflow-hidden bg-card md:rounded-2xl md:border">
         <iframe
           src={embedFor(item)}
@@ -136,7 +143,9 @@ function Watch() {
 
         {item.recommendation && (
           <section className="mt-8 rounded-2xl border border-primary/20 bg-primary-soft p-6 md:p-8">
-            <h2 className="text-sm font-semibold text-primary">{t("لماذا يرشحه أحمد؟", "Why Ahmed recommends it")}</h2>
+            <h2 className="text-sm font-semibold text-primary">
+              {t("لماذا يرشحه أحمد؟", "Why Ahmed recommends it")}
+            </h2>
             <p dir="auto" className="mt-3 text-lg leading-relaxed md:text-xl">
               {item.recommendation}
             </p>
@@ -156,7 +165,9 @@ function Watch() {
 
         {related.length > 0 && (
           <section className="mt-16 md:mt-20">
-            <h2 className="mb-6 text-2xl font-bold md:text-3xl">{t("قد يعجبك أيضاً", "You may also like")}</h2>
+            <h2 className="mb-6 text-2xl font-bold md:text-3xl">
+              {t("قد يعجبك أيضاً", "You may also like")}
+            </h2>
             <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((i) => (
                 <ContentCard key={i.id} item={i} />

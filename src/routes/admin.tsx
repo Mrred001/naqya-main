@@ -1,4 +1,6 @@
 import { ReportsAdmin } from "@/components/admin/ReportsAdmin";
+import { MusicFields } from "@/components/admin/MusicFields";
+import { validateMusicSelection } from "@/lib/music";
 import {
   Pencil,
   Star,
@@ -18,16 +20,16 @@ import {
   Activity,
   ArrowLeft,
 } from "lucide-react";
-import { defaultFcdsSpecialization, fcdsSpecializations, normalizeFcdsSpecialization, type FcdsSpecialization, fcdsYearForSemester } from "@/lib/fcds";
+import {
+  defaultFcdsSpecialization,
+  fcdsSpecializations,
+  normalizeFcdsSpecialization,
+  type FcdsSpecialization,
+  fcdsYearForSemester,
+} from "@/lib/fcds";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,9 +90,7 @@ function Label({
 }) {
   return (
     <label className={cn("block space-y-1.5", className)}>
-      <span className="text-xs uppercase tracking-[0.16em] text-amber-100/50">
-        {label}
-      </span>
+      <span className="text-xs uppercase tracking-[0.16em] text-amber-100/50">{label}</span>
       {children}
     </label>
   );
@@ -101,9 +101,7 @@ function AdminPage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_e, s) =>
-      setSession(s),
-    );
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
 
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -140,14 +138,9 @@ function AdminPage() {
         <div className="mx-auto max-w-md px-5 py-24">
           <h1 className="text-4xl font-bold">Not a curator</h1>
 
-          <p className="mt-4 text-amber-50/50">
-            This account doesn't have curator access.
-          </p>
+          <p className="mt-4 text-amber-50/50">This account doesn't have curator access.</p>
 
-          <button
-            className={cn(ghost, "mt-6")}
-            onClick={() => supabase.auth.signOut()}
-          >
+          <button className={cn(ghost, "mt-6")} onClick={() => supabase.auth.signOut()}>
             Sign out
           </button>
         </div>
@@ -156,6 +149,36 @@ function AdminPage() {
       )}
     </div>
   );
+}
+
+function requestMusicReview(youtubeUrl: string): {
+  music_status: MusicStatus;
+  music_skip_ranges: string | null;
+  music_reviewed_at: string;
+} | null {
+  const choice = window.prompt(
+    "Review audio first. Enter 1 for No Music, or 2 for Minimal Music (skippable intro/outro). Cancel to keep the suggestion pending.",
+  );
+  if (choice !== "1" && choice !== "2") return null;
+  const status: MusicStatus = choice === "1" ? "no_music" : "minimal_music";
+  const isVideo = parseYouTube(youtubeUrl)?.kind === "video";
+  const ranges =
+    status === "minimal_music" && isVideo
+      ? window.prompt(
+          "Enter every music segment as MM:SS-MM:SS, one per line. Cancel to keep pending.",
+        )
+      : "";
+  if (ranges === null) return null;
+  const error = validateMusicSelection(status, ranges ?? "", isVideo);
+  if (error) {
+    toast.error(error);
+    return null;
+  }
+  return {
+    music_reviewed_at: new Date().toISOString(),
+    music_status: status,
+    music_skip_ranges: status === "minimal_music" ? ranges?.trim() || null : null,
+  };
 }
 
 function SignIn() {
@@ -200,18 +223,12 @@ function SignIn() {
         onSubmit={submit}
         className="w-full max-w-sm rounded-3xl border border-amber-100/10 bg-amber-100/[0.03] p-8"
       >
-        <p className="text-xs tracking-[0.2em] text-amber-50/40">
-          NAQYA ADMIN
-        </p>
+        <p className="text-xs tracking-[0.2em] text-amber-50/40">NAQYA ADMIN</p>
 
-        <h1 className="mt-3 text-4xl font-bold">
-          Curator
-        </h1>
+        <h1 className="mt-3 text-4xl font-bold">Curator</h1>
 
         <p className="mt-3 text-sm text-amber-50/40">
-          {mode === "in"
-            ? "Sign in to manage NAQYA."
-            : "Create curator account."}
+          {mode === "in" ? "Sign in to manage NAQYA." : "Create curator account."}
         </p>
 
         <div className="mt-8 space-y-5">
@@ -236,27 +253,16 @@ function SignIn() {
             />
           </Label>
 
-          <button
-            className={cn(btn, "w-full")}
-            disabled={busy}
-          >
-            {busy
-              ? "Loading..."
-              : mode === "in"
-                ? "Sign in"
-                : "Create account"}
+          <button className={cn(btn, "w-full")} disabled={busy}>
+            {busy ? "Loading..." : mode === "in" ? "Sign in" : "Create account"}
           </button>
 
           <button
             type="button"
             className="w-full text-sm text-amber-50/40 hover:text-amber-50"
-            onClick={() =>
-              setMode(mode === "in" ? "up" : "in")
-            }
+            onClick={() => setMode(mode === "in" ? "up" : "in")}
           >
-            {mode === "in"
-              ? "Create account"
-              : "Already have an account? Sign in"}
+            {mode === "in" ? "Create account" : "Already have an account? Sign in"}
           </button>
         </div>
       </form>
@@ -269,6 +275,7 @@ type AdminTab =
   | "general"
   | "fcds"
   | "courses"
+  | "playlist-per-courses"
   | "suggestions"
   | "categories"
   | "reports";
@@ -277,37 +284,37 @@ function Dashboard({ email }: { email: string }) {
   const [tab, setTab] = useState<AdminTab>("overview");
 
   const { data: pending = { fcds: 0, general: 0, total: 0 } } = useQuery({
-  queryKey: ["pending-suggestions-count"],
+    queryKey: ["pending-suggestions-count"],
 
-  queryFn: async () => {
-    const [fcdsResult, generalResult] = await Promise.all([
-      supabase
-        .from("fcds_playlist_suggestions")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("status", "pending"),
+    queryFn: async () => {
+      const [fcdsResult, generalResult] = await Promise.all([
+        supabase
+          .from("fcds_playlist_suggestions")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
+          .eq("status", "pending"),
 
-      supabase
-        .from("general_content_suggestions")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("status", "pending"),
-    ]);
+        supabase
+          .from("general_content_suggestions")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
+          .eq("status", "pending"),
+      ]);
 
-    const fcds = fcdsResult.count ?? 0;
-    const general = generalResult.count ?? 0;
+      const fcds = fcdsResult.count ?? 0;
+      const general = generalResult.count ?? 0;
 
-    return {
-      fcds,
-      general,
-      total: fcds + general,
-    };
-  },
-});
+      return {
+        fcds,
+        general,
+        total: fcds + general,
+      };
+    },
+  });
 
   const navItems = [
     { id: "reports" as const, label: "Reports", icon: Inbox },
@@ -327,10 +334,11 @@ function Dashboard({ email }: { email: string }) {
       icon: GraduationCap,
     },
     {
-    id: "courses" as const,
-    label: "Courses",
-    icon: BookOpen,
-  },
+      id: "courses" as const,
+      label: "Courses",
+      icon: BookOpen,
+    },
+    { id: "playlist-per-courses" as const, label: "Playlist per Courses", icon: GraduationCap },
     {
       id: "suggestions" as const,
       label: "Pending Suggestions",
@@ -342,28 +350,19 @@ function Dashboard({ email }: { email: string }) {
       label: "Categories",
       icon: Tags,
     },
-    
   ];
 
   return (
     <div className="min-h-[100dvh] lg:flex">
-
       {/* Sidebar */}
       <aside className="border-b border-amber-100/10 bg-[#17140e] lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
         <div className="flex h-full flex-col p-5">
-
           <div className="border-b border-amber-100/15 pb-6">
-            <p className="text-xs tracking-[0.22em] text-amber-100/45">
-              NAQYA
-            </p>
+            <p className="text-xs tracking-[0.22em] text-amber-100/45">NAQYA</p>
 
-            <h1 className="mt-2 text-2xl font-bold">
-              Admin Dashboard
-            </h1>
+            <h1 className="mt-2 text-2xl font-bold">Admin Dashboard</h1>
 
-            <p className="mt-2 truncate text-xs text-amber-100/45">
-              {email}
-            </p>
+            <p className="mt-2 truncate text-xs text-amber-100/45">{email}</p>
           </div>
 
           <Link to="/" className={cn(ghost, "mt-5 justify-center")}>
@@ -392,30 +391,25 @@ function Dashboard({ email }: { email: string }) {
                     {item.label}
                   </span>
 
-                  {item.count !== undefined &&
-                    item.count > 0 && (
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
-                          tab === item.id
-                            ? "bg-[#17130a] text-amber-200"
-                            : "bg-amber-200/15 text-amber-100",
-                        )}
-                      >
-                        {item.count}
-                      </span>
-                    )}
+                  {item.count !== undefined && item.count > 0 && (
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-semibold",
+                        tab === item.id
+                          ? "bg-[#17130a] text-amber-200"
+                          : "bg-amber-200/15 text-amber-100",
+                      )}
+                    >
+                      {item.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </nav>
 
           <div className="mt-auto pt-8">
-            <button
-              type="button"
-              onClick={() => supabase.auth.signOut()}
-              className={ghost}
-            >
+            <button type="button" onClick={() => supabase.auth.signOut()} className={ghost}>
               Sign out
             </button>
           </div>
@@ -424,65 +418,41 @@ function Dashboard({ email }: { email: string }) {
 
       {/* Content */}
       <main className="w-full px-5 py-10 md:px-8 lg:ml-72 lg:px-12 lg:py-12">
+        {tab === "overview" && <Overview pendingCount={pending.total} />}
 
-        {tab === "overview" && (
-  <Overview
-  pendingCount={pending.total}
-/>
-)}
+        {tab === "general" && <ContentAdmin />}
 
-{tab === "general" && (
-  <ContentAdmin />
-)}
+        {tab === "fcds" && <FcdsLibraryAdmin />}
 
-{tab === "fcds" && (
-  <FcdsLibraryAdmin />
-)}
+        {tab === "courses" && <CoursesAdmin />}
+        {tab === "playlist-per-courses" && (
+          <CourseCoverageAdmin onOpenLibrary={() => setTab("fcds")} />
+        )}
 
-{tab === "courses" && (
-  <CoursesAdmin />
-)}
+        {tab === "suggestions" && <SuggestionsAdmin />}
 
-{tab === "suggestions" && (
-  <SuggestionsAdmin />
-)}
+        {tab === "reports" && <ReportsAdmin />}
 
-{tab === "reports" && <ReportsAdmin />}
-
-{tab === "categories" && (
-  <CategoryAdmin />
-)}
-
+        {tab === "categories" && <CategoryAdmin />}
       </main>
     </div>
   );
 }
 
-function Overview({
-  pendingCount,
-}: {
-  pendingCount: number;
-}) {
+function Overview({ pendingCount }: { pendingCount: number }) {
   const { data } = useQuery({
     queryKey: ["admin-overview"],
     queryFn: async () => {
-      const [
-        general,
-        fcds,
-      ] = await Promise.all([
-        supabase
-          .from("content")
-          .select("*", {
-            count: "exact",
-            head: true,
-          }),
+      const [general, fcds] = await Promise.all([
+        supabase.from("content").select("*", {
+          count: "exact",
+          head: true,
+        }),
 
-        supabase
-          .from("fcds_playlists")
-          .select("*", {
-            count: "exact",
-            head: true,
-          }),
+        supabase.from("fcds_playlists").select("*", {
+          count: "exact",
+          head: true,
+        }),
       ]);
 
       return {
@@ -495,10 +465,7 @@ function Overview({
   const visitsQuery = useQuery({
     queryKey: ["admin-daily-visits", 7],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).rpc(
-        "get_daily_site_visits",
-        { days: 7 },
-      );
+      const { data, error } = await supabase.rpc("get_daily_site_visits", { days: 7 });
       if (error) throw error;
       return (data ?? []) as { visit_date: string; total: number | string }[];
     },
@@ -528,13 +495,9 @@ function Overview({
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        OVERVIEW
-      </p>
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">OVERVIEW</p>
 
-      <h2 className="mt-2 text-4xl font-bold">
-        Dashboard
-      </h2>
+      <h2 className="mt-2 text-4xl font-bold">Dashboard</h2>
 
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {cards.map((card) => {
@@ -547,13 +510,9 @@ function Overview({
             >
               <Icon className="h-5 w-5 text-amber-50/40" />
 
-              <p className="mt-8 text-4xl font-bold">
-                {card.value}
-              </p>
+              <p className="mt-8 text-4xl font-bold">{card.value}</p>
 
-              <p className="mt-2 text-sm text-amber-50/40">
-                {card.label}
-              </p>
+              <p className="mt-2 text-sm text-amber-50/40">{card.label}</p>
             </div>
           );
         })}
@@ -562,9 +521,7 @@ function Overview({
       <section className="mt-6 rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs tracking-[0.18em] text-amber-50/35">
-              SITE TRAFFIC
-            </p>
+            <p className="text-xs tracking-[0.18em] text-amber-50/35">SITE TRAFFIC</p>
             <h3 className="mt-2 flex items-center gap-2 text-xl font-semibold">
               <Activity className="h-5 w-5 text-amber-300" />
               Daily visitors
@@ -603,12 +560,16 @@ function Overview({
                   <div className="flex h-28 w-full items-end overflow-hidden rounded-lg bg-black/20">
                     <div
                       className="w-full rounded-t-md bg-gradient-to-t from-amber-500/70 to-amber-200 transition-[height] duration-500"
-                      style={{ height: `${Math.max(amount > 0 ? 8 : 0, (amount / peakVisits) * 100)}%` }}
+                      style={{
+                        height: `${Math.max(amount > 0 ? 8 : 0, (amount / peakVisits) * 100)}%`,
+                      }}
                       aria-hidden="true"
                     />
                   </div>
                   <span className="text-center text-[11px] leading-tight text-amber-50/45">
-                    {label}<br />{day}
+                    {label}
+                    <br />
+                    {day}
                   </span>
                 </div>
               );
@@ -698,12 +659,9 @@ function SuggestionsAdmin() {
 
   const getMeta = useServerFn(fetchYouTubeMeta);
 
-  const [busyId, setBusyId] =
-    useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const [languages, setLanguages] = useState<
-    Record<string, "Arabic" | "English">
-  >({});
+  const [languages, setLanguages] = useState<Record<string, "Arabic" | "English">>({});
 
   const { data: suggestions = [], isLoading } = useQuery({
     queryKey: ["fcds-suggestions"],
@@ -723,6 +681,7 @@ function SuggestionsAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-suggestions"],
     });
@@ -740,14 +699,12 @@ function SuggestionsAdmin() {
     });
   };
 
-  const approveFcds = async (
-    suggestion: Suggestion,
-  ) => {
+  const approveFcds = async (suggestion: Suggestion) => {
+    const musicReview = requestMusicReview(suggestion.youtube_url);
+    if (!musicReview) return;
     setBusyId(suggestion.id);
 
-    const parsed = parseYouTube(
-      suggestion.youtube_url,
-    );
+    const parsed = parseYouTube(suggestion.youtube_url);
 
     let thumbnailUrl: string | null = null;
 
@@ -760,24 +717,21 @@ function SuggestionsAdmin() {
           },
         });
 
-        thumbnailUrl =
-          res.meta?.thumbnail_url ?? null;
+        thumbnailUrl = res.meta?.thumbnail_url ?? null;
       } catch {
         // thumbnail optional
       }
     }
 
-    const { error } = await supabase
-      .from("fcds_playlists")
-      .insert({
-        course_slug: suggestion.course_slug,
-        youtube_url: suggestion.youtube_url,
-        title: suggestion.title,
-        channel: suggestion.channel,
-        language:
-          languages[suggestion.id] ?? "Arabic",
-        thumbnail_url: thumbnailUrl,
-      });
+    const { error } = await supabase.from("fcds_playlists").insert({
+      course_slug: suggestion.course_slug,
+      youtube_url: suggestion.youtube_url,
+      title: suggestion.title,
+      channel: suggestion.channel,
+      language: languages[suggestion.id] ?? "Arabic",
+      thumbnail_url: thumbnailUrl,
+      ...musicReview,
+    });
 
     if (error) {
       setBusyId(null);
@@ -785,13 +739,12 @@ function SuggestionsAdmin() {
       return;
     }
 
-    const { error: statusError } =
-      await supabase
-        .from("fcds_playlist_suggestions")
-        .update({
-          status: "approved",
-        })
-        .eq("id", suggestion.id);
+    const { error: statusError } = await supabase
+      .from("fcds_playlist_suggestions")
+      .update({
+        status: "approved",
+      })
+      .eq("id", suggestion.id);
 
     setBusyId(null);
 
@@ -802,40 +755,40 @@ function SuggestionsAdmin() {
 
     toast.success("Added to FCDS");
     const refresh = () => {
-  qc.invalidateQueries({
-    queryKey: ["fcds-suggestions"],
-  });
+      void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
+      qc.invalidateQueries({
+        queryKey: ["fcds-suggestions"],
+      });
 
-  qc.invalidateQueries({
-    queryKey: ["general-suggestions"],
-  });
+      qc.invalidateQueries({
+        queryKey: ["general-suggestions"],
+      });
 
-  qc.invalidateQueries({
-    queryKey: ["pending-suggestions-count"],
-  });
+      qc.invalidateQueries({
+        queryKey: ["pending-suggestions-count"],
+      });
 
-  qc.invalidateQueries({
-    queryKey: ["admin-overview"],
-  });
+      qc.invalidateQueries({
+        queryKey: ["admin-overview"],
+      });
 
-  qc.invalidateQueries({
-    queryKey: ["content"],
-  });
+      qc.invalidateQueries({
+        queryKey: ["content"],
+      });
 
-  qc.invalidateQueries({
-    queryKey: ["fcds-library"],
-  });
-};
+      qc.invalidateQueries({
+        queryKey: ["fcds-library"],
+      });
+    };
+    refresh();
   };
 
-  const approveGeneral = async (
-    suggestion: Suggestion,
-  ) => {
+  const approveGeneral = async (suggestion: Suggestion) => {
+    const musicReview = requestMusicReview(suggestion.youtube_url);
+    if (!musicReview) return;
     setBusyId(suggestion.id);
 
-    const parsed = parseYouTube(
-      suggestion.youtube_url,
-    );
+    const parsed = parseYouTube(suggestion.youtube_url);
 
     if (!parsed) {
       setBusyId(null);
@@ -865,47 +818,33 @@ function SuggestionsAdmin() {
       // use suggestion data
     }
 
-    const { error } = await supabase
-      .from("content")
-      .insert({
-        youtube_url:
-          suggestion.youtube_url.trim(),
+    const { error } = await supabase.from("content").insert({
+      youtube_url: suggestion.youtube_url.trim(),
 
-        youtube_id: parsed.id,
+      youtube_id: parsed.id,
 
-        title:
-          meta?.title ||
-          suggestion.title,
+      title: meta?.title || suggestion.title,
 
-        channel:
-          meta?.channel ||
-          suggestion.channel ||
-          "Unknown",
+      channel: meta?.channel || suggestion.channel || "Unknown",
 
-        thumbnail_url:
-          meta?.thumbnail_url || null,
+      thumbnail_url: meta?.thumbnail_url || null,
 
-        duration_seconds:
-          meta?.duration_seconds ?? 0,
+      duration_seconds: meta?.duration_seconds ?? 0,
 
-        content_type: parsed.kind,
+      content_type: parsed.kind,
 
-        category_id: null,
+      category_id: null,
 
-        language:
-          languages[suggestion.id] ??
-          "Arabic",
+      language: languages[suggestion.id] ?? "Arabic",
 
-        music_status: "no_music",
+      ...musicReview,
 
-        recommendation:
-          suggestion.note || null,
+      recommendation: suggestion.note || null,
 
-        featured: false,
+      featured: false,
 
-        date_added:
-          new Date().toISOString(),
-      });
+      date_added: new Date().toISOString(),
+    });
 
     if (error) {
       setBusyId(null);
@@ -913,13 +852,12 @@ function SuggestionsAdmin() {
       return;
     }
 
-    const { error: statusError } =
-      await supabase
-        .from("fcds_playlist_suggestions")
-        .update({
-          status: "approved",
-        })
-        .eq("id", suggestion.id);
+    const { error: statusError } = await supabase
+      .from("fcds_playlist_suggestions")
+      .update({
+        status: "approved",
+      })
+      .eq("id", suggestion.id);
 
     setBusyId(null);
 
@@ -932,42 +870,36 @@ function SuggestionsAdmin() {
     refresh();
   };
 
-  const reject = async (
-  suggestion: Suggestion,
-) => {
-  if (
-    !confirm(
-      `Delete "${suggestion.title}" permanently?`,
-    )
-  ) {
-    return;
-  }
+  const reject = async (suggestion: Suggestion) => {
+    if (!confirm(`Delete "${suggestion.title}" permanently?`)) {
+      return;
+    }
 
-  setBusyId(suggestion.id);
+    setBusyId(suggestion.id);
 
-  const { error } = await supabase
-    .from("fcds_playlist_suggestions")
-    .delete()
-    .eq("id", suggestion.id);
+    const { error } = await supabase
+      .from("fcds_playlist_suggestions")
+      .delete()
+      .eq("id", suggestion.id);
 
-  setBusyId(null);
+    setBusyId(null);
 
-  if (error) {
-    toast.error(error.message);
-    return;
-  }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
-  toast.success("Suggestion deleted");
+    toast.success("Suggestion deleted");
 
-  refresh();
-};
+    refresh();
+  };
 
-const approveGeneralSuggestion = async (suggestion: any) => {
-  setBusyId(suggestion.id);
+  const approveGeneralSuggestion = async (suggestion: GeneralSuggestion) => {
+    const musicReview = requestMusicReview(suggestion.youtube_url);
+    if (!musicReview) return;
+    setBusyId(suggestion.id);
 
-  const { error } = await supabase
-    .from("content")
-    .insert({
+    const { error } = await supabase.from("content").insert({
       youtube_url: suggestion.youtube_url,
       youtube_id: suggestion.youtube_id,
       title: suggestion.title,
@@ -977,82 +909,74 @@ const approveGeneralSuggestion = async (suggestion: any) => {
       content_type: suggestion.content_type,
       category_id: null,
       language: suggestion.language || "English",
-      music_status: "no_music",
+      ...musicReview,
       recommendation: suggestion.note || null,
       featured: false,
       date_added: new Date().toISOString(),
     });
 
-  if (error) {
+    if (error) {
+      setBusyId(null);
+      toast.error(error.message);
+      return;
+    }
+
+    const { error: deleteError } = await supabase
+      .from("general_content_suggestions")
+      .delete()
+      .eq("id", suggestion.id);
+
     setBusyId(null);
-    toast.error(error.message);
-    return;
-  }
 
-  const { error: deleteError } = await supabase
-    .from("general_content_suggestions")
-    .delete()
-    .eq("id", suggestion.id);
+    if (deleteError) {
+      toast.error(deleteError.message);
+      return;
+    }
 
-  setBusyId(null);
+    toast.success("Added to General NAQYA");
+    refresh();
+  };
 
-  if (deleteError) {
-    toast.error(deleteError.message);
-    return;
-  }
+  const rejectGeneralSuggestion = async (suggestion: GeneralSuggestion) => {
+    if (!confirm(`Delete "${suggestion.title}"?`)) {
+      return;
+    }
 
-  toast.success("Added to General NAQYA");
-  refresh();
-};
+    setBusyId(suggestion.id);
 
-const rejectGeneralSuggestion = async (suggestion: any) => {
-  if (!confirm(`Delete "${suggestion.title}"?`)) {
-    return;
-  }
+    const { error } = await supabase
+      .from("general_content_suggestions")
+      .delete()
+      .eq("id", suggestion.id);
 
-  setBusyId(suggestion.id);
+    setBusyId(null);
 
-  const { error } = await supabase
-    .from("general_content_suggestions")
-    .delete()
-    .eq("id", suggestion.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
-  setBusyId(null);
-
-  if (error) {
-    toast.error(error.message);
-    return;
-  }
-
-  toast.success("Suggestion deleted");
-  refresh();
-};
+    toast.success("Suggestion deleted");
+    refresh();
+  };
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        INBOX
-      </p>
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">INBOX</p>
 
       <div className="mt-2 flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-bold">
-            Pending Suggestions
-          </h2>
+          <h2 className="text-4xl font-bold">Pending Suggestions</h2>
 
           <p className="mt-3 text-sm text-amber-50/40">
             Review the suggestion and choose whether it belongs in the general library or FCDS.
           </p>
         </div>
 
-        <span className="text-sm text-amber-50/30">
-          {suggestions.length} pending
-        </span>
+        <span className="text-sm text-amber-50/30">{suggestions.length} pending</span>
       </div>
 
       {isLoading ? (
-        <p className="mt-10 text-amber-50/40">
-          Loading...
-        </p>
+        <p className="mt-10 text-amber-50/40">Loading...</p>
       ) : suggestions.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
           No pending suggestions.
@@ -1065,16 +989,16 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
               className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
             >
               <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-
                     <span className="rounded-full bg-amber-100/10 px-3 py-1 font-mono text-xs text-amber-50/50">
                       {suggestion.course_slug}
                     </span>
 
                     <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
-                      {parseYouTube(suggestion.youtube_url)?.kind === "video" ? "Video" : "Playlist"}
+                      {parseYouTube(suggestion.youtube_url)?.kind === "video"
+                        ? "Video"
+                        : "Playlist"}
                     </span>
 
                     <span
@@ -1085,35 +1009,24 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                     </span>
 
                     <span className="text-xs text-amber-50/25">
-                      {new Date(
-                        suggestion.created_at,
-                      ).toLocaleString()}
+                      {new Date(suggestion.created_at).toLocaleString()}
                     </span>
-
                   </div>
 
-                  <h3 className="mt-4 text-xl font-semibold">
-                    {suggestion.title}
-                  </h3>
+                  <h3 className="mt-4 text-xl font-semibold">{suggestion.title}</h3>
 
                   <p className="mt-1 text-sm text-amber-50/40">
-                    {suggestion.channel ||
-                      "Unknown channel"}
+                    {suggestion.channel || "Unknown channel"}
                   </p>
 
                   {suggestion.note && (
-                    <p
-                      className="mt-4 max-w-2xl text-sm leading-6 text-amber-50/50"
-                      dir="auto"
-                    >
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-amber-50/50" dir="auto">
                       {suggestion.note}
                     </p>
                   )}
 
                   <a
-                    href={
-                      suggestion.youtube_url
-                    }
+                    href={suggestion.youtube_url}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-4 inline-flex items-center gap-2 text-sm text-amber-50/50 hover:text-amber-50"
@@ -1124,41 +1037,25 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
                 </div>
 
                 <div className="w-full shrink-0 space-y-3 xl:w-64">
-
                   <select
-                    value={
-                      languages[
-                        suggestion.id
-                      ] ?? "Arabic"
-                    }
+                    value={languages[suggestion.id] ?? "Arabic"}
                     onChange={(e) =>
                       setLanguages((prev) => ({
                         ...prev,
-                        [suggestion.id]:
-                          e.target.value as
-                            | "Arabic"
-                            | "English",
+                        [suggestion.id]: e.target.value as "Arabic" | "English",
                       }))
                     }
                     className={field}
                   >
-                    <option value="English">
-                      English
-                    </option>
+                    <option value="English">English</option>
 
-                    <option value="Arabic">
-                      Arabic
-                    </option>
+                    <option value="Arabic">Arabic</option>
                   </select>
 
                   <button
                     type="button"
-                    disabled={
-                      busyId === suggestion.id
-                    }
-                    onClick={() =>
-                      approveFcds(suggestion)
-                    }
+                    disabled={busyId === suggestion.id}
+                    onClick={() => approveFcds(suggestion)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-100/90 disabled:opacity-50"
                   >
                     <GraduationCap className="h-4 w-4" />
@@ -1167,14 +1064,8 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
 
                   <button
                     type="button"
-                    disabled={
-                      busyId === suggestion.id
-                    }
-                    onClick={() =>
-                      approveGeneral(
-                        suggestion,
-                      )
-                    }
+                    disabled={busyId === suggestion.id}
+                    onClick={() => approveGeneral(suggestion)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-100/15 px-4 py-2.5 text-sm font-semibold text-amber-50 hover:bg-amber-100/5 disabled:opacity-50"
                   >
                     <Library className="h-4 w-4" />
@@ -1183,18 +1074,13 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
 
                   <button
                     type="button"
-                    disabled={
-                      busyId === suggestion.id
-                    }
-                    onClick={() =>
-                      reject(suggestion)
-                    }
+                    disabled={busyId === suggestion.id}
+                    onClick={() => reject(suggestion)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                   >
                     <XCircle className="h-4 w-4" />
                     Reject
                   </button>
-
                 </div>
               </div>
             </article>
@@ -1203,120 +1089,100 @@ const rejectGeneralSuggestion = async (suggestion: any) => {
       )}
 
       {generalSuggestions.length > 0 && (
-  <section className="mt-14">
+        <section className="mt-14">
+          <div className="mb-6">
+            <p className="text-xs tracking-[0.2em] text-amber-50/30">GENERAL NAQYA</p>
 
-    <div className="mb-6">
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        GENERAL NAQYA
-      </p>
-
-      <h3 className="mt-2 text-2xl font-bold">
-        General Suggestions
-      </h3>
-    </div>
-
-    <div className="space-y-4">
-
-      {generalSuggestions.map((suggestion) => (
-        <article
-          key={suggestion.id}
-          className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
-        >
-          <div className="flex flex-col gap-6 lg:flex-row">
-
-            {suggestion.thumbnail_url && (
-              <img
-                src={suggestion.thumbnail_url}
-                alt=""
-                className="aspect-video w-full rounded-xl object-cover lg:w-52"
-              />
-            )}
-
-            <div className="min-w-0 flex-1">
-
-              <div className="flex flex-wrap gap-2">
-
-                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
-                  GENERAL
-                </span>
-
-                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
-                  {suggestion.content_type}
-                </span>
-
-                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
-                  {suggestion.language}
-                </span>
-
-                <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60" dir="auto">
-                  {suggestion.submitterUsername ? `@${suggestion.submitterUsername}` : "Guest"}
-                </span>
-
-              </div>
-
-              <h3 className="mt-4 text-xl font-semibold">
-                {suggestion.title}
-              </h3>
-
-              <p className="mt-1 text-sm text-amber-50/40">
-                {suggestion.channel || "Unknown channel"}
-              </p>
-
-              {suggestion.note && (
-                <p
-                  className="mt-4 text-sm leading-6 text-amber-50/50"
-                  dir="auto"
-                >
-                  {suggestion.note}
-                </p>
-              )}
-
-              <a
-                href={suggestion.youtube_url}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 inline-flex items-center gap-2 text-sm text-amber-50/50 hover:text-amber-50"
-              >
-                Open YouTube
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-
-            </div>
-
-            <div className="flex shrink-0 flex-col gap-3 lg:w-52">
-
-              <button
-                type="button"
-                disabled={busyId === suggestion.id}
-                onClick={() =>
-                  approveGeneralSuggestion(suggestion)
-                }
-                className="rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-100/90 disabled:opacity-50"
-              >
-                Add to General
-              </button>
-
-              <button
-                type="button"
-                disabled={busyId === suggestion.id}
-                onClick={() =>
-                  rejectGeneralSuggestion(suggestion)
-                }
-                className="rounded-xl px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50"
-              >
-                Reject
-              </button>
-
-            </div>
-
+            <h3 className="mt-2 text-2xl font-bold">General Suggestions</h3>
           </div>
-        </article>
-      ))}
 
-    </div>
+          <div className="space-y-4">
+            {generalSuggestions.map((suggestion) => (
+              <article
+                key={suggestion.id}
+                className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
+              >
+                <div className="flex flex-col gap-6 lg:flex-row">
+                  {suggestion.thumbnail_url && (
+                    <img
+                      src={suggestion.thumbnail_url}
+                      alt=""
+                      className="aspect-video w-full rounded-xl object-cover lg:w-52"
+                    />
+                  )}
 
-  </section>
-)}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
+                        GENERAL
+                      </span>
+
+                      <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
+                        {suggestion.content_type}
+                      </span>
+
+                      <span className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/50">
+                        {suggestion.language}
+                      </span>
+
+                      <span
+                        className="rounded-full border border-amber-100/10 px-3 py-1 text-xs text-amber-50/60"
+                        dir="auto"
+                      >
+                        {suggestion.submitterUsername
+                          ? `@${suggestion.submitterUsername}`
+                          : "Guest"}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-4 text-xl font-semibold">{suggestion.title}</h3>
+
+                    <p className="mt-1 text-sm text-amber-50/40">
+                      {suggestion.channel || "Unknown channel"}
+                    </p>
+
+                    {suggestion.note && (
+                      <p className="mt-4 text-sm leading-6 text-amber-50/50" dir="auto">
+                        {suggestion.note}
+                      </p>
+                    )}
+
+                    <a
+                      href={suggestion.youtube_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-flex items-center gap-2 text-sm text-amber-50/50 hover:text-amber-50"
+                    >
+                      Open YouTube
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+
+                  <div className="flex shrink-0 flex-col gap-3 lg:w-52">
+                    <button
+                      type="button"
+                      disabled={busyId === suggestion.id}
+                      onClick={() => approveGeneralSuggestion(suggestion)}
+                      className="rounded-xl bg-amber-100 px-4 py-2.5 text-sm font-semibold text-black hover:bg-amber-100/90 disabled:opacity-50"
+                    >
+                      Add to General
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={busyId === suggestion.id}
+                      onClick={() => rejectGeneralSuggestion(suggestion)}
+                      className="rounded-xl px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -1339,6 +1205,9 @@ type FcdsCourseRow = {
 type FcdsPlaylistRow = {
   id: string;
   course_slug: string;
+  music_status?: MusicStatus | null;
+  music_reviewed_at?: string | null;
+  music_skip_ranges?: string | null;
   youtube_url: string;
   title: string;
   channel: string | null;
@@ -1354,6 +1223,8 @@ type FcdsPlaylistDraft = {
   channel: string;
   language: "Arabic" | "English";
   thumbnail_url: string;
+  music_status: MusicStatus | "";
+  music_skip_ranges: string;
 };
 
 export function CoursePicker({
@@ -1439,6 +1310,8 @@ const emptyFcdsDraft = (): FcdsPlaylistDraft => ({
   channel: "",
   language: "Arabic",
   thumbnail_url: "",
+  music_status: "",
+  music_skip_ranges: "",
 });
 
 function FcdsLibraryAdmin() {
@@ -1462,7 +1335,7 @@ function FcdsLibraryAdmin() {
 
       if (error) throw error;
 
-      return data ?? [];
+      return (data ?? []) as FcdsPlaylistRow[];
     },
   });
 
@@ -1483,6 +1356,7 @@ function FcdsLibraryAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-library"],
     });
@@ -1501,30 +1375,20 @@ function FcdsLibraryAdmin() {
         youtube_url: playlist.youtube_url,
         title: playlist.title,
         channel: playlist.channel ?? "",
-        language:
-          playlist.language === "Arabic"
-            ? "Arabic"
-            : "English",
+        language: playlist.language === "Arabic" ? "Arabic" : "English",
         thumbnail_url: playlist.thumbnail_url ?? "",
+        music_status: playlist.music_reviewed_at ? (playlist.music_status ?? "") : "",
+        music_skip_ranges: playlist.music_skip_ranges ?? "",
       },
     });
   };
 
-  const remove = async (
-    playlist: FcdsPlaylistRow,
-  ) => {
-    if (
-      !confirm(
-        `Delete "${playlist.title}" permanently?`,
-      )
-    ) {
+  const remove = async (playlist: FcdsPlaylistRow) => {
+    if (!confirm(`Delete "${playlist.title}" permanently?`)) {
       return;
     }
 
-    const { error } = await supabase
-      .from("fcds_playlists")
-      .delete()
-      .eq("id", playlist.id);
+    const { error } = await supabase.from("fcds_playlists").delete().eq("id", playlist.id);
 
     if (error) {
       toast.error(error.message);
@@ -1552,16 +1416,11 @@ function FcdsLibraryAdmin() {
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        FCDS
-      </p>
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">FCDS</p>
 
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-
         <div>
-          <h2 className="text-4xl font-bold">
-            FCDS Library
-          </h2>
+          <h2 className="text-4xl font-bold">FCDS Library</h2>
 
           <p className="mt-3 text-sm text-amber-50/40">
             Manage playlists and videos in the FCDS library.
@@ -1579,34 +1438,23 @@ function FcdsLibraryAdmin() {
           className={btn}
         >
           <Plus className="h-4 w-4" />
-          Add Playlist
+          Add Resource
         </button>
-
       </div>
 
       {isLoading ? (
-        <p className="mt-10 text-amber-50/40">
-          Loading...
-        </p>
+        <p className="mt-10 text-amber-50/40">Loading...</p>
       ) : playlists.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
           No FCDS playlists yet.
         </div>
       ) : (
         <div className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
-
           {playlists.map((playlist) => {
-            const course = courses.find(
-              (course) =>
-                course.slug === playlist.course_slug,
-            );
+            const course = courses.find((course) => course.slug === playlist.course_slug);
 
             return (
-              <div
-                key={playlist.id}
-                className="flex items-center gap-4 py-4"
-              >
-
+              <div key={playlist.id} className="flex items-center gap-4 py-4">
                 {playlist.thumbnail_url ? (
                   <img
                     src={playlist.thumbnail_url}
@@ -1618,20 +1466,15 @@ function FcdsLibraryAdmin() {
                 )}
 
                 <div className="min-w-0 flex-1">
-
-                  <p className="truncate font-medium">
-                    {playlist.title}
-                  </p>
+                  <p className="truncate font-medium">{playlist.title}</p>
 
                   <p className="mt-1 text-xs text-amber-50/35">
                     {playlist.channel || "Unknown channel"}
                   </p>
 
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-
                     <span className="rounded-full border border-amber-100/10 px-2.5 py-1 font-mono text-[11px] text-amber-50/40">
-                      {course?.name ??
-                        playlist.course_slug}
+                      {course?.name ?? playlist.course_slug}
                     </span>
 
                     <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
@@ -1641,9 +1484,7 @@ function FcdsLibraryAdmin() {
                     <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
                       {playlist.language}
                     </span>
-
                   </div>
-
                 </div>
 
                 <a
@@ -1659,9 +1500,7 @@ function FcdsLibraryAdmin() {
                 <button
                   type="button"
                   aria-label="Edit source"
-                  onClick={() =>
-                    editPlaylist(playlist)
-                  }
+                  onClick={() => editPlaylist(playlist)}
                   className="p-2 text-amber-50/30 hover:text-amber-50"
                 >
                   <Pencil className="h-4 w-4" />
@@ -1675,11 +1514,9 @@ function FcdsLibraryAdmin() {
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
-
               </div>
             );
           })}
-
         </div>
       )}
     </div>
@@ -1701,24 +1538,15 @@ function FcdsPlaylistForm({
 }) {
   const [draft, setDraft] = useState(initial);
 
-  const [fetching, setFetching] =
-    useState(false);
+  const [fetching, setFetching] = useState(false);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const lastFetched =
-    useRef("");
+  const lastFetched = useRef("");
 
-  const getMeta =
-    useServerFn(fetchYouTubeMeta);
+  const getMeta = useServerFn(fetchYouTubeMeta);
 
-  const update = <
-    K extends keyof FcdsPlaylistDraft,
-  >(
-    key: K,
-    value: FcdsPlaylistDraft[K],
-  ) => {
+  const update = <K extends keyof FcdsPlaylistDraft>(key: K, value: FcdsPlaylistDraft[K]) => {
     setDraft((previous) => ({
       ...previous,
       [key]: value,
@@ -1728,19 +1556,15 @@ function FcdsPlaylistForm({
   const onUrl = async (url: string) => {
     update("youtube_url", url);
 
-    const parsed =
-      parseYouTube(url);
+    const parsed = parseYouTube(url);
 
     if (!parsed) return;
 
-    if (
-      lastFetched.current === parsed.id
-    ) {
+    if (lastFetched.current === parsed.id) {
       return;
     }
 
-    lastFetched.current =
-      parsed.id;
+    lastFetched.current = parsed.id;
 
     setFetching(true);
 
@@ -1753,10 +1577,7 @@ function FcdsPlaylistForm({
       });
 
       if (!res.meta) {
-        toast.error(
-          res.error ??
-            "Couldn't fetch YouTube details.",
-        );
+        toast.error(res.error ?? "Couldn't fetch YouTube details.");
 
         lastFetched.current = "";
         return;
@@ -1767,28 +1588,18 @@ function FcdsPlaylistForm({
       setDraft((previous) => ({
         ...previous,
 
-        title:
-          meta.title ||
-          previous.title,
+        title: meta.title || previous.title,
 
-        channel:
-          meta.channel ||
-          previous.channel,
+        channel: meta.channel || previous.channel,
 
-        thumbnail_url:
-          meta.thumbnail_url ||
-          previous.thumbnail_url,
+        thumbnail_url: meta.thumbnail_url || previous.thumbnail_url,
       }));
 
-      toast.success(
-        "YouTube details filled automatically",
-      );
+      toast.success("YouTube details filled automatically");
     } catch (error) {
       console.error(error);
 
-      toast.error(
-        "Couldn't fetch YouTube details.",
-      );
+      toast.error("Couldn't fetch YouTube details.");
 
       lastFetched.current = "";
     } finally {
@@ -1796,9 +1607,7 @@ function FcdsPlaylistForm({
     }
   };
 
-  const save = async (
-    e: FormEvent,
-  ) => {
+  const save = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!draft.course_slug) {
@@ -1806,134 +1615,96 @@ function FcdsPlaylistForm({
       return;
     }
 
-    const parsed =
-      parseYouTube(draft.youtube_url);
+    const parsed = parseYouTube(draft.youtube_url);
 
-    if (!parsed || (!id && parsed.kind !== "playlist")) {
-      toast.error(
-        id
-          ? "Enter a valid YouTube video or playlist URL."
-          : "Enter a valid YouTube Playlist URL.",
-      );
+    if (!parsed) {
+      toast.error("Enter a valid YouTube video or playlist URL.");
       return;
     }
 
     if (!draft.title.trim()) {
-      toast.error(
-        "Source title is required.",
-      );
+      toast.error("Source title is required.");
+      return;
+    }
+    const musicError = validateMusicSelection(
+      draft.music_status,
+      draft.music_skip_ranges,
+      parsed.kind === "video",
+    );
+    if (musicError) {
+      toast.error(musicError);
       return;
     }
 
     setSaving(true);
 
     const row = {
-      course_slug:
-        draft.course_slug,
+      course_slug: draft.course_slug,
 
-      youtube_url:
-        draft.youtube_url.trim(),
+      youtube_url: draft.youtube_url.trim(),
 
-      title:
-        draft.title.trim(),
+      title: draft.title.trim(),
 
-      channel:
-        draft.channel.trim() || null,
+      channel: draft.channel.trim() || null,
 
-      language:
-        draft.language,
+      language: draft.language,
 
-      thumbnail_url:
-        draft.thumbnail_url.trim() ||
-        null,
+      thumbnail_url: draft.thumbnail_url.trim() || null,
+      music_reviewed_at: new Date().toISOString(),
+      music_status: draft.music_status || null,
+      music_skip_ranges:
+        draft.music_status === "minimal_music" ? draft.music_skip_ranges.trim() || null : null,
     };
 
     const result = id
-      ? await supabase
-          .from("fcds_playlists")
-          .update(row)
-          .eq("id", id)
-      : await supabase
-          .from("fcds_playlists")
-          .insert(row);
+      ? await supabase.from("fcds_playlists").update(row).eq("id", id)
+      : await supabase.from("fcds_playlists").insert(row);
 
     setSaving(false);
 
     if (result.error) {
-      toast.error(
-        result.error.message,
-      );
+      toast.error(result.error.message);
       return;
     }
 
-    toast.success(
-      id
-        ? "Source updated"
-        : "Playlist added to FCDS",
-    );
+    toast.success(id ? "Source updated" : "Playlist added to FCDS");
 
     onDone();
   };
 
   return (
     <div className="max-w-3xl">
-
       <div className="flex items-start justify-between gap-4">
-
         <div>
-          <p className="text-xs tracking-[0.2em] text-amber-50/30">
-            FCDS
-          </p>
+          <p className="text-xs tracking-[0.2em] text-amber-50/30">FCDS</p>
 
           <h2 className="mt-2 text-4xl font-bold">
             {id
               ? parseYouTube(draft.youtube_url)?.kind === "video"
                 ? "Edit Video"
                 : "Edit Playlist"
-              : "Add Playlist"}
+              : "Add Resource"}
           </h2>
         </div>
 
-        <button
-          type="button"
-          onClick={onDone}
-          className={ghost}
-        >
+        <button type="button" onClick={onDone} className={ghost}>
           <X className="h-4 w-4" />
           Cancel
         </button>
-
       </div>
 
-      <form
-        onSubmit={save}
-        className="mt-10 grid gap-5 md:grid-cols-2"
-      >
-
-        <Label
-          label={id ? "YouTube video or playlist URL" : "YouTube Playlist URL"}
-          className="md:col-span-2"
-        >
+      <form onSubmit={save} className="mt-10 grid gap-5 md:grid-cols-2">
+        <Label label="YouTube video or playlist URL" className="md:col-span-2">
           <input
             required
             type="url"
             className={field}
             value={draft.youtube_url}
-            onChange={(e) =>
-              onUrl(e.target.value)
-            }
-            placeholder={
-              id
-                ? "https://youtube.com/watch?v=... or playlist URL"
-                : "https://youtube.com/playlist?list=..."
-            }
+            onChange={(e) => onUrl(e.target.value)}
+            placeholder={"https://youtube.com/watch?v=... or playlist URL"}
           />
 
-          {fetching && (
-            <p className="text-xs text-amber-50/30">
-              Fetching YouTube details...
-            </p>
-          )}
+          {fetching && <p className="text-xs text-amber-50/30">Fetching YouTube details...</p>}
         </Label>
 
         <Label label="Course">
@@ -1950,26 +1721,22 @@ function FcdsPlaylistForm({
           )}
         </Label>
 
+        <MusicFields
+          status={draft.music_status}
+          ranges={draft.music_skip_ranges}
+          kind={parseYouTube(draft.youtube_url)?.kind ?? "playlist"}
+          onStatusChange={(value) => update("music_status", value)}
+          onRangesChange={(value) => update("music_skip_ranges", value)}
+        />
         <Label label="Language">
           <select
             className={field}
             value={draft.language}
-            onChange={(e) =>
-              update(
-                "language",
-                e.target.value as
-                  | "Arabic"
-                  | "English",
-              )
-            }
+            onChange={(e) => update("language", e.target.value as "Arabic" | "English")}
           >
-            <option value="English">
-              English
-            </option>
+            <option value="English">English</option>
 
-            <option value="Arabic">
-              Arabic
-            </option>
+            <option value="Arabic">Arabic</option>
           </select>
         </Label>
 
@@ -1978,12 +1745,7 @@ function FcdsPlaylistForm({
             required
             className={field}
             value={draft.title}
-            onChange={(e) =>
-              update(
-                "title",
-                e.target.value,
-              )
-            }
+            onChange={(e) => update("title", e.target.value)}
           />
         </Label>
 
@@ -1991,28 +1753,15 @@ function FcdsPlaylistForm({
           <input
             className={field}
             value={draft.channel}
-            onChange={(e) =>
-              update(
-                "channel",
-                e.target.value,
-              )
-            }
+            onChange={(e) => update("channel", e.target.value)}
           />
         </Label>
 
-        <Label
-          label="Thumbnail URL"
-          className="md:col-span-2"
-        >
+        <Label label="Thumbnail URL" className="md:col-span-2">
           <input
             className={field}
             value={draft.thumbnail_url}
-            onChange={(e) =>
-              update(
-                "thumbnail_url",
-                e.target.value,
-              )
-            }
+            onChange={(e) => update("thumbnail_url", e.target.value)}
           />
         </Label>
 
@@ -2027,21 +1776,10 @@ function FcdsPlaylistForm({
         )}
 
         <div className="md:col-span-2">
-          <button
-            type="submit"
-            disabled={
-              saving || fetching
-            }
-            className={btn}
-          >
-            {saving
-              ? "Saving..."
-              : id
-                ? "Save Changes"
-                : "Add to FCDS"}
+          <button type="submit" disabled={saving || fetching} className={btn}>
+            {saving ? "Saving..." : id ? "Save Changes" : "Add to FCDS"}
           </button>
         </div>
-
       </form>
     </div>
   );
@@ -2061,7 +1799,8 @@ type Draft = {
   category_id: string;
   tags: string;
   language: string;
-  music_status: MusicStatus;
+  music_status: MusicStatus | "";
+  music_skip_ranges: string;
   recommendation: string;
   featured: boolean;
   date_added: string;
@@ -2077,33 +1816,26 @@ const emptyDraft = (): Draft => ({
   category_id: "",
   tags: "",
   language: "Arabic",
-  music_status: "no_music",
+  music_status: "",
+  music_skip_ranges: "",
   recommendation: "",
   featured: false,
-  date_added: new Date()
-    .toISOString()
-    .slice(0, 10),
+  date_added: new Date().toISOString().slice(0, 10),
 });
 
-const toDraft = (
-  c: ContentItem,
-): Draft => ({
+const toDraft = (c: ContentItem): Draft => ({
   youtube_url: c.youtube_url,
   title: c.title,
   channel: c.channel,
   thumbnail_url: c.thumbnail_url ?? "",
-  duration_min: String(
-    Math.round(
-      c.duration_seconds / 60,
-    ),
-  ),
+  duration_min: String(Math.round(c.duration_seconds / 60)),
   content_type: c.content_type,
   category_id: c.category_id ?? "",
   tags: c.tags.join(", "),
   language: c.language,
-  music_status: c.music_status,
-  recommendation:
-    c.recommendation ?? "",
+  music_status: c.music_reviewed_at ? c.music_status : "",
+  music_skip_ranges: c.music_skip_ranges ?? "",
+  recommendation: c.recommendation ?? "",
   featured: c.featured,
   date_added: c.date_added.slice(0, 10),
 });
@@ -2111,17 +1843,14 @@ const toDraft = (
 function ContentAdmin() {
   const qc = useQueryClient();
 
-  const { data: items = [] } =
-    useQuery(contentQuery);
+  const { data: items = [] } = useQuery(contentQuery);
 
-  const { data: categories = [] } =
-    useQuery(categoriesQuery);
+  const { data: categories = [] } = useQuery(categoriesQuery);
 
-  const [editing, setEditing] =
-    useState<{
-      id: string | null;
-      draft: Draft;
-    } | null>(null);
+  const [editing, setEditing] = useState<{
+    id: string | null;
+    draft: Draft;
+  } | null>(null);
 
   const refresh = () => {
     qc.invalidateQueries({
@@ -2133,17 +1862,12 @@ function ContentAdmin() {
     });
   };
 
-  const remove = async (
-    c: ContentItem,
-  ) => {
+  const remove = async (c: ContentItem) => {
     if (!confirm(`Delete "${c.title}"?`)) {
       return;
     }
 
-    const { error } = await supabase
-      .from("content")
-      .delete()
-      .eq("id", c.id);
+    const { error } = await supabase.from("content").delete().eq("id", c.id);
 
     if (error) {
       toast.error(error.message);
@@ -2154,9 +1878,7 @@ function ContentAdmin() {
     refresh();
   };
 
-  const toggleFeatured = async (
-    c: ContentItem,
-  ) => {
+  const toggleFeatured = async (c: ContentItem) => {
     const { error } = await supabase
       .from("content")
       .update({
@@ -2188,14 +1910,10 @@ function ContentAdmin() {
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        GENERAL
-      </p>
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">GENERAL</p>
 
       <div className="mt-2 flex items-center justify-between gap-4">
-        <h2 className="text-4xl font-bold">
-          General Library
-        </h2>
+        <h2 className="text-4xl font-bold">General Library</h2>
 
         <button
           className={btn}
@@ -2212,12 +1930,8 @@ function ContentAdmin() {
       </div>
 
       <ul className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
-
         {items.map((c) => (
-          <li
-            key={c.id}
-            className="flex items-center gap-4 py-4"
-          >
+          <li key={c.id} className="flex items-center gap-4 py-4">
             <img
               src={c.thumbnail_url ?? ""}
               alt=""
@@ -2225,41 +1939,23 @@ function ContentAdmin() {
             />
 
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">
-                {c.title}
-              </p>
+              <p className="truncate font-medium">{c.title}</p>
 
               <p className="text-xs text-amber-50/35">
-                {c.channel} ·{" "}
-                {c.category?.name ??
-                  "Uncategorized"}{" "}
-                ·{" "}
-                {formatDuration(
-                  c.duration_seconds,
-                )}{" "}
-                · {c.content_type}
+                {c.channel} · {c.category?.name ?? "Uncategorized"} ·{" "}
+                {formatDuration(c.duration_seconds)} · {c.content_type}
               </p>
             </div>
 
             <button
               aria-label="Toggle featured"
-              onClick={() =>
-                toggleFeatured(c)
-              }
+              onClick={() => toggleFeatured(c)}
               className={cn(
                 "p-2",
-                c.featured
-                  ? "text-yellow-400"
-                  : "text-amber-50/30 hover:text-amber-50",
+                c.featured ? "text-yellow-400" : "text-amber-50/30 hover:text-amber-50",
               )}
             >
-              <Star
-                className={cn(
-                  "h-4 w-4",
-                  c.featured &&
-                    "fill-current",
-                )}
-              />
+              <Star className={cn("h-4 w-4", c.featured && "fill-current")} />
             </button>
 
             <button
@@ -2284,7 +1980,6 @@ function ContentAdmin() {
             </button>
           </li>
         ))}
-
       </ul>
     </div>
   );
@@ -2301,59 +1996,40 @@ function ContentForm({
   categories: Category[];
   onDone: () => void;
 }) {
-  const [d, setD] =
-    useState(initial);
+  const [d, setD] = useState(initial);
 
-  const [busy, setBusy] =
-    useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const up = <
-    K extends keyof Draft,
-  >(
-    k: K,
-    v: Draft[K],
-  ) =>
+  const up = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setD((p) => ({
       ...p,
       [k]: v,
     }));
 
-  const getMeta =
-    useServerFn(fetchYouTubeMeta);
+  const getMeta = useServerFn(fetchYouTubeMeta);
 
-  const [fetching, setFetching] =
-    useState(false);
+  const [fetching, setFetching] = useState(false);
 
-  const lastFetched =
-    useRef("");
+  const lastFetched = useRef("");
 
-  const onUrl = async (
-    url: string,
-  ) => {
-    const parsed =
-      parseYouTube(url);
+  const onUrl = async (url: string) => {
+    const parsed = parseYouTube(url);
 
     setD((p) => ({
       ...p,
       youtube_url: url,
       ...(parsed
         ? {
-            content_type:
-              parsed.kind,
+            content_type: parsed.kind,
           }
         : {}),
     }));
 
-    if (
-      !parsed ||
-      lastFetched.current ===
-        parsed.id
-    ) {
+    if (!parsed || lastFetched.current === parsed.id) {
       return;
     }
 
-    lastFetched.current =
-      parsed.id;
+    lastFetched.current = parsed.id;
 
     setFetching(true);
 
@@ -2367,10 +2043,7 @@ function ContentForm({
     setFetching(false);
 
     if (!res.meta) {
-      toast.error(
-        res.error ??
-          "Couldn't fetch details.",
-      );
+      toast.error(res.error ?? "Couldn't fetch details.");
 
       return;
     }
@@ -2380,23 +2053,12 @@ function ContentForm({
     setD((p) => ({
       ...p,
       title: m.title || p.title,
-      channel:
-        m.channel || p.channel,
-      thumbnail_url:
-        m.thumbnail_url ||
-        p.thumbnail_url,
+      channel: m.channel || p.channel,
+      thumbnail_url: m.thumbnail_url || p.thumbnail_url,
 
       duration_min:
         m.duration_seconds != null
-          ? String(
-              Math.max(
-                1,
-                Math.round(
-                  m.duration_seconds /
-                    60,
-                ),
-              ),
-            )
+          ? String(Math.max(1, Math.round(m.duration_seconds / 60)))
           : p.duration_min,
     }));
 
@@ -2407,27 +2069,30 @@ function ContentForm({
     );
   };
 
-  const save = async (
-    e: FormEvent,
-  ) => {
+  const save = async (e: FormEvent) => {
     e.preventDefault();
 
-    const parsed =
-      parseYouTube(d.youtube_url);
+    const parsed = parseYouTube(d.youtube_url);
 
     if (!parsed) {
-      toast.error(
-        "That doesn't look like a YouTube link.",
-      );
+      toast.error("That doesn't look like a YouTube link.");
 
       return;
     }
 
+    const musicError = validateMusicSelection(
+      d.music_status,
+      d.music_skip_ranges,
+      parsed.kind === "video",
+    );
+    if (musicError) {
+      toast.error(musicError);
+      return;
+    }
     setBusy(true);
 
     const row = {
-      youtube_url:
-        d.youtube_url.trim(),
+      youtube_url: d.youtube_url.trim(),
 
       youtube_id: parsed.id,
 
@@ -2435,91 +2100,53 @@ function ContentForm({
 
       channel: d.channel.trim(),
 
-      thumbnail_url:
-        d.thumbnail_url.trim() ||
-        null,
+      thumbnail_url: d.thumbnail_url.trim() || null,
 
-      duration_seconds:
-        Math.round(
-          Number(
-            d.duration_min || 0,
-          ) * 60,
-        ),
+      duration_seconds: Math.round(Number(d.duration_min || 0) * 60),
 
-      content_type:
-        d.content_type,
+      content_type: d.content_type,
 
-      category_id:
-        d.category_id || null,
+      category_id: d.category_id || null,
 
-      language:
-        d.language.trim() ||
-        "English",
+      language: d.language.trim() || "English",
 
-      music_status:
-        d.music_status,
+      music_reviewed_at: new Date().toISOString(),
+      music_status: d.music_status as MusicStatus,
+      music_skip_ranges:
+        d.music_status === "minimal_music" ? d.music_skip_ranges.trim() || null : null,
 
-      recommendation:
-        d.recommendation.trim() ||
-        null,
+      recommendation: d.recommendation.trim() || null,
 
       featured: d.featured,
 
-      date_added: new Date(
-        d.date_added,
-      ).toISOString(),
+      date_added: new Date(d.date_added).toISOString(),
     };
 
     const res = id
-      ? await supabase
-          .from("content")
-          .update(row)
-          .eq("id", id)
-          .select("id")
-          .single()
-      : await supabase
-          .from("content")
-          .insert(row)
-          .select("id")
-          .single();
+      ? await supabase.from("content").update(row).eq("id", id).select("id").single()
+      : await supabase.from("content").insert(row).select("id").single();
 
     if (res.error) {
       setBusy(false);
-      toast.error(
-        res.error.message,
-      );
+      toast.error(res.error.message);
       return;
     }
 
-    const contentId =
-      res.data.id;
+    const contentId = res.data.id;
 
     const names = [
       ...new Set(
         d.tags
           .split(",")
-          .map((t) =>
-            t
-              .trim()
-              .toLowerCase(),
-          )
+          .map((t) => t.trim().toLowerCase())
           .filter(Boolean),
       ),
     ];
 
-    await supabase
-      .from("content_tags")
-      .delete()
-      .eq(
-        "content_id",
-        contentId,
-      );
+    await supabase.from("content_tags").delete().eq("content_id", contentId);
 
     if (names.length) {
-      const {
-        data: tags,
-        error,
-      } = await supabase
+      const { data: tags, error } = await supabase
         .from("tags")
         .upsert(
           names.map((name) => ({
@@ -2537,69 +2164,42 @@ function ContentForm({
         return;
       }
 
-      await supabase
-        .from("content_tags")
-        .insert(
-          tags.map((t) => ({
-            content_id:
-              contentId,
-            tag_id: t.id,
-          })),
-        );
+      await supabase.from("content_tags").insert(
+        tags.map((t) => ({
+          content_id: contentId,
+          tag_id: t.id,
+        })),
+      );
     }
 
     setBusy(false);
 
-    toast.success(
-      id
-        ? "Saved"
-        : "Added to library",
-    );
+    toast.success(id ? "Saved" : "Added to library");
 
     onDone();
   };
 
   return (
-    <form
-      onSubmit={save}
-      className="grid gap-5 md:grid-cols-2"
-    >
+    <form onSubmit={save} className="grid gap-5 md:grid-cols-2">
       <div className="flex items-center justify-between md:col-span-2">
-        <h2 className="text-4xl font-bold">
-          {id
-            ? "Edit content"
-            : "Add content"}
-        </h2>
+        <h2 className="text-4xl font-bold">{id ? "Edit content" : "Add content"}</h2>
 
-        <button
-          type="button"
-          onClick={onDone}
-          className={ghost}
-        >
+        <button type="button" onClick={onDone} className={ghost}>
           <X className="h-3.5 w-3.5" />
           Cancel
         </button>
       </div>
 
-      <Label
-        label="YouTube URL"
-        className="md:col-span-2"
-      >
+      <Label label="YouTube URL" className="md:col-span-2">
         <input
           required
           className={field}
           value={d.youtube_url}
-          onChange={(e) =>
-            onUrl(e.target.value)
-          }
+          onChange={(e) => onUrl(e.target.value)}
           placeholder="https://www.youtube.com/watch?v=..."
         />
 
-        {fetching && (
-          <p className="text-xs text-amber-50/30">
-            Fetching YouTube details...
-          </p>
-        )}
+        {fetching && <p className="text-xs text-amber-50/30">Fetching YouTube details...</p>}
       </Label>
 
       <Label label="Title">
@@ -2607,12 +2207,7 @@ function ContentForm({
           required
           className={field}
           value={d.title}
-          onChange={(e) =>
-            up(
-              "title",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("title", e.target.value)}
         />
       </Label>
 
@@ -2621,28 +2216,15 @@ function ContentForm({
           required
           className={field}
           value={d.channel}
-          onChange={(e) =>
-            up(
-              "channel",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("channel", e.target.value)}
         />
       </Label>
 
-      <Label
-        label="Thumbnail URL"
-        className="md:col-span-2"
-      >
+      <Label label="Thumbnail URL" className="md:col-span-2">
         <input
           className={field}
           value={d.thumbnail_url}
-          onChange={(e) =>
-            up(
-              "thumbnail_url",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("thumbnail_url", e.target.value)}
         />
       </Label>
 
@@ -2652,12 +2234,7 @@ function ContentForm({
           min={0}
           className={field}
           value={d.duration_min}
-          onChange={(e) =>
-            up(
-              "duration_min",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("duration_min", e.target.value)}
         />
       </Label>
 
@@ -2665,21 +2242,11 @@ function ContentForm({
         <select
           className={field}
           value={d.content_type}
-          onChange={(e) =>
-            up(
-              "content_type",
-              e.target
-                .value as ContentKind,
-            )
-          }
+          onChange={(e) => up("content_type", e.target.value as ContentKind)}
         >
-          <option value="video">
-            Video
-          </option>
+          <option value="video">Video</option>
 
-          <option value="playlist">
-            Playlist
-          </option>
+          <option value="playlist">Playlist</option>
         </select>
       </Label>
 
@@ -2687,22 +2254,12 @@ function ContentForm({
         <select
           className={field}
           value={d.category_id}
-          onChange={(e) =>
-            up(
-              "category_id",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("category_id", e.target.value)}
         >
-          <option value="">
-            Uncategorized
-          </option>
+          <option value="">Uncategorized</option>
 
           {categories.map((c) => (
-            <option
-              key={c.id}
-              value={c.id}
-            >
+            <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
@@ -2710,53 +2267,34 @@ function ContentForm({
       </Label>
 
       <Label label="Tags (comma separated)">
-        <input
-          className={field}
-          value={d.tags}
-          onChange={(e) =>
-            up(
-              "tags",
-              e.target.value,
-            )
-          }
-        />
+        <input className={field} value={d.tags} onChange={(e) => up("tags", e.target.value)} />
       </Label>
 
       <Label label="Language">
         <select
           className={field}
           value={d.language}
-          onChange={(e) =>
-            up(
-              "language",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("language", e.target.value)}
         >
-          <option value="English">
-            English
-          </option>
+          <option value="English">English</option>
 
-          <option value="Arabic">
-            Arabic
-          </option>
+          <option value="Arabic">Arabic</option>
         </select>
       </Label>
 
-      <Label
-        label="Why I recommend this"
-        className="md:col-span-2"
-      >
+      <MusicFields
+        status={d.music_status}
+        ranges={d.music_skip_ranges}
+        kind={d.content_type}
+        onStatusChange={(value) => up("music_status", value)}
+        onRangesChange={(value) => up("music_skip_ranges", value)}
+      />
+      <Label label="Why I recommend this" className="md:col-span-2">
         <textarea
           rows={4}
           className={field}
           value={d.recommendation}
-          onChange={(e) =>
-            up(
-              "recommendation",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("recommendation", e.target.value)}
         />
       </Label>
 
@@ -2765,12 +2303,7 @@ function ContentForm({
           type="date"
           className={field}
           value={d.date_added}
-          onChange={(e) =>
-            up(
-              "date_added",
-              e.target.value,
-            )
-          }
+          onChange={(e) => up("date_added", e.target.value)}
         />
       </Label>
 
@@ -2778,27 +2311,14 @@ function ContentForm({
         <input
           type="checkbox"
           checked={d.featured}
-          onChange={(e) =>
-            up(
-              "featured",
-              e.target.checked,
-            )
-          }
+          onChange={(e) => up("featured", e.target.checked)}
         />
-
         Featured
       </label>
 
       <div className="md:col-span-2">
-        <button
-          className={btn}
-          disabled={busy}
-        >
-          {busy
-            ? "Saving…"
-            : id
-              ? "Save changes"
-              : "Add to library"}
+        <button className={btn} disabled={busy}>
+          {busy ? "Saving…" : id ? "Save changes" : "Add to library"}
         </button>
       </div>
     </form>
@@ -2808,7 +2328,7 @@ function ContentForm({
 /* ------------------------------------------------ */
 /* Categories */
 /* ------------------------------------------------ */
- /* ------------------------------------------------ */
+/* ------------------------------------------------ */
 /* FCDS Courses */
 /* ------------------------------------------------ */
 
@@ -2874,6 +2394,7 @@ function CoursesAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-courses-admin"],
     });
@@ -2917,9 +2438,7 @@ function CoursesAdmin() {
     }
 
     if ((count ?? 0) > 0) {
-      toast.error(
-        "This course still has playlists. Move or delete them first.",
-      );
+      toast.error("This course still has playlists. Move or delete them first.");
       return;
     }
 
@@ -2927,10 +2446,7 @@ function CoursesAdmin() {
       return;
     }
 
-    const { error } = await supabase
-      .from("fcds_courses")
-      .delete()
-      .eq("id", course.id);
+    const { error } = await supabase.from("fcds_courses").delete().eq("id", course.id);
 
     if (error) {
       toast.error(error.message);
@@ -2956,19 +2472,13 @@ function CoursesAdmin() {
 
   return (
     <div>
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        FCDS
-      </p>
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">FCDS</p>
 
       <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-bold">
-            Courses
-          </h2>
+          <h2 className="text-4xl font-bold">Courses</h2>
 
-          <p className="mt-3 text-sm text-amber-50/40">
-            Manage courses in the FCDS library.
-          </p>
+          <p className="mt-3 text-sm text-amber-50/40">Manage courses in the FCDS library.</p>
         </div>
 
         <button
@@ -2987,9 +2497,7 @@ function CoursesAdmin() {
       </div>
 
       {isLoading ? (
-        <p className="mt-10 text-amber-50/40">
-          Loading...
-        </p>
+        <p className="mt-10 text-amber-50/40">Loading...</p>
       ) : courses.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
           No courses yet.
@@ -2997,18 +2505,20 @@ function CoursesAdmin() {
       ) : (
         <div className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
           {courses.map((course) => (
-            <div
-              key={course.id}
-              className="flex items-center gap-4 py-4"
-            >
+            <div key={course.id} className="flex items-center gap-4 py-4">
               <div className="min-w-0 flex-1">
-                <p className="font-medium">
-                  {course.name}
-                </p>
+                <p className="font-medium">{course.name}</p>
 
                 <p className="mt-1 text-xs text-amber-50/35">
-                  {course.code} · {courseYearLabel(course.year)} · {fcdsSpecializations.find((option) => option.value === normalizeFcdsSpecialization(course.specialization))?.label}
-                  {course.semester ? ` · Semester ${course.semester}` : " · No semester"} · /{course.slug}
+                  {course.code} · {courseYearLabel(course.year)} ·{" "}
+                  {
+                    fcdsSpecializations.find(
+                      (option) =>
+                        option.value === normalizeFcdsSpecialization(course.specialization),
+                    )?.label
+                  }
+                  {course.semester ? ` · Semester ${course.semester}` : " · No semester"} · /
+                  {course.slug}
                 </p>
               </div>
 
@@ -3049,10 +2559,7 @@ function CourseForm({
   const [draft, setDraft] = useState(initial);
   const [saving, setSaving] = useState(false);
 
-  const update = <K extends keyof FcdsCourseDraft>(
-    key: K,
-    value: FcdsCourseDraft[K],
-  ) => {
+  const update = <K extends keyof FcdsCourseDraft>(key: K, value: FcdsCourseDraft[K]) => {
     setDraft((previous) => ({
       ...previous,
       [key]: value,
@@ -3064,10 +2571,7 @@ function CourseForm({
       ...previous,
       name,
 
-      slug:
-        id === null
-          ? courseSlugify(name)
-          : previous.slug,
+      slug: id === null ? courseSlugify(name) : previous.slug,
     }));
   };
 
@@ -3106,13 +2610,8 @@ function CourseForm({
     };
 
     const result = id
-      ? await supabase
-          .from("fcds_courses")
-          .update(row)
-          .eq("id", id)
-      : await supabase
-          .from("fcds_courses")
-          .insert(row);
+      ? await supabase.from("fcds_courses").update(row).eq("id", id)
+      : await supabase.from("fcds_courses").insert(row);
 
     setSaving(false);
 
@@ -3121,11 +2620,7 @@ function CourseForm({
       return;
     }
 
-    toast.success(
-      id
-        ? "Course updated"
-        : "Course added",
-    );
+    toast.success(id ? "Course updated" : "Course added");
 
     onDone();
   };
@@ -3134,29 +2629,18 @@ function CourseForm({
     <div className="max-w-3xl">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs tracking-[0.2em] text-amber-50/30">
-            FCDS
-          </p>
+          <p className="text-xs tracking-[0.2em] text-amber-50/30">FCDS</p>
 
-          <h2 className="mt-2 text-4xl font-bold">
-            {id ? "Edit Course" : "Add Course"}
-          </h2>
+          <h2 className="mt-2 text-4xl font-bold">{id ? "Edit Course" : "Add Course"}</h2>
         </div>
 
-        <button
-          type="button"
-          onClick={onDone}
-          className={ghost}
-        >
+        <button type="button" onClick={onDone} className={ghost}>
           <X className="h-4 w-4" />
           Cancel
         </button>
       </div>
 
-      <form
-        onSubmit={save}
-        className="mt-10 grid gap-5 md:grid-cols-2"
-      >
+      <form onSubmit={save} className="mt-10 grid gap-5 md:grid-cols-2">
         <Label label="Course Name">
           <input
             required
@@ -3172,9 +2656,7 @@ function CourseForm({
             required
             className={field}
             value={draft.code}
-            onChange={(e) =>
-              update("code", e.target.value)
-            }
+            onChange={(e) => update("code", e.target.value)}
             placeholder="CS201"
           />
         </Label>
@@ -3187,7 +2669,9 @@ function CourseForm({
             onChange={(event) => update("specialization", event.target.value as FcdsSpecialization)}
           >
             {fcdsSpecializations.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
             ))}
           </select>
         </Label>
@@ -3196,27 +2680,21 @@ function CourseForm({
           <select
             className={field}
             value={draft.year}
-            onChange={(e) => setDraft((previous) => ({
-              ...previous,
-              year: e.target.value,
-              semester: null,
-            }))}
+            onChange={(e) =>
+              setDraft((previous) => ({
+                ...previous,
+                year: e.target.value,
+                semester: null,
+              }))
+            }
           >
-            <option value="السنة الأولى">
-              Year One
-            </option>
+            <option value="السنة الأولى">Year One</option>
 
-            <option value="السنة الثانية">
-              Year Two
-            </option>
+            <option value="السنة الثانية">Year Two</option>
 
-            <option value="السنة الثالثة">
-              Year Three
-            </option>
+            <option value="السنة الثالثة">Year Three</option>
 
-            <option value="السنة الرابعة">
-              Year Four
-            </option>
+            <option value="السنة الرابعة">Year Four</option>
           </select>
         </Label>
 
@@ -3230,7 +2708,7 @@ function CourseForm({
               setDraft((previous) => ({
                 ...previous,
                 semester,
-                year: semester ? fcdsYearForSemester(semester) ?? previous.year : previous.year,
+                year: semester ? (fcdsYearForSemester(semester) ?? previous.year) : previous.year,
               }));
             }}
           >
@@ -3251,27 +2729,14 @@ function CourseForm({
             required
             className={field}
             value={draft.slug}
-            onChange={(e) =>
-              update(
-                "slug",
-                courseSlugify(e.target.value),
-              )
-            }
+            onChange={(e) => update("slug", courseSlugify(e.target.value))}
             placeholder="data-structures"
           />
         </Label>
 
         <div className="md:col-span-2">
-          <button
-            type="submit"
-            className={btn}
-            disabled={saving}
-          >
-            {saving
-              ? "Saving..."
-              : id
-                ? "Save Changes"
-                : "Add Course"}
+          <button type="submit" className={btn} disabled={saving}>
+            {saving ? "Saving..." : id ? "Save Changes" : "Add Course"}
           </button>
         </div>
       </form>
@@ -3282,26 +2747,20 @@ const slugify = (s: string) =>
   s
     .toLowerCase()
     .trim()
-    .replace(
-      /[^a-z0-9]+/g,
-      "-",
-    )
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 
 function CategoryAdmin() {
   const qc = useQueryClient();
 
-  const { data: categories = [] } =
-    useQuery(categoriesQuery);
+  const { data: categories = [] } = useQuery(categoriesQuery);
 
-  const [name, setName] =
-    useState("");
+  const [name, setName] = useState("");
 
-  const [edit, setEdit] =
-    useState<{
-      id: string;
-      name: string;
-    } | null>(null);
+  const [edit, setEdit] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const refresh = () => {
     qc.invalidateQueries({
@@ -3313,22 +2772,16 @@ function CategoryAdmin() {
     });
   };
 
-  const add = async (
-    e: FormEvent,
-  ) => {
+  const add = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) return;
 
-    const { error } =
-      await supabase
-        .from("categories")
-        .insert({
-          name: name.trim(),
-          slug: slugify(name),
-          sort_order:
-            categories.length + 1,
-        });
+    const { error } = await supabase.from("categories").insert({
+      name: name.trim(),
+      slug: slugify(name),
+      sort_order: categories.length + 1,
+    });
 
     if (error) {
       toast.error(error.message);
@@ -3342,14 +2795,13 @@ function CategoryAdmin() {
   const save = async () => {
     if (!edit) return;
 
-    const { error } =
-      await supabase
-        .from("categories")
-        .update({
-          name: edit.name.trim(),
-          slug: slugify(edit.name),
-        })
-        .eq("id", edit.id);
+    const { error } = await supabase
+      .from("categories")
+      .update({
+        name: edit.name.trim(),
+        slug: slugify(edit.name),
+      })
+      .eq("id", edit.id);
 
     if (error) {
       toast.error(error.message);
@@ -3360,22 +2812,12 @@ function CategoryAdmin() {
     refresh();
   };
 
-  const remove = async (
-    c: Category,
-  ) => {
-    if (
-      !confirm(
-        `Delete category "${c.name}"? Content stays uncategorized.`,
-      )
-    ) {
+  const remove = async (c: Category) => {
+    if (!confirm(`Delete category "${c.name}"? Content stays uncategorized.`)) {
       return;
     }
 
-    const { error } =
-      await supabase
-        .from("categories")
-        .delete()
-        .eq("id", c.id);
+    const { error } = await supabase.from("categories").delete().eq("id", c.id);
 
     if (error) {
       toast.error(error.message);
@@ -3387,25 +2829,16 @@ function CategoryAdmin() {
 
   return (
     <div className="max-w-3xl">
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">
-        GENERAL
-      </p>
+      <p className="text-xs tracking-[0.2em] text-amber-50/30">GENERAL</p>
 
-      <h2 className="mt-2 text-4xl font-bold">
-        Categories
-      </h2>
+      <h2 className="mt-2 text-4xl font-bold">Categories</h2>
 
-      <form
-        onSubmit={add}
-        className="mt-10 flex gap-3"
-      >
+      <form onSubmit={add} className="mt-10 flex gap-3">
         <input
           className={field}
           placeholder="New category name"
           value={name}
-          onChange={(e) =>
-            setName(e.target.value)
-          }
+          onChange={(e) => setName(e.target.value)}
         />
 
         <button className={btn}>
@@ -3415,12 +2848,8 @@ function CategoryAdmin() {
       </form>
 
       <ul className="mt-8 divide-y divide-amber-100/10 border-y border-amber-100/10">
-
         {categories.map((c) => (
-          <li
-            key={c.id}
-            className="flex items-center gap-3 py-3"
-          >
+          <li key={c.id} className="flex items-center gap-3 py-3">
             {edit?.id === c.id ? (
               <>
                 <input
@@ -3433,39 +2862,22 @@ function CategoryAdmin() {
                       name: e.target.value,
                     })
                   }
-                  onKeyDown={(e) =>
-                    e.key ===
-                      "Enter" &&
-                    save()
-                  }
+                  onKeyDown={(e) => e.key === "Enter" && save()}
                 />
 
-                <button
-                  className={ghost}
-                  onClick={save}
-                  type="button"
-                >
+                <button className={ghost} onClick={save} type="button">
                   <Check className="h-3.5 w-3.5" />
                   Save
                 </button>
 
-                <button
-                  className={ghost}
-                  onClick={() =>
-                    setEdit(null)
-                  }
-                  type="button"
-                >
+                <button className={ghost} onClick={() => setEdit(null)} type="button">
                   Cancel
                 </button>
               </>
             ) : (
               <>
                 <span className="flex-1">
-                  {c.name}{" "}
-                  <span className="text-xs text-amber-50/30">
-                    /{c.slug}
-                  </span>
+                  {c.name} <span className="text-xs text-amber-50/30">/{c.slug}</span>
                 </span>
 
                 <button
@@ -3483,9 +2895,7 @@ function CategoryAdmin() {
 
                 <button
                   aria-label="Delete"
-                  onClick={() =>
-                    remove(c)
-                  }
+                  onClick={() => remove(c)}
                   className="p-2 text-amber-50/30 hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -3494,8 +2904,222 @@ function CategoryAdmin() {
             )}
           </li>
         ))}
-
       </ul>
     </div>
+  );
+}
+
+/* ------------------------------------------------ */
+/* Darb course resource coverage — live DB counts */
+/* ------------------------------------------------ */
+function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
+  const [search, setSearch] = useState("");
+  const [year, setYear] = useState("all");
+  const [semester, setSemester] = useState("all");
+  const [specialization, setSpecialization] = useState("all");
+  const [visibility, setVisibility] = useState("all");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const { data, isPending, error } = useQuery({
+    queryKey: ["admin-course-coverage"],
+    queryFn: async () => {
+      const [coursesResult, resourceResult] = await Promise.all([
+        supabase.from("fcds_courses").select("*").order("semester", { ascending: true }),
+        supabase.from("fcds_playlists").select("id,course_slug,title,youtube_url"),
+      ]);
+      if (coursesResult.error) throw coursesResult.error;
+      if (resourceResult.error) throw resourceResult.error;
+      return {
+        courses: (coursesResult.data ?? []) as FcdsCourseRow[],
+        resources: resourceResult.data ?? [],
+      };
+    },
+  });
+  const courses = data?.courses ?? [];
+  const resources = data?.resources ?? [];
+  const byCourse = new Map<string, typeof resources>();
+  resources.forEach((resource) =>
+    byCourse.set(resource.course_slug, [...(byCourse.get(resource.course_slug) ?? []), resource]),
+  );
+  const covered = courses.filter((c) => (byCourse.get(c.slug)?.length ?? 0) > 0).length;
+  const total = courses.length;
+  const filtered = courses.filter((c) => {
+    const n = byCourse.get(c.slug)?.length ?? 0;
+    return (
+      (year === "all" || c.year === year) &&
+      (semester === "all" || String(c.semester) === semester) &&
+      (specialization === "all" ||
+        normalizeFcdsSpecialization(c.specialization) === specialization) &&
+      (visibility === "all" || (visibility === "empty" ? n === 0 : n > 0)) &&
+      `${c.name} ${c.code}`.toLowerCase().includes(search.toLowerCase())
+    );
+  });
+  return (
+    <section className="space-y-6">
+      <div>
+        <p className="text-xs tracking-[0.2em] text-amber-50/35">DARB / COVERAGE</p>
+        <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Playlist per Courses</h2>
+        <p className="mt-2 text-sm text-amber-50/50">
+          See exactly which courses have video or playlist resources.
+        </p>
+      </div>
+      {error && (
+        <p role="alert" className="text-red-300">
+          Couldn't load course coverage. {error.message}
+        </p>
+      )}
+      {isPending ? (
+        <p className="text-amber-50/55">Loading coverage…</p>
+      ) : error ? null : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ["Covered courses", `${covered} / ${total}`],
+              ["Uncovered courses", String(total - covered)],
+              ["All resources", String(resources.length)],
+              ["Coverage", total ? `${Math.round((covered / total) * 100)}%` : "0%"],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.03] p-4"
+              >
+                <p className="text-2xl font-bold text-amber-200">{value}</p>
+                <p className="mt-1 text-xs text-amber-50/55">{label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-amber-100/10">
+            <div
+              className="h-full rounded-full bg-amber-300"
+              style={{ width: `${total ? (covered / total) * 100 : 0}%` }}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <input
+              className={field}
+              placeholder="Search course or code"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search courses"
+            />
+            <select
+              className={field}
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              aria-label="Year"
+            >
+              <option value="all">All years</option>
+              {["السنة الأولى", "السنة الثانية", "السنة الثالثة", "السنة الرابعة"].map((y) => (
+                <option key={y} value={y}>
+                  {courseYearLabel(y)}
+                </option>
+              ))}
+            </select>
+            <select
+              className={field}
+              value={semester}
+              onChange={(e) => setSemester(e.target.value)}
+              aria-label="Semester"
+            >
+              <option value="all">All semesters</option>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                <option key={s} value={String(s)}>
+                  Semester {s}
+                </option>
+              ))}
+            </select>
+            <select
+              className={field}
+              value={specialization}
+              onChange={(e) => setSpecialization(e.target.value)}
+              aria-label="Specialization"
+            >
+              <option value="all">All specializations</option>
+              {fcdsSpecializations.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className={field}
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value)}
+              aria-label="Coverage"
+            >
+              <option value="all">All courses</option>
+              <option value="filled">With resources</option>
+              <option value="empty">Without resources</option>
+            </select>
+          </div>
+          <p className="text-xs text-amber-50/40">
+            Showing {filtered.length} of {total} courses. Playlist and video counts are separate.
+          </p>
+          <div className="divide-y divide-amber-100/10 rounded-2xl border border-amber-100/10">
+            {filtered.map((c) => {
+              const items = byCourse.get(c.slug) ?? [];
+              const playlistCount = items.filter(
+                (i) => parseYouTube(i.youtube_url)?.kind === "playlist",
+              ).length;
+              const videoCount = items.filter(
+                (i) => parseYouTube(i.youtube_url)?.kind === "video",
+              ).length;
+              return (
+                <div key={c.id} className="p-4">
+                  <button
+                    type="button"
+                    className="flex w-full flex-wrap items-center justify-between gap-3 text-left sm:flex-nowrap"
+                    onClick={() => setExpanded(expanded === c.slug ? null : c.slug)}
+                    aria-expanded={expanded === c.slug}
+                  >
+                    <span className="min-w-0">
+                      <span className="block font-medium">{c.name}</span>
+                      <span className="block text-xs text-amber-50/45">
+                        {c.code} · {courseYearLabel(c.year)} · Semester {c.semester ?? "—"}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right text-xs text-amber-100/75">
+                      {playlistCount} playlists · {videoCount} videos
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-amber-50/50",
+                        expanded === c.slug && "rotate-180",
+                      )}
+                    />
+                  </button>
+                  {expanded === c.slug && (
+                    <div className="mt-4 space-y-2 border-t border-amber-100/10 pt-4">
+                      {items.length ? (
+                        items.map((i) => (
+                          <a
+                            key={i.id}
+                            href={i.youtube_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block truncate text-sm text-amber-200 hover:underline"
+                          >
+                            {i.title} ↗
+                          </a>
+                        ))
+                      ) : (
+                        <p className="text-sm text-amber-50/50">
+                          No resources for this course yet.
+                        </p>
+                      )}
+                      <button type="button" className={ghost} onClick={onOpenLibrary}>
+                        Manage in FCDS Library
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {!filtered.length && (
+              <p className="p-5 text-sm text-amber-50/50">No matching courses.</p>
+            )}
+          </div>
+        </>
+      )}
+    </section>
   );
 }

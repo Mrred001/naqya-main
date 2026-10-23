@@ -1,4 +1,6 @@
 import { recordFcdsOpen } from "@/lib/fcds-discovery";
+import { MusicNotice } from "@/components/site/MusicNotice";
+import type { MusicStatus } from "@/lib/content";
 import { ResourceProgress } from "@/components/account/ResourceProgress";
 import { SaveButton } from "@/components/account/SaveButton";
 import { SavedItemsLink } from "@/components/account/SavedItemsLink";
@@ -31,6 +33,9 @@ type FcdsCourse = {
 type FcdsPlaylistRow = {
   id: string;
   course_slug: string;
+  music_status?: MusicStatus | null;
+  music_reviewed_at?: string | null;
+  music_skip_ranges?: string | null;
   youtube_url: string;
   title: string;
   channel: string | null;
@@ -146,7 +151,18 @@ function CoursePage() {
 
             <span>•</span>
 
-            <span>{english ? ({ "السنة الأولى": "Year 1", "السنة الثانية": "Year 2", "السنة الثالثة": "Year 3", "السنة الرابعة": "Year 4" } as Record<string, string>)[course.year] ?? course.year : course.year}</span>
+            <span>
+              {english
+                ? ((
+                    {
+                      "السنة الأولى": "Year 1",
+                      "السنة الثانية": "Year 2",
+                      "السنة الثالثة": "Year 3",
+                      "السنة الرابعة": "Year 4",
+                    } as Record<string, string>
+                  )[course.year] ?? course.year)
+                : course.year}
+            </span>
           </div>
         </section>
 
@@ -155,7 +171,9 @@ function CoursePage() {
             <div>
               <p className="font-mono text-xs text-primary">PLAYLISTS</p>
 
-              <h2 className="mt-2 text-3xl font-bold">{t("المصادر المتاحة", "Available resources")}</h2>
+              <h2 className="mt-2 text-3xl font-bold">
+                {t("المصادر المتاحة", "Available resources")}
+              </h2>
             </div>
 
             <p className="text-sm text-muted-foreground">{playlists.length} Playlists</p>
@@ -174,11 +192,19 @@ function CoursePage() {
           )}
 
           {!playlistsLoading && !playlistsError && sources.length === 0 && (
-            <div className="rounded-2xl border border-border bg-card p-10 text-center" dir={english ? "ltr" : "rtl"}>
-              <p className="text-lg font-semibold">{t("ما في مصادر للمادة دي حالياً.", "There are no resources for this course yet.")}</p>
+            <div
+              className="rounded-2xl border border-border bg-card p-10 text-center"
+              dir={english ? "ltr" : "rtl"}
+            >
+              <p className="text-lg font-semibold">
+                {t("ما في مصادر للمادة دي حالياً.", "There are no resources for this course yet.")}
+              </p>
 
               <p className="mt-2 text-sm text-muted-foreground">
-                {t("لو عندك فيديو أو Playlist مفيدة، اقترحها من صفحة درب FCDS.", "Have a useful video or playlist? Suggest it from the DARB FCDS page.")}
+                {t(
+                  "لو عندك فيديو أو Playlist مفيدة، اقترحها من صفحة درب FCDS.",
+                  "Have a useful video or playlist? Suggest it from the DARB FCDS page.",
+                )}
               </p>
             </div>
           )}
@@ -187,10 +213,18 @@ function CoursePage() {
             <div className="grid gap-4">
               {playlists.map((playlist) => (
                 <article key={playlist.id} className="space-y-3">
+                  <MusicNotice
+                    status={playlist.music_reviewed_at ? playlist.music_status : null}
+                    skipRanges={playlist.music_skip_ranges}
+                  />
                   <a
                     href={playlist.youtube_url}
-                    onClick={() => { void recordFcdsOpen(playlist.id); }}
-                    onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(playlist.id); }}
+                    onClick={() => {
+                      void recordFcdsOpen(playlist.id);
+                    }}
+                    onAuxClick={(event) => {
+                      if (event.button === 1) void recordFcdsOpen(playlist.id);
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:bg-primary/[0.03] md:flex"
@@ -245,7 +279,7 @@ function CoursePage() {
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center gap-3" dir="rtl">
                   <Video className="h-5 w-5 text-primary" />
-              <span className="font-semibold">{t("فيديوهات منفردة", "Individual videos")}</span>
+                  <span className="font-semibold">{t("فيديوهات منفردة", "Individual videos")}</span>
                   <span className="rounded-full bg-accent px-2.5 py-1 text-xs text-muted-foreground">
                     {videos.length}
                   </span>
@@ -256,12 +290,20 @@ function CoursePage() {
                 {videos.map((video) => (
                   <article
                     key={video.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border p-3 lg:flex-row lg:items-center"
+                    className="flex flex-col gap-3 rounded-xl border border-border p-3"
                   >
+                    <MusicNotice
+                      status={video.music_reviewed_at ? video.music_status : null}
+                      skipRanges={video.music_skip_ranges}
+                    />
                     <a
                       href={video.youtube_url}
-                      onClick={() => { void recordFcdsOpen(video.id); }}
-                      onAuxClick={(event) => { if (event.button === 1) void recordFcdsOpen(video.id); }}
+                      onClick={() => {
+                        void recordFcdsOpen(video.id);
+                      }}
+                      onAuxClick={(event) => {
+                        if (event.button === 1) void recordFcdsOpen(video.id);
+                      }}
                       target="_blank"
                       rel="noreferrer"
                       className="flex min-w-0 flex-1 items-center gap-3"
@@ -290,7 +332,10 @@ function CoursePage() {
                       </span>
                       <ExternalLink className="h-4 w-4 shrink-0 text-primary" />
                     </a>
-                    <div className="flex shrink-0 flex-col items-start gap-2" dir={english ? "ltr" : "rtl"}>
+                    <div
+                      className="flex shrink-0 flex-col items-start gap-2"
+                      dir={english ? "ltr" : "rtl"}
+                    >
                       <SaveButton kind="fcds" id={video.id} />
                       <ResourceProgress id={video.id} />
                     </div>

@@ -194,7 +194,10 @@ describe("Account privacy and saved sources", () => {
     mocks.signOut.mockResolvedValue({ error: null });
     wrap(<SiteHeader />);
 
-    expect(await screen.findByRole("link", { name: "المحفوظات" })).toHaveAttribute("href", "/saved");
+    expect(await screen.findByRole("link", { name: "المحفوظات" })).toHaveAttribute(
+      "href",
+      "/saved",
+    );
     expect(screen.getByRole("button", { name: "تفعيل الوضع الفاتح" })).toBeVisible();
 
     const avatar = await screen.findByRole("button", { name: "حسابي" });

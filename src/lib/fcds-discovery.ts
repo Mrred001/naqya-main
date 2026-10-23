@@ -14,9 +14,12 @@ export type FcdsResource = {
 export const recentFcdsQuery = queryOptions({
   queryKey: ["fcds-discovery", "recent"],
   queryFn: async () => {
-    const { data, error } = await supabase.from("fcds_playlists")
+    const { data, error } = await supabase
+      .from("fcds_playlists")
       .select("id,course_slug,youtube_url,title,channel,thumbnail_url,created_at")
-      .order("created_at", { ascending: false }).order("id").limit(3);
+      .order("created_at", { ascending: false })
+      .order("id")
+      .limit(3);
     if (error) throw error;
     return (data ?? []) as FcdsResource[];
   },

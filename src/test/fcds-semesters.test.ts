@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { defaultFcdsSpecialization, normalizeFcdsSpecialization, fcdsSemesterForTemporaryCode, fcdsYearForSemester } from "@/lib/fcds";
+import {
+  defaultFcdsSpecialization,
+  normalizeFcdsSpecialization,
+  fcdsSemesterForTemporaryCode,
+  fcdsYearForSemester,
+} from "@/lib/fcds";
 
 describe("FCDS semester to year mapping", () => {
   it("maps every semester pair to the matching year", () => {

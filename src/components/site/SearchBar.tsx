@@ -4,7 +4,15 @@ import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useSitePreferences } from "./PreferencesProvider";
 
-export function SearchBar({ initial = "", onChange, className }: { initial?: string; onChange?: (q: string) => void; className?: string }) {
+export function SearchBar({
+  initial = "",
+  onChange,
+  className,
+}: {
+  initial?: string;
+  onChange?: (q: string) => void;
+  className?: string;
+}) {
   const { language } = useSitePreferences();
   const english = language === "en";
   const [q, setQ] = useState(initial);
@@ -48,7 +56,10 @@ export function SearchBar({ initial = "", onChange, className }: { initial?: str
           expanded ? "opacity-100" : "pointer-events-none opacity-0",
         )}
       >
-        <Search className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden="true" />
+        <Search
+          className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-focus-within:text-primary"
+          aria-hidden="true"
+        />
         <input
           ref={inputRef}
           disabled={!expanded}
@@ -57,7 +68,11 @@ export function SearchBar({ initial = "", onChange, className }: { initial?: str
             setQ(e.target.value);
             onChange?.(e.target.value);
           }}
-          placeholder={english ? "Search videos, playlists, channels, or topics…" : "ابحث عن فيديو، قائمة تشغيل، قناة، أو موضوع..."}
+          placeholder={
+            english
+              ? "Search videos, playlists, channels, or topics…"
+              : "ابحث عن فيديو، قائمة تشغيل، قناة، أو موضوع..."
+          }
           aria-label={english ? "Search" : "بحث"}
           className="min-w-0 w-full bg-transparent text-base outline-none placeholder:text-muted-foreground"
         />
