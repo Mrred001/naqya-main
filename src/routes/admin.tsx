@@ -741,6 +741,7 @@ function SuggestionsAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-suggestions"],
     });
@@ -823,6 +824,7 @@ function SuggestionsAdmin() {
 
     toast.success("Added to FCDS");
     const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
   qc.invalidateQueries({
     queryKey: ["fcds-suggestions"],
   });
@@ -1514,6 +1516,7 @@ function FcdsLibraryAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-library"],
     });
@@ -2925,6 +2928,7 @@ function CoursesAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-courses-admin"],
     });
@@ -3557,6 +3561,7 @@ function CategoryAdmin() {
 function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const [search, setSearch] = useState("");
   const [year, setYear] = useState("all");
+  const [semester, setSemester] = useState("all");
   const [specialization, setSpecialization] = useState("all");
   const [visibility, setVisibility] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -3581,6 +3586,7 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const filtered = courses.filter((c) => {
     const n = byCourse.get(c.slug)?.length ?? 0;
     return (year === "all" || c.year === year)
+      && (semester === "all" || String(c.semester) === semester)
       && (specialization === "all" || normalizeFcdsSpecialization(c.specialization) === specialization)
       && (visibility === "all" || (visibility === "empty" ? n === 0 : n > 0))
       && `${c.name} ${c.code}`.toLowerCase().includes(search.toLowerCase());
@@ -3592,7 +3598,7 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         <p className="mt-2 text-sm text-amber-50/50">See exactly which courses have video or playlist resources.</p>
       </div>
       {error && <p role="alert" className="text-red-300">Couldn't load course coverage. {error.message}</p>}
-      {isPending ? <p className="text-amber-50/55">Loading coverage…</p> : <>
+      {isPending ? <p className="text-amber-50/55">Loading coverage…</p> : error ? null : <>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             ["Covered courses", `${covered} / ${total}`],
@@ -3605,6 +3611,7 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <input className={field} placeholder="Search course or code" value={search} onChange={e => setSearch(e.target.value)} aria-label="Search courses" />
           <select className={field} value={year} onChange={e => setYear(e.target.value)} aria-label="Year"><option value="all">All years</option>{["السنة الأولى","السنة الثانية","السنة الثالثة","السنة الرابعة"].map(y => <option key={y} value={y}>{courseYearLabel(y)}</option>)}</select>
+          <select className={field} value={semester} onChange={e => setSemester(e.target.value)} aria-label="Semester"><option value="all">All semesters</option>{[1,2,3,4,5,6,7,8].map(s => <option key={s} value={String(s)}>Semester {s}</option>)}</select>
           <select className={field} value={specialization} onChange={e => setSpecialization(e.target.value)} aria-label="Specialization"><option value="all">All specializations</option>{fcdsSpecializations.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
           <select className={field} value={visibility} onChange={e => setVisibility(e.target.value)} aria-label="Coverage"><option value="all">All courses</option><option value="filled">With resources</option><option value="empty">Without resources</option></select>
         </div>
@@ -3613,9 +3620,9 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
           {filtered.map(c => {
             const items = byCourse.get(c.slug) ?? [];
             const playlistCount = items.filter(i => parseYouTube(i.youtube_url)?.kind === "playlist").length;
-            const videoCount = items.length - playlistCount;
+            const videoCount = items.filter(i => parseYouTube(i.youtube_url)?.kind === "video").length;
             return <div key={c.id} className="p-4">
-              <button type="button" className="flex w-full items-center justify-between gap-4 text-left" onClick={() => setExpanded(expanded === c.slug ? null : c.slug)} aria-expanded={expanded === c.slug}>
+              <button type="button" className="flex w-full flex-wrap items-center justify-between gap-3 text-left sm:flex-nowrap" onClick={() => setExpanded(expanded === c.slug ? null : c.slug)} aria-expanded={expanded === c.slug}>
                 <span className="min-w-0"><span className="block font-medium">{c.name}</span><span className="block text-xs text-amber-50/45">{c.code} · {courseYearLabel(c.year)} · Semester {c.semester ?? "—"}</span></span>
                 <span className="shrink-0 text-right text-xs text-amber-100/75">{playlistCount} playlists · {videoCount} videos</span>
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-amber-50/50", expanded === c.slug && "rotate-180")} />
