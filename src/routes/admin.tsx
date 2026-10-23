@@ -1344,6 +1344,8 @@ type FcdsCourseRow = {
 type FcdsPlaylistRow = {
   id: string;
   course_slug: string;
+  music_status?: MusicStatus | null;
+  music_skip_ranges?: string | null;
   youtube_url: string;
   title: string;
   channel: string | null;
@@ -1590,7 +1592,7 @@ function FcdsLibraryAdmin() {
           className={btn}
         >
           <Plus className="h-4 w-4" />
-          Add Playlist
+          Add Resource
         </button>
 
       </div>
@@ -1820,11 +1822,9 @@ function FcdsPlaylistForm({
     const parsed =
       parseYouTube(draft.youtube_url);
 
-    if (!parsed || (!id && parsed.kind !== "playlist")) {
+    if (!parsed) {
       toast.error(
-        id
-          ? "Enter a valid YouTube video or playlist URL."
-          : "Enter a valid YouTube Playlist URL.",
+        "Enter a valid YouTube video or playlist URL.",
       );
       return;
     }
@@ -1903,7 +1903,7 @@ function FcdsPlaylistForm({
               ? parseYouTube(draft.youtube_url)?.kind === "video"
                 ? "Edit Video"
                 : "Edit Playlist"
-              : "Add Playlist"}
+              : "Add Resource"}
           </h2>
         </div>
 
@@ -1924,7 +1924,7 @@ function FcdsPlaylistForm({
       >
 
         <Label
-          label={id ? "YouTube video or playlist URL" : "YouTube Playlist URL"}
+          label="YouTube video or playlist URL"
           className="md:col-span-2"
         >
           <input
@@ -1936,9 +1936,7 @@ function FcdsPlaylistForm({
               onUrl(e.target.value)
             }
             placeholder={
-              id
-                ? "https://youtube.com/watch?v=... or playlist URL"
-                : "https://youtube.com/playlist?list=..."
+              "https://youtube.com/watch?v=... or playlist URL"
             }
           />
 
