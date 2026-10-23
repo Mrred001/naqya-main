@@ -1,4 +1,5 @@
 import { SaveButton } from "@/components/account/SaveButton";
+import { MusicNotice } from "@/components/site/MusicNotice";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowRight, ExternalLink } from "lucide-react";
@@ -88,6 +89,7 @@ function Watch() {
       >
         <ArrowRight className="h-4 w-4" /> {t("العودة إلى المكتبة", "Back to library")}
       </Link>
+      <div className="mx-5 mt-4 md:mx-0"><MusicNotice status={item.music_status} skipRanges={item.music_skip_ranges} /></div>
       <div className="mt-4 aspect-video overflow-hidden bg-card md:rounded-2xl md:border">
         <iframe
           src={embedFor(item)}
