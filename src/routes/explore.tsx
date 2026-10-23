@@ -1,3 +1,4 @@
+import { useSearchAnalytics } from "@/lib/use-search-analytics";
 import type { ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -104,6 +105,8 @@ function Explore() {
     if (search.sort === "oldest") list.reverse();
     return list;
   }, [items, search]);
+
+  useSearchAnalytics("general", search.q ?? "", filtered.length);
 
   const groups: { label: string; key: keyof Search; options: [string, string][] }[] = [
     { label: t("اللغة", "Language"), key: "language", options: languages.map((l) => [l, l]) },

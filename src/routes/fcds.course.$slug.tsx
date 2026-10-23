@@ -1,3 +1,4 @@
+import { ShareButton } from "@/components/site/ShareButton";
 import { recordFcdsOpen } from "@/lib/fcds-discovery";
 import { MusicNotice } from "@/components/site/MusicNotice";
 import type { MusicStatus } from "@/lib/content";
@@ -145,6 +146,9 @@ function CoursePage() {
           <p className="font-mono text-sm text-primary">COURSE</p>
 
           <h1 className="mt-3 text-5xl font-bold md:text-7xl">{course.name}</h1>
+          <div className="mt-4">
+            <ShareButton library="fcds" courseSlug={course.slug} title={course.name} />
+          </div>
 
           <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
             <span className="font-mono text-primary">{course.code}</span>
@@ -266,7 +270,15 @@ function CoursePage() {
                     </div>
                   </a>
                   <div className="flex flex-wrap items-center gap-3" dir={english ? "ltr" : "rtl"}>
-                    <SaveButton kind="fcds" id={playlist.id} />
+                    <div className="flex flex-wrap gap-2">
+                      <SaveButton kind="fcds" id={playlist.id} />
+                      <ShareButton
+                        library="fcds"
+                        resourceId={playlist.id}
+                        courseSlug={course.slug}
+                        title={playlist.title}
+                      />
+                    </div>
                     <ResourceProgress id={playlist.id} />
                   </div>
                 </article>
@@ -336,7 +348,15 @@ function CoursePage() {
                       className="flex shrink-0 flex-col items-start gap-2"
                       dir={english ? "ltr" : "rtl"}
                     >
-                      <SaveButton kind="fcds" id={video.id} />
+                      <div className="flex flex-wrap gap-2">
+                        <SaveButton kind="fcds" id={video.id} />
+                        <ShareButton
+                          library="fcds"
+                          resourceId={video.id}
+                          courseSlug={course.slug}
+                          title={video.title}
+                        />
+                      </div>
                       <ResourceProgress id={video.id} />
                     </div>
                   </article>

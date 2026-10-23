@@ -510,6 +510,10 @@ export type Database = {
           visit_date: string;
         }[];
       };
+      get_site_analytics: {
+        Args: { p_days?: number; p_library?: string };
+        Returns: Json;
+      };
       get_top_fcds_videos: {
         Args: never;
         Returns: {
@@ -525,6 +529,22 @@ export type Database = {
       };
       record_fcds_open: {
         Args: { resource_id: string; visitor_id: string };
+        Returns: undefined;
+      };
+      record_site_event: {
+        Args: {
+          p_campaign?: string;
+          p_course?: string;
+          p_event: string;
+          p_library: string;
+          p_path?: string;
+          p_resource?: string;
+          p_results?: number;
+          p_session: string;
+          p_source?: string;
+          p_term?: string;
+          p_visitor: string;
+        };
         Returns: undefined;
       };
       suggestion_link_status: {

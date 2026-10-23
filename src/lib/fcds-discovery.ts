@@ -1,3 +1,4 @@
+import { trackAnalytics } from "./analytics";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -39,6 +40,7 @@ export const popularFcdsQuery = queryOptions({
 // Only intentional resource opens count, never a card render or dialog open.
 // The database also suppresses repeat clicks from the same browser for 30 minutes.
 export async function recordFcdsOpen(id: string): Promise<void> {
+  void trackAnalytics("resource_open", "fcds", { resourceId: id });
   try {
     const key = "darb-resource-visitor-v1";
     let visitor = localStorage.getItem(key);

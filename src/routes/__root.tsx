@@ -19,6 +19,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SiteHeader, SiteFooter } from "@/components/site/SiteHeader";
 import { PreferencesProvider } from "@/components/site/PreferencesProvider";
+import { recordPageAnalytics } from "@/lib/analytics";
 import { recordDailyVisit } from "@/lib/site-analytics";
 
 function NotFoundComponent() {
@@ -137,6 +138,7 @@ function RootComponent() {
   useEffect(() => {
     if (pathname.startsWith("/admin") || pathname.startsWith("/auth")) return;
     void recordDailyVisit();
+    recordPageAnalytics(pathname);
   }, [pathname]);
 
   return (

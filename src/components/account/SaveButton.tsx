@@ -1,3 +1,4 @@
+import { trackAnalytics } from "@/lib/analytics";
 import { Bookmark as BookmarkIcon } from "lucide-react";
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -34,8 +35,11 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
             ...(kind === "general" ? { content_id: id } : { fcds_playlist_id: id }),
           });
       if (result.error && result.error.code !== "23505") throw result.error;
+      return !saved && !result.error;
     },
-    onSuccess: (_data, activeUser) => {
+    onSuccess: (created, activeUser) => {
+      if (created)
+        void trackAnalytics("save", kind === "general" ? "general" : "fcds", { resourceId: id });
       void client.invalidateQueries({ queryKey: ["bookmarks", activeUser.id] });
     },
     onError: () =>

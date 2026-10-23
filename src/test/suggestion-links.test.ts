@@ -50,9 +50,10 @@ describe("resource open tracking", () => {
     rpc.mockResolvedValue({ error: null });
     await recordFcdsOpen("resource-1");
     await recordFcdsOpen("resource-1");
-    const first = rpc.mock.calls[0]![1];
+    const opens = rpc.mock.calls.filter((call) => call[0] === "record_fcds_open");
+    const first = opens[0]![1];
     expect(first.visitor_id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(rpc.mock.calls[1]).toEqual(["record_fcds_open", first]);
+    expect(opens[1]).toEqual(["record_fcds_open", first]);
   });
   it("does not reject or block navigation when telemetry fails", async () => {
     rpc.mockRejectedValueOnce(new Error("offline"));

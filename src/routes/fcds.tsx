@@ -1,3 +1,4 @@
+import { useSearchAnalytics } from "@/lib/use-search-analytics";
 import { FcdsDiscovery } from "@/components/fcds/FcdsDiscovery";
 import { checkSuggestionLink, duplicateSuggestionMessage } from "@/lib/suggestion-links";
 import { SavedItemsLink } from "@/components/account/SavedItemsLink";
@@ -116,6 +117,8 @@ function FCDS() {
       normalizeFcdsSpecialization(course.specialization) === selectedSpecialization;
     return matchesSearch && matchesYear && matchesSemester && matchesSpecialization;
   });
+
+  useSearchAnalytics("fcds", search, filteredCourses.length, !coursesLoading && !coursesError);
 
   const resetSuggestionForm = () => {
     setSuggestKind("playlist");

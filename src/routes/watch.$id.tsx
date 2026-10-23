@@ -1,3 +1,4 @@
+import { ShareButton } from "@/components/site/ShareButton";
 import { SaveButton } from "@/components/account/SaveButton";
 import { MusicNotice } from "@/components/site/MusicNotice";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
@@ -112,7 +113,8 @@ function Watch() {
         <p dir="auto" className="mt-2 text-lg text-muted-foreground">
           {item.channel}
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <ShareButton library="general" resourceId={item.id} title={item.title} />
           <SaveButton kind="general" id={item.id} />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">

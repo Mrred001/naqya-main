@@ -1,3 +1,4 @@
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { ReportsAdmin } from "@/components/admin/ReportsAdmin";
 import { useMusicReview } from "@/components/admin/useMusicReview";
 import { MusicFields } from "@/components/admin/MusicFields";
@@ -426,6 +427,8 @@ function Overview({ pendingCount }: { pendingCount: number }) {
         }),
       ]);
 
+      if (general.error) throw general.error;
+      if (fcds.error) throw fcds.error;
       return {
         general: general.count ?? 0,
         fcds: fcds.count ?? 0,
@@ -433,28 +436,15 @@ function Overview({ pendingCount }: { pendingCount: number }) {
     },
   });
 
-  const visitsQuery = useQuery({
-    queryKey: ["admin-daily-visits", 7],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_daily_site_visits", { days: 7 });
-      if (error) throw error;
-      return (data ?? []) as { visit_date: string; total: number | string }[];
-    },
-  });
-
-  const visitRows = visitsQuery.data ?? [];
-  const todayVisits = Number(visitRows.at(-1)?.total ?? 0);
-  const peakVisits = Math.max(1, ...visitRows.map((row) => Number(row.total)));
-
   const cards = [
     {
       label: "General Library",
-      value: data?.general ?? 0,
+      value: data?.general ?? "—",
       icon: Library,
     },
     {
-      label: "FCDS Playlists",
-      value: data?.fcds ?? 0,
+      label: "DARB Resources",
+      value: data?.fcds ?? "—",
       icon: GraduationCap,
     },
     {
@@ -470,87 +460,26 @@ function Overview({ pendingCount }: { pendingCount: number }) {
 
       <h2 className="mt-2 text-4xl font-bold">Dashboard</h2>
 
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         {cards.map((card) => {
           const Icon = card.icon;
 
           return (
             <div
               key={card.label}
-              className="rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-6"
+              className="flex items-center gap-2 rounded-xl border border-amber-100/10 px-3 py-2"
             >
-              <Icon className="h-5 w-5 text-amber-50/40" />
+              <Icon className="h-4 w-4 text-amber-50/40" />
 
-              <p className="mt-8 text-4xl font-bold">{card.value}</p>
+              <p className="text-sm font-semibold">{card.value}</p>
 
-              <p className="mt-2 text-sm text-amber-50/40">{card.label}</p>
+              <p className="text-xs text-amber-50/40">{card.label}</p>
             </div>
           );
         })}
       </div>
 
-      <section className="mt-6 rounded-2xl border border-amber-100/10 bg-amber-100/[0.025] p-5 sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs tracking-[0.18em] text-amber-50/35">SITE TRAFFIC</p>
-            <h3 className="mt-2 flex items-center gap-2 text-xl font-semibold">
-              <Activity className="h-5 w-5 text-amber-300" />
-              Daily visitors
-            </h3>
-            <p className="mt-1 text-sm text-amber-50/45">
-              Unique browsers recorded per day · Khartoum time
-            </p>
-          </div>
-          <div className="min-w-28 rounded-xl border border-amber-200/15 bg-amber-300/[0.07] px-4 py-3 text-center">
-            <p className="text-3xl font-bold text-amber-200">
-              {visitsQuery.isPending ? "—" : todayVisits}
-            </p>
-            <p className="mt-1 text-xs text-amber-50/45">Today</p>
-          </div>
-        </div>
-
-        {visitsQuery.isError ? (
-          <p className="mt-6 rounded-xl border border-amber-100/10 bg-black/15 p-4 text-sm text-amber-50/55">
-            Daily analytics is not available yet. Apply the latest Supabase migration to enable it.
-          </p>
-        ) : (
-          <div
-            className="mt-7 grid grid-cols-7 items-end gap-2 sm:gap-4"
-            aria-label="Unique daily visitors for the last seven days"
-          >
-            {visitRows.map((row) => {
-              const amount = Number(row.total);
-              const label = new Intl.DateTimeFormat("en", {
-                weekday: "short",
-                timeZone: "Africa/Khartoum",
-              }).format(new Date(`${row.visit_date}T12:00:00`));
-              const day = row.visit_date.slice(-2);
-              return (
-                <div key={row.visit_date} className="flex min-w-0 flex-col items-center gap-2">
-                  <span className="text-xs tabular-nums text-amber-50/65">{amount}</span>
-                  <div className="flex h-28 w-full items-end overflow-hidden rounded-lg bg-black/20">
-                    <div
-                      className="w-full rounded-t-md bg-gradient-to-t from-amber-500/70 to-amber-200 transition-[height] duration-500"
-                      style={{
-                        height: `${Math.max(amount > 0 ? 8 : 0, (amount / peakVisits) * 100)}%`,
-                      }}
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <span className="text-center text-[11px] leading-tight text-amber-50/45">
-                    {label}
-                    <br />
-                    {day}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {visitsQuery.isPending && (
-          <p className="mt-5 text-sm text-amber-50/40">Loading analytics…</p>
-        )}
-      </section>
+      <AnalyticsDashboard />
     </div>
   );
 }
