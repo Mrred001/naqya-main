@@ -16,6 +16,7 @@ export type ContentItem = {
   category_id: string | null;
   language: string;
   music_status: MusicStatus;
+  music_skip_ranges?: string | null;
   recommendation: string | null;
   featured: boolean;
   date_added: string;
