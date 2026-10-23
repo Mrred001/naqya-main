@@ -1,4 +1,6 @@
 import { recordFcdsOpen } from "@/lib/fcds-discovery";
+import { MusicNotice } from "@/components/site/MusicNotice";
+import type { MusicStatus } from "@/lib/content";
 import { ResourceProgress } from "@/components/account/ResourceProgress";
 import { SaveButton } from "@/components/account/SaveButton";
 import { SavedItemsLink } from "@/components/account/SavedItemsLink";
@@ -31,6 +33,8 @@ type FcdsCourse = {
 type FcdsPlaylistRow = {
   id: string;
   course_slug: string;
+  music_status?: MusicStatus | null;
+  music_skip_ranges?: string | null;
   youtube_url: string;
   title: string;
   channel: string | null;
@@ -187,6 +191,7 @@ function CoursePage() {
             <div className="grid gap-4">
               {playlists.map((playlist) => (
                 <article key={playlist.id} className="space-y-3">
+                  <MusicNotice status={playlist.music_status} skipRanges={playlist.music_skip_ranges} />
                   <a
                     href={playlist.youtube_url}
                     onClick={() => { void recordFcdsOpen(playlist.id); }}
@@ -256,8 +261,9 @@ function CoursePage() {
                 {videos.map((video) => (
                   <article
                     key={video.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border p-3 lg:flex-row lg:items-center"
+                    className="flex flex-col gap-3 rounded-xl border border-border p-3"
                   >
+                    <MusicNotice status={video.music_status} skipRanges={video.music_skip_ranges} />
                     <a
                       href={video.youtube_url}
                       onClick={() => { void recordFcdsOpen(video.id); }}
