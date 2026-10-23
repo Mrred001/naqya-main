@@ -8,8 +8,8 @@ export function MusicNotice({
   status,
   skipRanges,
 }: {
-  status?: MusicStatus | null;
-  skipRanges?: string | null;
+  status?: MusicStatus | null | undefined;
+  skipRanges?: string | null | undefined;
 }) {
   const { language } = useSitePreferences();
   if (!status || status === "no_music") return null;
@@ -27,22 +27,28 @@ export function MusicNotice({
         <div>
           <p className="font-semibold">
             {minimal
-              ? (english ? "Music notice" : "تنبيه: موسيقى محدودة")
-              : (english ? "Music present" : "تنبيه: يوجد موسيقى في المحتوى")}
+              ? english
+                ? "Music notice"
+                : "تنبيه: موسيقى محدودة"
+              : english
+                ? "Music present"
+                : "تنبيه: يوجد موسيقى في المحتوى"}
           </p>
           <p className="mt-1 text-muted-foreground">
             {minimal
-              ? (english
-                  ? "This resource contains music in short sections only. Please skip the parts containing music."
-                  : "المحتوى ده فيه موسيقى في أجزاء محدودة. بنوصيك تتخطى الأجزاء الفيها موسيقى.")
-              : (english
-                  ? "This resource was previously marked as containing music. Please review before watching."
-                  : "المصدر ده كان مصنّف سابقاً إنو فيه موسيقى. راجعه قبل المشاهدة.")}
+              ? english
+                ? "This resource contains music in short sections only. Please skip the parts containing music."
+                : "المحتوى ده فيه موسيقى في أجزاء محدودة. بنوصيك تتخطى الأجزاء الفيها موسيقى."
+              : english
+                ? "This resource was previously marked as containing music. Please review before watching."
+                : "المصدر ده كان مصنّف سابقاً إنو فيه موسيقى. راجعه قبل المشاهدة."}
           </p>
           {minimal && segments && segments.length > 0 && (
             <p className="mt-2 font-medium">
               {english ? "Skip:" : "الأجزاء المقترح تخطيها:"}{" "}
-              <span dir="ltr" className="inline-block font-mono">{segments.map((s) => s.label).join(" · ")}</span>
+              <span dir="ltr" className="inline-block font-mono">
+                {segments.map((s) => s.label).join(" · ")}
+              </span>
             </p>
           )}
         </div>
