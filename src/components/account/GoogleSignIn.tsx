@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { rememberAuthReturn } from "@/lib/auth-return";
 import { supabase } from "@/integrations/supabase/client";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
@@ -11,12 +12,7 @@ export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
     setBusy(true);
     setError(false);
     try {
-      try {
-        if (intent) sessionStorage.setItem("naqya-auth-intent", intent);
-        else sessionStorage.removeItem("naqya-auth-intent");
-      } catch {
-        /* Sign-in works even when session storage is unavailable. */
-      }
+      rememberAuthReturn(intent);
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

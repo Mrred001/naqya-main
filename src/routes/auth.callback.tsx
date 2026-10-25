@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { clearAuthReturn, getAuthReturn } from "@/lib/auth-return";
 import { GoogleSignIn } from "@/components/account/GoogleSignIn";
 
 export const Route = createFileRoute("/auth/callback")({
@@ -11,33 +12,26 @@ export const Route = createFileRoute("/auth/callback")({
 });
 function AuthCallback() {
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
-  const [chatIntent, setChatIntent] = useState(false);
+  const [destination, setDestination] = useState("/naqya");
   const navigate = useNavigate();
   useEffect(() => {
     let active = true;
-    try {
-      if (sessionStorage.getItem("naqya-auth-intent") === "support-chat") setChatIntent(true);
-      sessionStorage.removeItem("naqya-auth-intent");
-    } catch {
-      /* Optional return intent. */
-    }
+    const returnTo = getAuthReturn();
+    setDestination(returnTo);
     // getSession waits for Supabase's automatic PKCE exchange; never log auth URLs.
     void supabase.auth
       .getSession()
       .then(async ({ data, error }) => {
         if (!active) return;
-        // Only clean an actual OAuth query, and finish that navigation before
-        // showing links the user can click. A same-route replace issued after
-        // success can otherwise land after a link click and send them back here.
-        if (window.location.search) {
-          try {
-            await navigate({ to: "/auth/callback", search: {}, replace: true });
-          } catch {
-            // Keep the callback usable if URL cleanup fails; Supabase has already
-            // completed the session exchange.
-          }
+        if (error || !data.session || data.session.user.is_anonymous) {
+          setState("error");
+          return;
         }
-        if (active) setState(!error && data.session ? "success" : "error");
+        setState("success");
+        // Replace the callback (and OAuth code) with the page that started login.
+        // Wait for navigation before clearing state so effect retries retain it.
+        await navigate({ href: returnTo, replace: true });
+        clearAuthReturn();
       })
       .catch(() => {
         if (!active) return;
@@ -53,37 +47,20 @@ function AuthCallback() {
         {state === "loading"
           ? "جاري تسجيل دخولك…"
           : state === "success"
-            ? "أهلاً بيك في نقيا"
+            ? "تم تسجيل دخولك"
             : "تسجيل الدخول ما اكتمل"}
       </h1>
       {state === "success" ? (
         <>
-          {chatIntent && (
-            <Link
-              to="/fcds/messages"
-              className="block rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground"
-            >
-              افتح محادثتك مع أحمد
-            </Link>
-          )}
-          <p>حسابك جاهز. احفظ المصادر البتهمك وارجع ليها من أي جهاز.</p>
-          <Link
-            to="/saved"
-            className="inline-block rounded-xl bg-primary px-5 py-3 text-primary-foreground"
-          >
-            افتح المحفوظات
-          </Link>
-          <Link to="/naqya" className="block text-primary">
-            تصفّح نقيا
-          </Link>
-          <Link to="/fcds" className="block text-primary">
-            تصفّح درب
-          </Link>
+          <p role="status">جاري رجوعك للصفحة…</p>
+          <a href={destination} className="block text-primary">
+            ارجع للصفحة
+          </a>
         </>
       ) : state === "error" ? (
         <>
           <p>ممكن تكون لغيت الدخول أو الرابط انتهت صلاحيته. تقدر تحاول تاني أو تواصل التصفّح.</p>
-          <GoogleSignIn {...(chatIntent ? { intent: "support-chat" as const } : {})} />
+          <GoogleSignIn />
           <Link to="/" className="block text-primary">
             الرئيسية
           </Link>
