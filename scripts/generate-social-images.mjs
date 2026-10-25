@@ -1,3 +1,5 @@
+// DARB and NAQYA use approved artwork: public/social/*-v2.jpg.
+// This generator only maintains the separate gateway image; it must not overwrite the approved brand art.
 // Run with `node scripts/generate-social-images.mjs` using the repository's sharp dependency.
 import sharp from "sharp";
 import { readFile, mkdir } from "node:fs/promises";
@@ -10,20 +12,6 @@ const text = (x, y, size, color, value) =>
 const shell = (background, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="${background}"/>${body}</svg>`;
 const cards = {
-  darb: shell(
-    "#061710",
-    image(darb, "image/png", 450, 55, 300, 220) +
-      text(600, 345, 64, "#8beab5", "DARB · درب") +
-      text(600, 420, 29, "#d8e7df", "مصادر مادتك، بلا تشتت") +
-      text(600, 555, 20, "#7ca18b", "naqya-main.vercel.app/fcds"),
-  ),
-  naqya: shell(
-    "#101014",
-    image(naqya, "image/svg+xml", 430, 85, 340, 160) +
-      text(600, 345, 64, "#f3f1fa", "NAQYA · نقيا") +
-      text(600, 420, 29, "#bba8f4", "ما يستحق وقتك") +
-      text(600, 555, 20, "#9993aa", "naqya-main.vercel.app/naqya"),
-  ),
   gateway: shell(
     "#0c1010",
     `<path d="M600 95V480" stroke="#32403c" stroke-width="2"/>` +
