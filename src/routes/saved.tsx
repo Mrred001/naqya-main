@@ -15,7 +15,7 @@ export const Route = createFileRoute("/saved")({
   }),
   component: Saved,
 });
-type Playlist = { id: string; course_slug: string; title: string; channel: string | null };
+type Playlist = { id: string; course_slug: string | null; title: string; channel: string | null };
 const playlistsQuery = queryOptions({
   queryKey: ["fcds-playlists"],
   queryFn: async () => {
@@ -109,8 +109,8 @@ function Saved() {
                       {playlist.channel}
                     </p>
                     <Link
-                      to="/fcds/course/$slug"
-                      params={{ slug: playlist.course_slug }}
+                      to="/fcds/resource/$id"
+                      params={{ id: playlist.id }}
                       className="inline-block text-primary"
                     >
                       {t("افتح صفحة المادة", "Open course page")}

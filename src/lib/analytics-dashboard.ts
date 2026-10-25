@@ -28,7 +28,14 @@ export type AnalyticsSummary = {
   sources: { source: string; sessions: number; visitors: number }[];
   campaigns: { source: string; campaign: string; sessions: number; visitors: number }[];
   retention: { eligible: number; returned: number };
-  coverage: { total: number; covered: number; missing: { name: string; slug: string }[] } | null;
+  coverage: {
+    unique_resources?: number;
+    associations?: number;
+    support_only?: number;
+    total: number;
+    covered: number;
+    missing: { name: string; slug: string }[];
+  } | null;
   pending: number;
   reports: number;
 };

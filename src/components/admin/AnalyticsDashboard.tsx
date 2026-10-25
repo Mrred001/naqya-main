@@ -419,6 +419,12 @@ export function AnalyticsDashboard() {
                   Courses without resources (up to 10):
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
+                  <p className="mb-3 text-xs text-amber-100/50">
+                    {data.coverage.unique_resources ?? "—"} unique resources ·{" "}
+                    {data.coverage.associations ?? "—"} course links ·{" "}
+                    {data.coverage.support_only ?? "—"} support-only courses. Coverage counts course
+                    sources only.
+                  </p>
                   {data.coverage.missing.map((row) => (
                     <span
                       key={row.slug}

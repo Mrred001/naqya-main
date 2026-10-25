@@ -1,3 +1,4 @@
+import { darbResourcesQuery, resourcesForCourse } from "@/lib/darb-resources";
 import { useSearchAnalytics } from "@/lib/use-search-analytics";
 import { FcdsDiscovery } from "@/components/fcds/FcdsDiscovery";
 import { checkSuggestionLink, duplicateSuggestionMessage } from "@/lib/suggestion-links";
@@ -732,25 +733,10 @@ function FCDS() {
 function CourseCard({ course }: { course: FcdsCourse }) {
   const { language } = useSitePreferences();
   const english = language === "en";
-  const { data: playlistCount, isSuccess: countReady } = useQuery({
-    queryKey: ["fcds-course-count", course.slug],
-
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("fcds_playlists")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("course_slug", course.slug);
-
-      if (error) {
-        throw error;
-      }
-
-      return count ?? 0;
-    },
-  });
+  const resources = useQuery(darbResourcesQuery);
+  const countReady = resources.isSuccess;
+  const playlistCount = resourcesForCourse(resources.data ?? [], course.slug, "primary").length;
+  const supportCount = resourcesForCourse(resources.data ?? [], course.slug, "support").length;
 
   return (
     <Link
@@ -769,7 +755,13 @@ function CourseCard({ course }: { course: FcdsCourse }) {
       <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
         {countReady && playlistCount === 0 ? (
           <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-            {english ? "No resources yet" : "ما عندها مصادر"}
+            {supportCount
+              ? english
+                ? `${supportCount} supporting explanations`
+                : `${supportCount} شروحات مساعدة`
+              : english
+                ? "No resources yet"
+                : "ما عندها مصادر"}
           </span>
         ) : (
           <span>

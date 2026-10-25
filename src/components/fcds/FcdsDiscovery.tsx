@@ -1,3 +1,4 @@
+import { Calculator } from "lucide-react";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -63,6 +64,22 @@ export function FcdsDiscovery() {
             <ArrowUpRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           </button>
         ))}
+        <Link
+          to="/fcds/calculator"
+          className="flex min-w-0 items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-400/10 px-4 py-3 text-start transition-colors hover:bg-amber-400/15 focus-visible:ring-2 focus-visible:ring-amber-400"
+        >
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400/15 text-amber-700 dark:text-amber-300">
+            <Calculator className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-bold text-amber-800 dark:text-amber-200">
+              {t("دليل الآلة الحاسبة", "Calculator guide")}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {t("العمليات حسب موديل آلتك", "Operations for your calculator model")}
+            </span>
+          </span>
+        </Link>
       </div>
       <Dialog
         open={active !== null}
@@ -124,8 +141,8 @@ export function FcdsDiscovery() {
                 return (
                   <article key={resource.id} className="rounded-xl border border-border p-3">
                     <Link
-                      to="/fcds/course/$slug"
-                      params={{ slug: resource.course_slug }}
+                      to="/fcds/resource/$id"
+                      params={{ id: resource.id }}
                       className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <ResourceThumbnail url={thumbnail} />

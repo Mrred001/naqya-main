@@ -1,3 +1,6 @@
+import { DarbResourceAdmin } from "@/components/admin/DarbResourceAdmin";
+import { DarbResourceEditor, type DarbSeed } from "@/components/admin/DarbResourceEditor";
+import { darbCoursesQuery, darbResourcesQuery, resourcesForCourse } from "@/lib/darb-resources";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { ReportsAdmin } from "@/components/admin/ReportsAdmin";
 import { useMusicReview } from "@/components/admin/useMusicReview";
@@ -18,6 +21,7 @@ import {
   ExternalLink,
   XCircle,
   BookOpen,
+  Calculator,
   ChevronDown,
   Activity,
   ArrowLeft,
@@ -245,6 +249,7 @@ function SignIn() {
 type AdminTab =
   | "overview"
   | "general"
+  | "calculator"
   | "fcds"
   | "courses"
   | "playlist-per-courses"
@@ -289,6 +294,7 @@ function Dashboard({ email }: { email: string }) {
   });
 
   const navItems = [
+    { id: "calculator" as const, label: "Calculator guide", icon: Calculator },
     { id: "reports" as const, label: "Reports", icon: Inbox },
     {
       id: "overview" as const,
@@ -394,7 +400,8 @@ function Dashboard({ email }: { email: string }) {
 
         {tab === "general" && <ContentAdmin />}
 
-        {tab === "fcds" && <FcdsLibraryAdmin />}
+        {tab === "fcds" && <DarbResourceAdmin />}
+        {tab === "calculator" && <DarbResourceAdmin calculator />}
 
         {tab === "courses" && <CoursesAdmin />}
         {tab === "playlist-per-courses" && (
@@ -541,6 +548,7 @@ async function addSubmitterUsernames<T extends SuggestionOwner>(rows: T[]) {
 }
 
 function SuggestionsAdmin() {
+  const [reviewing, setReviewing] = useState<DarbSeed | null>(null);
   const { requestMusicReview, musicReviewDialog } = useMusicReview();
   const { data: generalSuggestions = [] } = useQuery({
     queryKey: ["general-suggestions"],
@@ -600,89 +608,15 @@ function SuggestionsAdmin() {
     });
   };
 
-  const approveFcds = async (suggestion: Suggestion) => {
-    const musicReview = await requestMusicReview(suggestion.youtube_url, suggestion.title);
-    if (!musicReview) return;
-    setBusyId(suggestion.id);
-
-    const parsed = parseYouTube(suggestion.youtube_url);
-
-    let thumbnailUrl: string | null = null;
-
-    if (parsed) {
-      try {
-        const res = await getMeta({
-          data: {
-            id: parsed.id,
-            kind: parsed.kind,
-          },
-        });
-
-        thumbnailUrl = res.meta?.thumbnail_url ?? null;
-      } catch {
-        // thumbnail optional
-      }
-    }
-
-    const { error } = await supabase.from("fcds_playlists").insert({
-      course_slug: suggestion.course_slug,
+  const approveFcds = (suggestion: Suggestion) =>
+    setReviewing({
       youtube_url: suggestion.youtube_url,
       title: suggestion.title,
       channel: suggestion.channel,
       language: languages[suggestion.id] ?? "Arabic",
-      thumbnail_url: thumbnailUrl,
-      ...musicReview,
+      suggestionId: suggestion.id,
+      course_links: [{ course_slug: suggestion.course_slug, role: "primary", note: null }],
     });
-
-    if (error) {
-      setBusyId(null);
-      toast.error(error.message);
-      return;
-    }
-
-    const { error: statusError } = await supabase
-      .from("fcds_playlist_suggestions")
-      .update({
-        status: "approved",
-      })
-      .eq("id", suggestion.id);
-
-    setBusyId(null);
-
-    if (statusError) {
-      toast.error(statusError.message);
-      return;
-    }
-
-    toast.success("Added to FCDS");
-    const refresh = () => {
-      void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
-      qc.invalidateQueries({
-        queryKey: ["fcds-suggestions"],
-      });
-
-      qc.invalidateQueries({
-        queryKey: ["general-suggestions"],
-      });
-
-      qc.invalidateQueries({
-        queryKey: ["pending-suggestions-count"],
-      });
-
-      qc.invalidateQueries({
-        queryKey: ["admin-overview"],
-      });
-
-      qc.invalidateQueries({
-        queryKey: ["content"],
-      });
-
-      qc.invalidateQueries({
-        queryKey: ["fcds-library"],
-      });
-    };
-    refresh();
-  };
 
   const approveGeneral = async (suggestion: Suggestion) => {
     const musicReview = await requestMusicReview(suggestion.youtube_url, suggestion.title);
@@ -860,6 +794,8 @@ function SuggestionsAdmin() {
     toast.success("Suggestion deleted");
     refresh();
   };
+  if (reviewing)
+    return <DarbResourceEditor initial={reviewing} onDone={() => setReviewing(null)} />;
   return (
     <div>
       {musicReviewDialog}
@@ -1073,6 +1009,23 @@ function SuggestionsAdmin() {
                     <button
                       type="button"
                       disabled={busyId === suggestion.id}
+                      onClick={() =>
+                        setReviewing({
+                          youtube_url: suggestion.youtube_url,
+                          title: suggestion.title,
+                          channel: suggestion.channel,
+                          language: suggestion.language,
+                          generalSuggestionId: suggestion.id,
+                        })
+                      }
+                      className="min-h-11 rounded-xl border border-amber-200/20 px-4 py-2.5 text-sm"
+                    >
+                      Add to DARB
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={busyId === suggestion.id}
                       onClick={() => rejectGeneralSuggestion(suggestion)}
                       className="rounded-xl px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                     >
@@ -1102,31 +1055,6 @@ type FcdsCourseRow = {
   semester: number | null;
   specialization?: FcdsSpecialization;
   created_at: string;
-};
-
-type FcdsPlaylistRow = {
-  id: string;
-  course_slug: string;
-  music_status?: MusicStatus | null;
-  music_reviewed_at?: string | null;
-  music_skip_ranges?: string | null;
-  youtube_url: string;
-  title: string;
-  channel: string | null;
-  language: string;
-  thumbnail_url: string | null;
-  created_at: string;
-};
-
-type FcdsPlaylistDraft = {
-  course_slug: string;
-  youtube_url: string;
-  title: string;
-  channel: string;
-  language: "Arabic" | "English";
-  thumbnail_url: string;
-  music_status: MusicStatus | "";
-  music_skip_ranges: string;
 };
 
 export function CoursePicker({
@@ -1204,492 +1132,6 @@ export function CoursePicker({
     </Popover>
   );
 }
-
-const emptyFcdsDraft = (): FcdsPlaylistDraft => ({
-  course_slug: "",
-  youtube_url: "",
-  title: "",
-  channel: "",
-  language: "Arabic",
-  thumbnail_url: "",
-  music_status: "",
-  music_skip_ranges: "",
-});
-
-function FcdsLibraryAdmin() {
-  const qc = useQueryClient();
-
-  const [editing, setEditing] = useState<{
-    id: string | null;
-    draft: FcdsPlaylistDraft;
-  } | null>(null);
-
-  const { data: playlists = [], isLoading } = useQuery({
-    queryKey: ["fcds-library"],
-
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fcds_playlists")
-        .select("*")
-        .order("created_at", {
-          ascending: false,
-        });
-
-      if (error) throw error;
-
-      return (data ?? []) as FcdsPlaylistRow[];
-    },
-  });
-
-  const { data: courses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: ["fcds-courses-admin"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fcds_courses")
-        .select("*")
-        .order("semester", { ascending: true, nullsFirst: false })
-        .order("year", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (error) throw error;
-
-      return (data ?? []) as FcdsCourseRow[];
-    },
-  });
-
-  const refresh = () => {
-    void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
-    qc.invalidateQueries({
-      queryKey: ["fcds-library"],
-    });
-
-    qc.invalidateQueries({
-      queryKey: ["admin-overview"],
-    });
-  };
-
-  const editPlaylist = (playlist: FcdsPlaylistRow) => {
-    setEditing({
-      id: playlist.id,
-
-      draft: {
-        course_slug: playlist.course_slug,
-        youtube_url: playlist.youtube_url,
-        title: playlist.title,
-        channel: playlist.channel ?? "",
-        language: playlist.language === "Arabic" ? "Arabic" : "English",
-        thumbnail_url: playlist.thumbnail_url ?? "",
-        music_status: playlist.music_reviewed_at ? (playlist.music_status ?? "") : "",
-        music_skip_ranges: playlist.music_skip_ranges ?? "",
-      },
-    });
-  };
-
-  const remove = async (playlist: FcdsPlaylistRow) => {
-    if (!confirm(`Delete "${playlist.title}" permanently?`)) {
-      return;
-    }
-
-    const { error } = await supabase.from("fcds_playlists").delete().eq("id", playlist.id);
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    toast.success("Source deleted");
-    refresh();
-  };
-
-  if (editing) {
-    return (
-      <FcdsPlaylistForm
-        id={editing.id}
-        initial={editing.draft}
-        courses={courses}
-        coursesLoading={coursesLoading}
-        onDone={() => {
-          setEditing(null);
-          refresh();
-        }}
-      />
-    );
-  }
-
-  return (
-    <div>
-      <p className="text-xs tracking-[0.2em] text-amber-50/30">FCDS</p>
-
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-4xl font-bold">FCDS Library</h2>
-
-          <p className="mt-3 text-sm text-amber-50/40">
-            Manage playlists and videos in the FCDS library.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            setEditing({
-              id: null,
-              draft: emptyFcdsDraft(),
-            })
-          }
-          className={btn}
-        >
-          <Plus className="h-4 w-4" />
-          Add Resource
-        </button>
-      </div>
-
-      {isLoading ? (
-        <p className="mt-10 text-amber-50/40">Loading...</p>
-      ) : playlists.length === 0 ? (
-        <div className="mt-10 rounded-2xl border border-amber-100/10 p-10 text-center text-amber-50/30">
-          No FCDS playlists yet.
-        </div>
-      ) : (
-        <div className="mt-10 divide-y divide-amber-100/10 border-y border-amber-100/10">
-          {playlists.map((playlist) => {
-            const course = courses.find((course) => course.slug === playlist.course_slug);
-
-            return (
-              <div key={playlist.id} className="flex items-center gap-4 py-4">
-                {playlist.thumbnail_url ? (
-                  <img
-                    src={playlist.thumbnail_url}
-                    alt=""
-                    className="hidden aspect-video w-32 shrink-0 rounded-lg bg-amber-100/5 object-cover sm:block"
-                  />
-                ) : (
-                  <div className="hidden aspect-video w-32 shrink-0 rounded-lg bg-amber-100/5 sm:block" />
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{playlist.title}</p>
-
-                  <p className="mt-1 text-xs text-amber-50/35">
-                    {playlist.channel || "Unknown channel"}
-                  </p>
-
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 font-mono text-[11px] text-amber-50/40">
-                      {course?.name ?? playlist.course_slug}
-                    </span>
-
-                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
-                      {parseYouTube(playlist.youtube_url)?.kind === "video" ? "Video" : "Playlist"}
-                    </span>
-
-                    <span className="rounded-full border border-amber-100/10 px-2.5 py-1 text-[11px] text-amber-50/40">
-                      {playlist.language}
-                    </span>
-                  </div>
-                </div>
-
-                <a
-                  href={playlist.youtube_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Open YouTube"
-                  className="p-2 text-amber-50/30 hover:text-amber-50"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-
-                <button
-                  type="button"
-                  aria-label="Edit source"
-                  onClick={() => editPlaylist(playlist)}
-                  className="p-2 text-amber-50/30 hover:text-amber-50"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-
-                <button
-                  type="button"
-                  aria-label="Delete source"
-                  onClick={() => remove(playlist)}
-                  className="p-2 text-amber-50/30 hover:text-red-400"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FcdsPlaylistForm({
-  id,
-  initial,
-  courses,
-  coursesLoading,
-  onDone,
-}: {
-  id: string | null;
-  initial: FcdsPlaylistDraft;
-  courses: FcdsCourseRow[];
-  coursesLoading: boolean;
-  onDone: () => void;
-}) {
-  const [draft, setDraft] = useState(initial);
-
-  const [fetching, setFetching] = useState(false);
-
-  const [saving, setSaving] = useState(false);
-
-  const lastFetched = useRef("");
-
-  const getMeta = useServerFn(fetchYouTubeMeta);
-
-  const update = <K extends keyof FcdsPlaylistDraft>(key: K, value: FcdsPlaylistDraft[K]) => {
-    setDraft((previous) => ({
-      ...previous,
-      [key]: value,
-    }));
-  };
-
-  const onUrl = async (url: string) => {
-    update("youtube_url", url);
-
-    const parsed = parseYouTube(url);
-
-    if (!parsed) return;
-
-    if (lastFetched.current === parsed.id) {
-      return;
-    }
-
-    lastFetched.current = parsed.id;
-
-    setFetching(true);
-
-    try {
-      const res = await getMeta({
-        data: {
-          id: parsed.id,
-          kind: parsed.kind,
-        },
-      });
-
-      if (!res.meta) {
-        toast.error(res.error ?? "Couldn't fetch YouTube details.");
-
-        lastFetched.current = "";
-        return;
-      }
-
-      const meta = res.meta;
-
-      setDraft((previous) => ({
-        ...previous,
-
-        title: meta.title || previous.title,
-
-        channel: meta.channel || previous.channel,
-
-        thumbnail_url: meta.thumbnail_url || previous.thumbnail_url,
-      }));
-
-      toast.success("YouTube details filled automatically");
-    } catch (error) {
-      console.error(error);
-
-      toast.error("Couldn't fetch YouTube details.");
-
-      lastFetched.current = "";
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  const save = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!draft.course_slug) {
-      toast.error("Choose a course.");
-      return;
-    }
-
-    const parsed = parseYouTube(draft.youtube_url);
-
-    if (!parsed) {
-      toast.error("Enter a valid YouTube video or playlist URL.");
-      return;
-    }
-
-    if (!draft.title.trim()) {
-      toast.error("Source title is required.");
-      return;
-    }
-    const musicError = validateMusicSelection(
-      draft.music_status,
-      draft.music_skip_ranges,
-      parsed.kind === "video",
-    );
-    if (musicError) {
-      toast.error(musicError);
-      return;
-    }
-
-    setSaving(true);
-
-    const row = {
-      course_slug: draft.course_slug,
-
-      youtube_url: draft.youtube_url.trim(),
-
-      title: draft.title.trim(),
-
-      channel: draft.channel.trim() || null,
-
-      language: draft.language,
-
-      thumbnail_url: draft.thumbnail_url.trim() || null,
-      music_reviewed_at: new Date().toISOString(),
-      music_status: draft.music_status || null,
-      music_skip_ranges:
-        draft.music_status === "minimal_music" ? draft.music_skip_ranges.trim() || null : null,
-    };
-
-    const result = id
-      ? await supabase.from("fcds_playlists").update(row).eq("id", id)
-      : await supabase.from("fcds_playlists").insert(row);
-
-    setSaving(false);
-
-    if (result.error) {
-      toast.error(result.error.message);
-      return;
-    }
-
-    toast.success(id ? "Source updated" : "Playlist added to FCDS");
-
-    onDone();
-  };
-
-  return (
-    <div className="max-w-3xl">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs tracking-[0.2em] text-amber-50/30">FCDS</p>
-
-          <h2 className="mt-2 text-4xl font-bold">
-            {id
-              ? parseYouTube(draft.youtube_url)?.kind === "video"
-                ? "Edit Video"
-                : "Edit Playlist"
-              : "Add Resource"}
-          </h2>
-        </div>
-
-        <button type="button" onClick={onDone} className={ghost}>
-          <X className="h-4 w-4" />
-          Cancel
-        </button>
-      </div>
-
-      <form onSubmit={save} className="mt-10 grid gap-5 md:grid-cols-2">
-        <Label label="YouTube video or playlist URL" className="md:col-span-2">
-          <input
-            required
-            type="url"
-            className={field}
-            value={draft.youtube_url}
-            onChange={(e) => onUrl(e.target.value)}
-            placeholder={"https://youtube.com/watch?v=... or playlist URL"}
-          />
-
-          {fetching && <p className="text-xs text-amber-50/30">Fetching YouTube details...</p>}
-        </Label>
-
-        <Label label="Course">
-          <CoursePicker
-            disabled={coursesLoading || courses.length === 0}
-            courses={courses}
-            value={draft.course_slug}
-            onChange={(slug) => update("course_slug", slug)}
-          />
-          {!coursesLoading && courses.length === 0 && (
-            <p className="mt-2 text-xs text-amber-200/75">
-              No courses have been added yet. Add courses from the Courses tab first.
-            </p>
-          )}
-        </Label>
-
-        <MusicFields
-          status={draft.music_status}
-          ranges={draft.music_skip_ranges}
-          kind={parseYouTube(draft.youtube_url)?.kind ?? "playlist"}
-          onStatusChange={(value) => update("music_status", value)}
-          onRangesChange={(value) => update("music_skip_ranges", value)}
-        />
-        <Label label="Language">
-          <select
-            className={field}
-            value={draft.language}
-            onChange={(e) => update("language", e.target.value as "Arabic" | "English")}
-          >
-            <option value="English">English</option>
-
-            <option value="Arabic">Arabic</option>
-          </select>
-        </Label>
-
-        <Label label="Playlist Title">
-          <input
-            required
-            className={field}
-            value={draft.title}
-            onChange={(e) => update("title", e.target.value)}
-          />
-        </Label>
-
-        <Label label="Channel">
-          <input
-            className={field}
-            value={draft.channel}
-            onChange={(e) => update("channel", e.target.value)}
-          />
-        </Label>
-
-        <Label label="Thumbnail URL" className="md:col-span-2">
-          <input
-            className={field}
-            value={draft.thumbnail_url}
-            onChange={(e) => update("thumbnail_url", e.target.value)}
-          />
-        </Label>
-
-        {draft.thumbnail_url && (
-          <div className="md:col-span-2">
-            <img
-              src={draft.thumbnail_url}
-              alt=""
-              className="aspect-video w-full max-w-sm rounded-xl border border-amber-100/10 object-cover"
-            />
-          </div>
-        )}
-
-        <div className="md:col-span-2">
-          <button type="submit" disabled={saving || fetching} className={btn}>
-            {saving ? "Saving..." : id ? "Save Changes" : "Add to FCDS"}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-/* ------------------------------------------------ */
-/* General NAQYA */
-/* ------------------------------------------------ */
 
 type Draft = {
   youtube_url: string;
@@ -2821,27 +2263,16 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const [specialization, setSpecialization] = useState("all");
   const [visibility, setVisibility] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
-  const { data, isPending, error } = useQuery({
-    queryKey: ["admin-course-coverage"],
-    queryFn: async () => {
-      const [coursesResult, resourceResult] = await Promise.all([
-        supabase.from("fcds_courses").select("*").order("semester", { ascending: true }),
-        supabase.from("fcds_playlists").select("id,course_slug,title,youtube_url"),
-      ]);
-      if (coursesResult.error) throw coursesResult.error;
-      if (resourceResult.error) throw resourceResult.error;
-      return {
-        courses: (coursesResult.data ?? []) as FcdsCourseRow[],
-        resources: resourceResult.data ?? [],
-      };
-    },
-  });
-  const courses = data?.courses ?? [];
-  const resources = data?.resources ?? [];
-  const byCourse = new Map<string, typeof resources>();
-  resources.forEach((resource) =>
-    byCourse.set(resource.course_slug, [...(byCourse.get(resource.course_slug) ?? []), resource]),
+  const courseQuery = useQuery(darbCoursesQuery);
+  const resourceQuery = useQuery(darbResourcesQuery);
+  const courses = courseQuery.data ?? [];
+  const resources = resourceQuery.data ?? [];
+  const isPending = courseQuery.isPending || resourceQuery.isPending;
+  const error = courseQuery.error || resourceQuery.error;
+  const byCourse = new Map(
+    courses.map((c) => [c.slug, resourcesForCourse(resources, c.slug, "primary")]),
   );
+  const associationCount = resources.reduce((sum, r) => sum + r.course_links.length, 0);
   const covered = courses.filter((c) => (byCourse.get(c.slug)?.length ?? 0) > 0).length;
   const total = courses.length;
   const filtered = courses.filter((c) => {
@@ -2861,7 +2292,8 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
         <p className="text-xs tracking-[0.2em] text-amber-50/35">DARB / COVERAGE</p>
         <h2 className="mt-2 text-3xl font-bold sm:text-4xl">Playlist per Courses</h2>
         <p className="mt-2 text-sm text-amber-50/50">
-          See exactly which courses have video or playlist resources.
+          Coverage means at least one course source, not full syllabus completion. Supporting
+          explanations are counted separately.
         </p>
       </div>
       {error && (
@@ -2877,7 +2309,18 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
             {[
               ["Covered courses", `${covered} / ${total}`],
               ["Uncovered courses", String(total - covered)],
-              ["All resources", String(resources.length)],
+              ["Unique resources", String(resources.length)],
+              ["Course links", String(associationCount)],
+              [
+                "Support-only courses",
+                String(
+                  courses.filter(
+                    (c) =>
+                      !byCourse.get(c.slug)?.length &&
+                      resourcesForCourse(resources, c.slug, "support").length > 0,
+                  ).length,
+                ),
+              ],
               ["Coverage", total ? `${Math.round((covered / total) * 100)}%` : "0%"],
             ].map(([label, value]) => (
               <div
@@ -2980,7 +2423,8 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
                       </span>
                     </span>
                     <span className="shrink-0 text-right text-xs text-amber-100/75">
-                      {playlistCount} playlists · {videoCount} videos
+                      {playlistCount} playlists · {videoCount} videos ·{" "}
+                      {resourcesForCourse(resources, c.slug, "support").length} supporting
                     </span>
                     <ChevronDown
                       className={cn(
@@ -2991,8 +2435,8 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
                   </button>
                   {expanded === c.slug && (
                     <div className="mt-4 space-y-2 border-t border-amber-100/10 pt-4">
-                      {items.length ? (
-                        items.map((i) => (
+                      {resourcesForCourse(resources, c.slug).length ? (
+                        resourcesForCourse(resources, c.slug).map((i) => (
                           <a
                             key={i.id}
                             href={i.youtube_url}
@@ -3000,7 +2444,12 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
                             rel="noreferrer"
                             className="block truncate text-sm text-amber-200 hover:underline"
                           >
-                            {i.title} ↗
+                            {i.title} ·{" "}
+                            {i.course_links.find((l) => l.course_slug === c.slug)?.role ===
+                            "support"
+                              ? "Supporting"
+                              : "Course source"}{" "}
+                            ↗
                           </a>
                         ))
                       ) : (

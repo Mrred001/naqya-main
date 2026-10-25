@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type FcdsResource = {
   id: string;
-  course_slug: string;
+  course_slug: string | null;
   youtube_url: string;
   title: string;
   channel: string | null;
@@ -39,8 +39,11 @@ export const popularFcdsQuery = queryOptions({
 
 // Only intentional resource opens count, never a card render or dialog open.
 // The database also suppresses repeat clicks from the same browser for 30 minutes.
-export async function recordFcdsOpen(id: string): Promise<void> {
-  void trackAnalytics("resource_open", "fcds", { resourceId: id });
+export async function recordFcdsOpen(id: string, courseSlug?: string): Promise<void> {
+  void trackAnalytics("resource_open", "fcds", {
+    resourceId: id,
+    ...(courseSlug ? { courseSlug } : {}),
+  });
   try {
     const key = "darb-resource-visitor-v1";
     let visitor = localStorage.getItem(key);

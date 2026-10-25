@@ -16,8 +16,10 @@ import { Route as FcdsRouteImport } from './routes/fcds'
 import { Route as NaqyaRouteImport } from './routes/naqya'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as FcdsCalculatorRouteImport } from './routes/fcds.calculator'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as FcdsCourseSlugRouteImport } from './routes/fcds.course.$slug'
+import { Route as FcdsResourceIdRouteImport } from './routes/fcds.resource.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,6 +56,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FcdsCalculatorRoute = FcdsCalculatorRouteImport.update({
+  id: '/calculator',
+  path: '/calculator',
+  getParentRoute: () => FcdsRoute,
+} as any)
 const WatchIdRoute = WatchIdRouteImport.update({
   id: '/watch/$id',
   path: '/watch/$id',
@@ -62,6 +69,11 @@ const WatchIdRoute = WatchIdRouteImport.update({
 const FcdsCourseSlugRoute = FcdsCourseSlugRouteImport.update({
   id: '/course/$slug',
   path: '/course/$slug',
+  getParentRoute: () => FcdsRoute,
+} as any)
+const FcdsResourceIdRoute = FcdsResourceIdRouteImport.update({
+  id: '/resource/$id',
+  path: '/resource/$id',
   getParentRoute: () => FcdsRoute,
 } as any)
 
@@ -73,8 +85,10 @@ export interface FileRoutesByFullPath {
   '/naqya': typeof NaqyaRoute
   '/saved': typeof SavedRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/fcds/calculator': typeof FcdsCalculatorRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
+  '/fcds/resource/$id': typeof FcdsResourceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,8 +98,10 @@ export interface FileRoutesByTo {
   '/naqya': typeof NaqyaRoute
   '/saved': typeof SavedRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/fcds/calculator': typeof FcdsCalculatorRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
+  '/fcds/resource/$id': typeof FcdsResourceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,8 +112,10 @@ export interface FileRoutesById {
   '/naqya': typeof NaqyaRoute
   '/saved': typeof SavedRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/fcds/calculator': typeof FcdsCalculatorRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
+  '/fcds/resource/$id': typeof FcdsResourceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,8 +127,10 @@ export interface FileRouteTypes {
     | '/naqya'
     | '/saved'
     | '/auth/callback'
+    | '/fcds/calculator'
     | '/watch/$id'
     | '/fcds/course/$slug'
+    | '/fcds/resource/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,8 +140,10 @@ export interface FileRouteTypes {
     | '/naqya'
     | '/saved'
     | '/auth/callback'
+    | '/fcds/calculator'
     | '/watch/$id'
     | '/fcds/course/$slug'
+    | '/fcds/resource/$id'
   id:
     | '__root__'
     | '/'
@@ -131,8 +153,10 @@ export interface FileRouteTypes {
     | '/naqya'
     | '/saved'
     | '/auth/callback'
+    | '/fcds/calculator'
     | '/watch/$id'
     | '/fcds/course/$slug'
+    | '/fcds/resource/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fcds/calculator': {
+      id: '/fcds/calculator'
+      path: '/calculator'
+      fullPath: '/fcds/calculator'
+      preLoaderRoute: typeof FcdsCalculatorRouteImport
+      parentRoute: typeof FcdsRoute
+    }
     '/watch/$id': {
       id: '/watch/$id'
       path: '/watch/$id'
@@ -211,15 +242,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FcdsCourseSlugRouteImport
       parentRoute: typeof FcdsRoute
     }
+    '/fcds/resource/$id': {
+      id: '/fcds/resource/$id'
+      path: '/resource/$id'
+      fullPath: '/fcds/resource/$id'
+      preLoaderRoute: typeof FcdsResourceIdRouteImport
+      parentRoute: typeof FcdsRoute
+    }
   }
 }
 
 interface FcdsRouteChildren {
+  FcdsCalculatorRoute: typeof FcdsCalculatorRoute
   FcdsCourseSlugRoute: typeof FcdsCourseSlugRoute
+  FcdsResourceIdRoute: typeof FcdsResourceIdRoute
 }
 
 const FcdsRouteChildren: FcdsRouteChildren = {
+  FcdsCalculatorRoute: FcdsCalculatorRoute,
   FcdsCourseSlugRoute: FcdsCourseSlugRoute,
+  FcdsResourceIdRoute: FcdsResourceIdRoute,
 }
 
 const FcdsRouteWithChildren = FcdsRoute._addFileChildren(FcdsRouteChildren)

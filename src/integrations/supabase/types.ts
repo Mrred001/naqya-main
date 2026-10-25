@@ -212,8 +212,11 @@ export type Database = {
       };
       fcds_playlists: {
         Row: {
+          calculator_guide: boolean;
+          calculator_model: string | null;
+          calculator_topic: string | null;
           channel: string | null;
-          course_slug: string;
+          course_slug: string | null;
           created_at: string;
           id: string;
           language: string;
@@ -225,8 +228,11 @@ export type Database = {
           youtube_url: string;
         };
         Insert: {
+          calculator_guide?: boolean;
+          calculator_model?: string | null;
+          calculator_topic?: string | null;
           channel?: string | null;
-          course_slug: string;
+          course_slug?: string | null;
           created_at?: string;
           id?: string;
           language?: string;
@@ -238,8 +244,11 @@ export type Database = {
           youtube_url: string;
         };
         Update: {
+          calculator_guide?: boolean;
+          calculator_model?: string | null;
+          calculator_topic?: string | null;
           channel?: string | null;
-          course_slug?: string;
+          course_slug?: string | null;
           created_at?: string;
           id?: string;
           language?: string;
@@ -251,6 +260,42 @@ export type Database = {
           youtube_url?: string;
         };
         Relationships: [];
+      };
+      fcds_resource_courses: {
+        Row: {
+          course_slug: string;
+          note: string | null;
+          resource_id: string;
+          role: string;
+        };
+        Insert: {
+          course_slug: string;
+          note?: string | null;
+          resource_id: string;
+          role?: string;
+        };
+        Update: {
+          course_slug?: string;
+          note?: string | null;
+          resource_id?: string;
+          role?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fcds_resource_courses_course_slug_fkey";
+            columns: ["course_slug"];
+            isOneToOne: false;
+            referencedRelation: "fcds_courses";
+            referencedColumns: ["slug"];
+          },
+          {
+            foreignKeyName: "fcds_resource_courses_resource_id_fkey";
+            columns: ["resource_id"];
+            isOneToOne: false;
+            referencedRelation: "fcds_playlists";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       fcds_resource_opens: {
         Row: {
@@ -546,6 +591,17 @@ export type Database = {
           p_visitor: string;
         };
         Returns: undefined;
+      };
+      save_darb_resource: {
+        Args: {
+          p_append?: boolean;
+          p_general_suggestion?: string;
+          p_id?: string;
+          p_links?: Json;
+          p_payload?: Json;
+          p_suggestion?: string;
+        };
+        Returns: string;
       };
       suggestion_link_status: {
         Args: { resource_url: string };

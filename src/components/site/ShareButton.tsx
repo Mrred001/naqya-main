@@ -20,9 +20,11 @@ export function ShareButton({
     const path =
       library === "general" && resourceId
         ? `/watch/${resourceId}`
-        : courseSlug
-          ? `/fcds/course/${courseSlug}`
-          : window.location.pathname;
+        : library === "fcds" && resourceId
+          ? `/fcds/resource/${resourceId}`
+          : courseSlug
+            ? `/fcds/course/${courseSlug}`
+            : window.location.pathname;
     const url = new URL(path, window.location.origin);
     url.searchParams.set("utm_source", "share");
     try {
