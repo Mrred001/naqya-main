@@ -70,7 +70,9 @@ export function ReportsAdmin() {
                   {report.status === "new" ? "New" : "Resolved"}
                 </span>
                 <time dateTime={report.created_at}>
-                  {new Date(report.created_at).toLocaleString("en")}
+                  {new Date(report.created_at).toLocaleString("en-GB", {
+                    timeZone: "Africa/Cairo",
+                  })}
                 </time>
               </div>
               <p className="my-4 whitespace-pre-wrap break-words">{report.details}</p>

@@ -19,6 +19,7 @@ import { CourseAssociations } from "./CourseAssociations";
 const field =
   "w-full min-h-11 rounded-xl border border-amber-200/15 bg-[#19160f] px-4 py-3 text-sm text-amber-50 focus:ring-2 focus:ring-amber-300/40";
 export type DarbSeed = Partial<DarbResource> & {
+  communityRequestId?: string;
   suggestionId?: string;
   generalSuggestionId?: string;
 };
@@ -93,26 +94,38 @@ export function DarbResourceEditor({
     }
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("save_darb_resource", {
-        ...(initial.id ? { p_id: initial.id } : {}),
-        p_payload: {
-          youtube_url: url,
-          title,
-          channel,
-          language,
-          thumbnail_url: thumbnail,
-          music_status: status,
-          music_skip_ranges: ranges,
-          calculator_guide: guide,
-          calculator_topic: guide ? topic : null,
-          calculator_model: guide ? model : null,
-        },
-        p_links: links.map((l) => ({ course_slug: l.course_slug, role: l.role, note: l.note })),
-        ...(initial.suggestionId ? { p_suggestion: initial.suggestionId } : {}),
-        ...(initial.generalSuggestionId
-          ? { p_general_suggestion: initial.generalSuggestionId }
-          : {}),
-      });
+      const p_payload = {
+        youtube_url: url,
+        title,
+        channel,
+        language,
+        thumbnail_url: thumbnail,
+        music_status: status,
+        music_skip_ranges: ranges,
+        calculator_guide: guide,
+        calculator_topic: guide ? topic : null,
+        calculator_model: guide ? model : null,
+      };
+      const p_links = links.map((l) => ({
+        course_slug: l.course_slug,
+        role: l.role,
+        note: l.note,
+      }));
+      const { error } = initial.communityRequestId
+        ? await supabase.rpc("approve_calculator_request", {
+            p_request: initial.communityRequestId,
+            p_payload,
+            p_links,
+          })
+        : await supabase.rpc("save_darb_resource", {
+            ...(initial.id ? { p_id: initial.id } : {}),
+            p_payload,
+            p_links,
+            ...(initial.suggestionId ? { p_suggestion: initial.suggestionId } : {}),
+            ...(initial.generalSuggestionId
+              ? { p_general_suggestion: initial.generalSuggestionId }
+              : {}),
+          });
       if (error) throw error;
       await qc.invalidateQueries();
       toast.success("Source and course links saved");
@@ -133,7 +146,7 @@ export function DarbResourceEditor({
         <h2 className="text-xl font-semibold">
           {initial.id
             ? "Edit source"
-            : initial.suggestionId || initial.generalSuggestionId
+            : initial.suggestionId || initial.generalSuggestionId || initial.communityRequestId
               ? "Review & approve suggestion"
               : "Add source"}
         </h2>
@@ -294,7 +307,7 @@ export function DarbResourceEditor({
       >
         {busy
           ? "Saving…"
-          : initial.suggestionId || initial.generalSuggestionId
+          : initial.suggestionId || initial.generalSuggestionId || initial.communityRequestId
             ? "Save & approve"
             : "Save source"}
       </button>

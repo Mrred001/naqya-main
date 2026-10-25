@@ -1,3 +1,4 @@
+import { CommunityRequestsAdmin } from "@/components/admin/CommunityRequestsAdmin";
 import { DarbResourceAdmin } from "@/components/admin/DarbResourceAdmin";
 import { DarbResourceEditor, type DarbSeed } from "@/components/admin/DarbResourceEditor";
 import { darbCoursesQuery, darbResourcesQuery, resourcesForCourse } from "@/lib/darb-resources";
@@ -247,6 +248,7 @@ function SignIn() {
 }
 
 type AdminTab =
+  | "community"
   | "overview"
   | "general"
   | "calculator"
@@ -260,11 +262,11 @@ type AdminTab =
 function Dashboard({ email }: { email: string }) {
   const [tab, setTab] = useState<AdminTab>("overview");
 
-  const { data: pending = { fcds: 0, general: 0, total: 0 } } = useQuery({
+  const { data: pending = { fcds: 0, general: 0, community: 0, total: 0 } } = useQuery({
     queryKey: ["pending-suggestions-count"],
 
     queryFn: async () => {
-      const [fcdsResult, generalResult] = await Promise.all([
+      const [fcdsResult, generalResult, communityResult] = await Promise.all([
         supabase
           .from("fcds_playlist_suggestions")
           .select("*", {
@@ -280,6 +282,10 @@ function Dashboard({ email }: { email: string }) {
             head: true,
           })
           .eq("status", "pending"),
+        supabase
+          .from("community_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending"),
       ]);
 
       const fcds = fcdsResult.count ?? 0;
@@ -288,12 +294,19 @@ function Dashboard({ email }: { email: string }) {
       return {
         fcds,
         general,
+        community: communityResult.count ?? 0,
         total: fcds + general,
       };
     },
   });
 
   const navItems = [
+    {
+      id: "community" as const,
+      label: "Messages & requests",
+      icon: Inbox,
+      count: pending.community,
+    },
     { id: "calculator" as const, label: "Calculator guide", icon: Calculator },
     { id: "reports" as const, label: "Reports", icon: Inbox },
     {
@@ -411,6 +424,7 @@ function Dashboard({ email }: { email: string }) {
         {tab === "suggestions" && <SuggestionsAdmin />}
 
         {tab === "reports" && <ReportsAdmin />}
+        {tab === "community" && <CommunityRequestsAdmin />}
 
         {tab === "categories" && <CategoryAdmin />}
       </main>
@@ -847,7 +861,9 @@ function SuggestionsAdmin() {
                     </span>
 
                     <span className="text-xs text-amber-50/25">
-                      {new Date(suggestion.created_at).toLocaleString()}
+                      {new Date(suggestion.created_at).toLocaleString("en-GB", {
+                        timeZone: "Africa/Cairo",
+                      })}
                     </span>
                   </div>
 

@@ -35,6 +35,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      community_requests: {
+        Row: {
+          calculator_model: string | null;
+          calculator_topic: string | null;
+          course_slug: string | null;
+          created_at: string;
+          details: string;
+          id: string;
+          kind: string;
+          resource_id: string | null;
+          status: string;
+          title: string;
+          user_id: string | null;
+          visitor_key: string;
+          youtube_url: string | null;
+        };
+        Insert: {
+          calculator_model?: string | null;
+          calculator_topic?: string | null;
+          course_slug?: string | null;
+          created_at?: string;
+          details?: string;
+          id?: string;
+          kind: string;
+          resource_id?: string | null;
+          status?: string;
+          title?: string;
+          user_id?: string | null;
+          visitor_key: string;
+          youtube_url?: string | null;
+        };
+        Update: {
+          calculator_model?: string | null;
+          calculator_topic?: string | null;
+          course_slug?: string | null;
+          created_at?: string;
+          details?: string;
+          id?: string;
+          kind?: string;
+          resource_id?: string | null;
+          status?: string;
+          title?: string;
+          user_id?: string | null;
+          visitor_key?: string;
+          youtube_url?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "community_requests_course_slug_fkey";
+            columns: ["course_slug"];
+            isOneToOne: false;
+            referencedRelation: "fcds_courses";
+            referencedColumns: ["slug"];
+          },
+          {
+            foreignKeyName: "community_requests_resource_id_fkey";
+            columns: ["resource_id"];
+            isOneToOne: false;
+            referencedRelation: "fcds_playlists";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       content: {
         Row: {
           category_id: string | null;
@@ -548,6 +611,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      approve_calculator_request: {
+        Args: { p_links: Json; p_payload: Json; p_request: string };
+        Returns: string;
+      };
+      approve_course_recommendation: {
+        Args: { p_note?: string; p_request: string; p_role?: string };
+        Returns: undefined;
+      };
       get_daily_site_visits: {
         Args: { days?: number };
         Returns: {
@@ -602,6 +673,15 @@ export type Database = {
           p_suggestion?: string;
         };
         Returns: string;
+      };
+      submit_community_request: {
+        Args: {
+          p_courses?: string[];
+          p_kind: string;
+          p_payload: Json;
+          p_visitor?: string;
+        };
+        Returns: number;
       };
       suggestion_link_status: {
         Args: { resource_url: string };

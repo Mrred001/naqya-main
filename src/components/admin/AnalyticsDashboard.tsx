@@ -142,7 +142,7 @@ export function AnalyticsDashboard() {
         </div>
       </div>
       <p className="text-xs leading-relaxed text-amber-50/45">
-        Khartoum time · Today is incomplete. Visitors are estimated by browser, not verified people.
+        Egypt time · Today is incomplete. Visitors are estimated by browser, not verified people.
         Sessions restart after 30 minutes of inactivity. Opens do not prove a video was watched.
         Signed-in curators are excluded.
       </p>
@@ -167,7 +167,7 @@ export function AnalyticsDashboard() {
             <div className="rounded-xl border border-amber-200/15 bg-amber-300/[0.04] px-4 py-3 text-xs leading-relaxed text-amber-100/60">
               Detailed tracking started{" "}
               {new Date(data.tracked_since).toLocaleString("en-GB", {
-                timeZone: "Africa/Khartoum",
+                timeZone: "Africa/Cairo",
               })}
               . Earlier traffic remains in the legacy history below. Library splits, engagement,
               retention, and comparisons use only the new tracking; initial periods are partial.

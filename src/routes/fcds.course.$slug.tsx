@@ -1,3 +1,4 @@
+import { CommunityRequestButton } from "@/components/fcds/CommunityRequestButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { darbCoursesQuery, darbResourcesQuery, resourcesForCourse } from "@/lib/darb-resources";
@@ -58,6 +59,7 @@ function CoursePage() {
         </Link>
         <div className="flex flex-wrap items-center gap-2">
           <SavedItemsLink />
+          <CommunityRequestButton kind="message" iconOnly />
           <AccountMenu />
           <LanguageToggle />
           <ThemeToggle />

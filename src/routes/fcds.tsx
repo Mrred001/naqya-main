@@ -1,3 +1,5 @@
+import { socialMeta } from "@/lib/social-meta";
+import { CommunityRequestButton } from "@/components/fcds/CommunityRequestButton";
 import { darbResourcesQuery, resourcesForCourse } from "@/lib/darb-resources";
 import { useSearchAnalytics } from "@/lib/use-search-analytics";
 import { FcdsDiscovery } from "@/components/fcds/FcdsDiscovery";
@@ -31,6 +33,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 export const Route = createFileRoute("/fcds")({
   head: () => ({
     meta: [
+      ...socialMeta("darb"),
       { title: "درب FCDS — مصادر مادتك" },
       {
         name: "description",
@@ -316,6 +319,7 @@ function FCDS() {
             className="flex items-center justify-center gap-1.5 justify-self-center lg:col-start-2 lg:row-start-1 sm:gap-2"
             dir="ltr"
           >
+            <CommunityRequestButton kind="message" iconOnly />
             <AccountMenu iconOnly />
             <SavedItemsLink />
             <ThemeToggle />

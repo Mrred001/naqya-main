@@ -11,7 +11,7 @@ The overview combines a new usage dashboard with the preserved legacy daily traf
 - Returning visitors were first seen in that library before the selected period. All-library visitors are deduplicated across libraries.
 - Seven-day retention uses new visitors first seen in the selected period with seven complete observation days, and a return on a later local day within seven days. An empty eligible cohort displays “Collecting data”.
 - Sessions are attributed to their entry source/campaign. Untagged app referrals can appear as “Direct / unknown”. Use `utm_source` and `utm_campaign` for campaign links.
-- Today and initial comparison periods are incomplete. All reporting day boundaries use Africa/Khartoum.
+- Today and initial comparison periods are incomplete. All reporting day boundaries use Africa/Cairo.
 - Coverage, pending suggestions, and open reports are current totals, not period activity.
 
 ## Data boundaries

@@ -1,3 +1,4 @@
+import { CommunityRequestButton } from "@/components/fcds/CommunityRequestButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -53,6 +54,10 @@ function CalculatorGuide() {
             ? "Find the operation you need, and check the calculator model before following the steps."
             : "اختار العملية البتحتاجها، واتأكد من موديل الآلة قبل تطبيق الخطوات."}
         </p>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <CommunityRequestButton kind="calculator_suggestion" />
+        <CommunityRequestButton kind="calculator_request" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <input

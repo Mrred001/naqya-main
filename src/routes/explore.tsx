@@ -1,3 +1,4 @@
+import { socialMeta } from "@/lib/social-meta";
 import { useSearchAnalytics } from "@/lib/use-search-analytics";
 import type { ReactNode } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/explore")({
   }),
   head: () => ({
     meta: [
+      ...socialMeta("naqya"),
       { title: "استكشف — NAQYA نقيا" },
       {
         name: "description",

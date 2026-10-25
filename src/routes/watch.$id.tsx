@@ -1,3 +1,4 @@
+import { socialMeta } from "@/lib/social-meta";
 import { ShareButton } from "@/components/site/ShareButton";
 import { SaveButton } from "@/components/account/SaveButton";
 import { MusicNotice } from "@/components/site/MusicNotice";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/watch/$id")({
       };
     const t = `${loaderData.title} — NAQYA نقيا`;
     const meta: Array<Record<string, string>> = [
+      ...socialMeta("naqya", t, loaderData.description),
       { title: t },
       { name: "description", content: loaderData.description },
       { property: "og:title", content: t },
@@ -35,6 +37,7 @@ export const Route = createFileRoute("/watch/$id")({
     if (loaderData.thumb?.startsWith("https://")) {
       meta.push(
         { property: "og:image", content: loaderData.thumb },
+        { property: "og:image:secure_url", content: loaderData.thumb },
         { name: "twitter:image", content: loaderData.thumb },
       );
     }

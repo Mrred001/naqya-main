@@ -1,3 +1,4 @@
+import { socialMeta } from "@/lib/social-meta";
 import { checkSuggestionLink, duplicateSuggestionMessage } from "@/lib/suggestion-links";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ import { useSitePreferences } from "@/components/site/PreferencesProvider";
 export const Route = createFileRoute("/naqya")({
   head: () => ({
     meta: [
+      ...socialMeta("naqya"),
       { title: "NAQYA" },
       {
         name: "description",

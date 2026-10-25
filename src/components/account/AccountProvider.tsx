@@ -54,6 +54,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       authEventVersion.current += 1;
       if (active) {
         // Cancel and remove private data on every session change, including logout.
+        void queryClient.cancelQueries({ queryKey: ["community-requests"] });
+        queryClient.removeQueries({ queryKey: ["community-requests"] });
         void queryClient.cancelQueries({ queryKey: ["bookmarks"] });
         queryClient.removeQueries({ queryKey: ["bookmarks"] });
         void queryClient.cancelQueries({ queryKey: ["resource-progress"] });

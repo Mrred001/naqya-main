@@ -2,9 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "naqya-daily-visitor";
 
-export function khartoumDateKey(date = new Date()): string {
+export function egyptDateKey(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Khartoum",
+    timeZone: "Africa/Cairo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -17,7 +17,7 @@ export function khartoumDateKey(date = new Date()): string {
 export async function recordDailyVisit(): Promise<void> {
   if (typeof window === "undefined") return;
 
-  const today = khartoumDateKey();
+  const today = egyptDateKey();
   let saved: { date?: string; key?: string } = {};
 
   try {

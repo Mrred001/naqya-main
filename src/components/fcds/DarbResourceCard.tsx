@@ -1,3 +1,4 @@
+import { CommunityRequestButton } from "@/components/fcds/CommunityRequestButton";
 import { ExternalLink, Calculator } from "lucide-react";
 import { type DarbResource } from "@/lib/darb-resources";
 import { parseYouTube } from "@/lib/content";
@@ -79,6 +80,7 @@ export function DarbResourceCard({
           {...(courseSlug ? { courseSlug } : {})}
         />
         <ResourceProgress id={resource.id} />
+        <CommunityRequestButton kind="course_recommendation" resource={resource} />
       </div>
     </article>
   );
