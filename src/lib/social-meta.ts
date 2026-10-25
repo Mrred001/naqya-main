@@ -19,8 +19,7 @@ export function socialMeta(
       : brand === "naqya"
         ? "محتوى منتقى بعناية، يستحق وقتك."
         : "نقيا للمحتوى المفيد ودرب لمصادر مواد FCDS.");
-  const image =
-    brand === "gateway" ? `${origin}/social/gateway-v1.png` : `${origin}/social/${brand}-v2.jpg`;
+  const image = `${origin}/social/${brand}-v2.jpg`;
   return [
     { property: "og:site_name", content: name },
     { property: "og:title", content: heading },
@@ -28,7 +27,7 @@ export function socialMeta(
     { property: "og:locale", content: "ar_EG" },
     { property: "og:image", content: image },
     { property: "og:image:secure_url", content: image },
-    { property: "og:image:type", content: brand === "gateway" ? "image/png" : "image/jpeg" },
+    { property: "og:image:type", content: "image/jpeg" },
     { property: "og:image:width", content: "1200" },
     { property: "og:image:height", content: brand === "gateway" ? "630" : "1200" },
     { property: "og:image:alt", content: heading },
