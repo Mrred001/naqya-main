@@ -199,32 +199,38 @@ export type Database = {
       fcds_courses: {
         Row: {
           code: string;
+          course_kind: string;
           created_at: string;
           id: string;
           name: string;
           semester: number | null;
           slug: string;
           specialization: string;
+          specializations: string[];
           year: string;
         };
         Insert: {
           code: string;
+          course_kind?: string;
           created_at?: string;
           id?: string;
           name: string;
           semester?: number | null;
           slug: string;
           specialization?: string;
+          specializations?: string[];
           year: string;
         };
         Update: {
           code?: string;
+          course_kind?: string;
           created_at?: string;
           id?: string;
           name?: string;
           semester?: number | null;
           slug?: string;
           specialization?: string;
+          specializations?: string[];
           year?: string;
         };
         Relationships: [];
@@ -700,6 +706,7 @@ export type Database = {
           visit_date: string;
         }[];
       };
+      get_darb_public_stats: { Args: never; Returns: Json };
       get_site_analytics: {
         Args: { p_days?: number; p_library?: string };
         Returns: Json;

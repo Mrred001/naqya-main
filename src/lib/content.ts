@@ -57,13 +57,21 @@ export const categoriesQuery = queryOptions({
 
 export const contentQuery = queryOptions({
   queryKey: ["content"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("content")
-      .select(SELECT)
-      .order("date_added", { ascending: false });
-    if (error) throw error;
-    return (data as unknown as Row[]).map(normalize);
+  queryFn: async ({ signal }) => {
+    const rows: Row[] = [];
+    for (let offset = 0; ; offset += 1000) {
+      const { data, error } = await supabase
+        .from("content")
+        .select(SELECT)
+        .order("date_added", { ascending: false })
+        .order("id")
+        .range(offset, offset + 999)
+        .abortSignal(signal);
+      if (error) throw error;
+      rows.push(...((data ?? []) as unknown as Row[]));
+      if (!data || data.length < 1000) break;
+    }
+    return rows.map(normalize);
   },
 });
 

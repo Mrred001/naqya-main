@@ -1,3 +1,4 @@
+import { courseKind, courseKindLabel } from "@/lib/course-types";
 import { CommunityRequestButton } from "@/components/fcds/CommunityRequestButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -67,7 +68,8 @@ function CoursePage() {
       </div>
       <header>
         <p className="text-sm text-muted-foreground">
-          {course.code} · {course.year}
+          {course.code} ·{" "}
+          {courseKind(course) === "core" ? course.year : courseKindLabel(course, en)}
         </p>
         <h1 dir="auto" className="mt-3 text-3xl font-bold sm:text-4xl">
           {course.name}

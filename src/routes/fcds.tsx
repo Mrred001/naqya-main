@@ -1,6 +1,18 @@
+import {
+  courseKind,
+  courseKindLabel,
+  matchesCourseFilters,
+  type CourseKind,
+} from "@/lib/course-types";
+import { DarbStats } from "@/components/fcds/DarbStats";
 import { socialMeta } from "@/lib/social-meta";
 import { CommunityRequestButton } from "@/components/fcds/CommunityRequestButton";
-import { darbResourcesQuery, resourcesForCourse } from "@/lib/darb-resources";
+import {
+  darbCoursesQuery,
+  type DarbCourse,
+  darbResourcesQuery,
+  resourcesForCourse,
+} from "@/lib/darb-resources";
 import { useSearchAnalytics } from "@/lib/use-search-analytics";
 import { FcdsDiscovery } from "@/components/fcds/FcdsDiscovery";
 import { checkSuggestionLink, duplicateSuggestionMessage } from "@/lib/suggestion-links";
@@ -44,16 +56,7 @@ export const Route = createFileRoute("/fcds")({
   component: FCDS,
 });
 
-type FcdsCourse = {
-  id: string;
-  name: string;
-  slug: string;
-  code: string;
-  year: string;
-  semester: number | null;
-  specialization?: FcdsSpecialization;
-  created_at: string;
-};
+type FcdsCourse = DarbCourse;
 
 function FCDS() {
   const { language } = useSitePreferences();
@@ -63,6 +66,7 @@ function FCDS() {
   const [search, setSearch] = useState("");
   const [selectedSpecialization, setSelectedSpecialization] =
     useState<FcdsSpecialization>(defaultFcdsSpecialization);
+  const [selectedKind, setSelectedKind] = useState<CourseKind>("core");
   const [selectedYear, setSelectedYear] = useState("كل السنوات");
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
 
@@ -90,23 +94,7 @@ function FCDS() {
     data: courses = [],
     isLoading: coursesLoading,
     error: coursesError,
-  } = useQuery({
-    queryKey: ["fcds-courses"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fcds_courses")
-        .select("*")
-        .order("semester", { ascending: true, nullsFirst: false })
-        .order("year", { ascending: true })
-        .order("name", { ascending: true });
-
-      if (error) {
-        throw error;
-      }
-
-      return (data ?? []) as FcdsCourse[];
-    },
-  });
+  } = useQuery(darbCoursesQuery);
 
   const filteredCourses = courses.filter((course) => {
     const q = search.toLowerCase().trim();
@@ -114,12 +102,15 @@ function FCDS() {
     const matchesSearch =
       course.name.toLowerCase().includes(q) || course.code.toLowerCase().includes(q);
 
-    const matchesYear = selectedYear === "كل السنوات" || course.year === selectedYear;
-    const matchesSemester = selectedSemester === null || course.semester === selectedSemester;
-
-    const matchesSpecialization =
-      normalizeFcdsSpecialization(course.specialization) === selectedSpecialization;
-    return matchesSearch && matchesYear && matchesSemester && matchesSpecialization;
+    return (
+      matchesSearch &&
+      matchesCourseFilters(course, {
+        kind: selectedKind,
+        specialization: selectedSpecialization,
+        year: selectedYear,
+        semester: selectedSemester,
+      })
+    );
   });
 
   useSearchAnalytics("fcds", search, filteredCourses.length, !coursesLoading && !coursesError);
@@ -358,6 +349,8 @@ function FCDS() {
             )}
           </p>
 
+          <DarbStats />
+
           <div className="mt-7 flex min-w-0 max-w-2xl items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 focus-within:border-primary/50">
             <Search className="h-5 w-5 shrink-0 text-primary" />
 
@@ -393,69 +386,120 @@ function FCDS() {
                 ))}
               </select>
             </label>
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label={t("فلترة حسب السنة", "Filter by year")}
-            >
-              {["كل السنوات", ...fcdsYearOptions].map((year) => (
-                <button
-                  key={year}
-                  type="button"
-                  aria-pressed={selectedYear === year}
-                  onClick={() => {
-                    setSelectedYear(year);
-                    setSelectedSemester(null);
-                  }}
-                  className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                    selectedYear === year
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
-                  }`}
-                >
-                  {english
-                    ? ((
-                        {
-                          "كل السنوات": "All years",
-                          "السنة الأولى": "Year 1",
-                          "السنة الثانية": "Year 2",
-                          "السنة الثالثة": "Year 3",
-                          "السنة الرابعة": "Year 4",
-                        } as Record<string, string>
-                      )[year] ?? year)
-                    : year}
-                </button>
-              ))}
+            <div className="space-y-3">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold">
+                <input
+                  type="checkbox"
+                  checked={selectedKind !== "core"}
+                  onChange={(e) => setSelectedKind(e.target.checked ? "faculty" : "core")}
+                  className="h-5 w-5 accent-emerald-400"
+                />
+                {t("المواد الاختيارية", "Elective courses")}
+              </label>
+              {selectedKind !== "core" && (
+                <>
+                  <div
+                    role="group"
+                    aria-label={t("نوع الاختياري", "Elective type")}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {(["faculty", "program"] as const).map((kind) => (
+                      <button
+                        type="button"
+                        key={kind}
+                        aria-pressed={selectedKind === kind}
+                        onClick={() => setSelectedKind(kind)}
+                        className={`min-h-11 rounded-full border px-5 py-2 text-sm ${selectedKind === kind ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"}`}
+                      >
+                        {courseKindLabel({ course_kind: kind }, english)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {selectedKind === "faculty"
+                      ? t(
+                          "اختياري الكلية مشترك بين التخصصات، بدون سنة أو سمستر.",
+                          "Faculty electives are shared across tracks, without year or semester.",
+                        )
+                      : t(
+                          "اختياري البرنامج حسب التخصص المختار، بدون سنة أو سمستر.",
+                          "Program electives follow the selected specialization, without year or semester.",
+                        )}{" "}
+                    {t(
+                      "راجع خطتك ولائحتك الدراسية الحالية قبل الاختيار.",
+                      "Check your current study plan before choosing.",
+                    )}
+                  </p>
+                </>
+              )}
             </div>
+            {selectedKind === "core" && (
+              <>
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="group"
+                  aria-label={t("فلترة حسب السنة", "Filter by year")}
+                >
+                  {["كل السنوات", ...fcdsYearOptions].map((year) => (
+                    <button
+                      key={year}
+                      type="button"
+                      aria-pressed={selectedYear === year}
+                      onClick={() => {
+                        setSelectedYear(year);
+                        setSelectedSemester(null);
+                      }}
+                      className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                        selectedYear === year
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+                      }`}
+                    >
+                      {english
+                        ? ((
+                            {
+                              "كل السنوات": "All years",
+                              "السنة الأولى": "Year 1",
+                              "السنة الثانية": "Year 2",
+                              "السنة الثالثة": "Year 3",
+                              "السنة الرابعة": "Year 4",
+                            } as Record<string, string>
+                          )[year] ?? year)
+                        : year}
+                    </button>
+                  ))}
+                </div>
 
-            <div
-              className="flex flex-wrap items-center gap-2"
-              role="group"
-              aria-label={t("فلترة حسب السمستر", "Filter by semester")}
-            >
-              <span className="ml-1 text-xs font-medium text-muted-foreground">
-                {t("السمستر", "Semester")}
-              </span>
-              {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
-                <button
-                  key={semester}
-                  type="button"
-                  aria-label={`${t("سمستر", "Semester")} ${semester}`}
-                  aria-pressed={selectedSemester === semester}
-                  onClick={() => {
-                    setSelectedSemester(semester);
-                    setSelectedYear(fcdsYearForSemester(semester) ?? "كل السنوات");
-                  }}
-                  className={`grid h-10 w-10 place-items-center rounded-full border text-sm font-semibold transition-colors ${
-                    selectedSemester === semester
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
-                  }`}
+                <div
+                  className="flex flex-wrap items-center gap-2"
+                  role="group"
+                  aria-label={t("فلترة حسب السمستر", "Filter by semester")}
                 >
-                  {semester}
-                </button>
-              ))}
-            </div>
+                  <span className="ml-1 text-xs font-medium text-muted-foreground">
+                    {t("السمستر", "Semester")}
+                  </span>
+                  {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
+                    <button
+                      key={semester}
+                      type="button"
+                      aria-label={`${t("سمستر", "Semester")} ${semester}`}
+                      aria-pressed={selectedSemester === semester}
+                      onClick={() => {
+                        setSelectedSemester(semester);
+                        setSelectedYear(fcdsYearForSemester(semester) ?? "كل السنوات");
+                      }}
+                      className={`grid h-10 w-10 place-items-center rounded-full border text-sm font-semibold transition-colors ${
+                        selectedSemester === semester
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary"
+                      }`}
+                    >
+                      {semester}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -527,7 +571,7 @@ function FCDS() {
                 className="rounded-2xl border border-border p-10 text-center text-muted-foreground"
                 dir={english ? "ltr" : "rtl"}
               >
-                {selectedSemester === null
+                {selectedKind !== "core" || selectedSemester === null
                   ? t("ما لقينا مادة مطابقة للبحث.", "No courses match your search.")
                   : t(
                       `ما لقينا مواد مسجلة لسمستر ${selectedSemester} لحدي هسي.`,
@@ -774,16 +818,18 @@ function CourseCard({ course }: { course: FcdsCourse }) {
         )}
 
         <span>
-          {english
-            ? ((
-                {
-                  "السنة الأولى": "Year 1",
-                  "السنة الثانية": "Year 2",
-                  "السنة الثالثة": "Year 3",
-                  "السنة الرابعة": "Year 4",
-                } as Record<string, string>
-              )[course.year] ?? course.year)
-            : course.year}
+          {courseKind(course) !== "core"
+            ? courseKindLabel(course, english)
+            : english
+              ? ((
+                  {
+                    "السنة الأولى": "Year 1",
+                    "السنة الثانية": "Year 2",
+                    "السنة الثالثة": "Year 3",
+                    "السنة الرابعة": "Year 4",
+                  } as Record<string, string>
+                )[course.year] ?? course.year)
+              : course.year}
         </span>
       </div>
     </Link>

@@ -15,6 +15,8 @@ export type DarbCourse = {
   code: string;
   year: string;
   semester: number | null;
+  course_kind?: "core" | "faculty" | "program";
+  specializations?: string[];
   specialization?: string;
   created_at: string;
 };

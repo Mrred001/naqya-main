@@ -1,3 +1,4 @@
+import { courseKind, courseKindLabel } from "@/lib/course-types";
 import { useId, useState } from "react";
 import { type CourseAssociation, type DarbCourse } from "@/lib/darb-resources";
 const field =
@@ -20,7 +21,8 @@ export function CourseAssociations({
   const visible = courses.filter((c) =>
     `${c.name} ${c.code} ${c.year}`.toLowerCase().includes(search.toLowerCase()),
   );
-  const years = [...new Set(visible.map((c) => c.year))];
+  const group = (c: DarbCourse) => (courseKind(c) === "core" ? c.year : courseKindLabel(c, true));
+  const years = [...new Set(visible.map(group))];
   const change = (slug: string, patch: Partial<CourseAssociation>) =>
     onChange(value.map((link) => (link.course_slug === slug ? { ...link, ...patch } : link)));
   return (
@@ -79,7 +81,7 @@ export function CourseAssociations({
             </p>
             <div className="space-y-2">
               {visible
-                .filter((c) => c.year === year)
+                .filter((c) => group(c) === year)
                 .map((course) => {
                   const selected = value.find((v) => v.course_slug === course.slug);
                   return (

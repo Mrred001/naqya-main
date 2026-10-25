@@ -15,10 +15,16 @@ export function MusicReviewDialog({
   youtubeUrl,
   title,
   onComplete,
+  submitLabel = "Approve & add",
+  busy = false,
+  failure,
 }: {
   youtubeUrl: string;
   title: string;
   onComplete: (review: MusicReview | null) => void;
+  submitLabel?: string;
+  busy?: boolean;
+  failure?: string;
 }) {
   const [status, setStatus] = useState<MusicReview["music_status"] | "">("");
   const [ranges, setRanges] = useState("");
@@ -28,6 +34,7 @@ export function MusicReviewDialog({
   const isVideo = parseYouTube(youtubeUrl)?.kind === "video";
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     const message = validateMusicSelection(status, ranges, isVideo);
     if (message || !status) {
       setError(message);
@@ -43,7 +50,7 @@ export function MusicReviewDialog({
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) onComplete(null);
+        if (!open && !busy) onComplete(null);
       }}
     >
       <DialogContent
@@ -162,6 +169,11 @@ export function MusicReviewDialog({
               )}
             </div>
           )}
+          {failure && (
+            <p role="alert" className="text-sm text-red-300">
+              {failure}
+            </p>
+          )}
           {error && (
             <p id={errorId} role="alert" className="text-sm text-red-300">
               {error}
@@ -170,6 +182,7 @@ export function MusicReviewDialog({
           <div className="flex flex-col-reverse gap-3 border-t border-amber-100/10 pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
+              disabled={busy}
               onClick={() => onComplete(null)}
               className="min-h-11 rounded-xl border border-amber-200/15 px-5 py-3 text-sm text-amber-100/70 hover:border-amber-200/40"
             >
@@ -177,11 +190,11 @@ export function MusicReviewDialog({
             </button>
             <button
               type="submit"
-              disabled={!status}
+              disabled={!status || busy}
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 py-3 text-sm font-semibold text-[#17130a] hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Check className="h-4 w-4" aria-hidden="true" />
-              Approve &amp; add
+              {busy ? "Saving…" : submitLabel}
             </button>
           </div>
         </form>

@@ -39,7 +39,10 @@ export function ReportsAdmin() {
         .update({ status: report.status === "new" ? "resolved" : "new" })
         .eq("id", report.id);
       if (error) throw error;
-      await cache.invalidateQueries({ queryKey: ["site-reports"] });
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: ["site-reports"] }),
+        cache.invalidateQueries({ queryKey: ["admin-review-work"] }),
+      ]);
     } catch {
       setFailure("Could not update the report status.");
     } finally {

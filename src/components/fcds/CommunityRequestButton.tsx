@@ -1,3 +1,4 @@
+import { courseKind, courseKindLabel } from "@/lib/course-types";
 import { SupportChatButton } from "@/components/chat/SupportChatButton";
 import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -263,7 +264,9 @@ function CommunityRequestFormButton({
                             <span className="min-w-0 break-words">
                               {course.name}
                               <span className="mx-2 text-xs text-muted-foreground">
-                                {course.year}
+                                {courseKind(course) === "core"
+                                  ? course.year
+                                  : courseKindLabel(course, en)}
                               </span>
                             </span>
                           </label>

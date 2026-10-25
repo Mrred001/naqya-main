@@ -1,3 +1,7 @@
+import { ReviewQueue } from "@/components/admin/ReviewQueue";
+import { pendingWorkQuery } from "@/lib/pending-work";
+import { reviewReasons } from "@/lib/review-queue";
+import { courseKind, courseKinds, courseKindLabel, type CourseKind } from "@/lib/course-types";
 import { SupportInbox } from "@/components/admin/SupportInbox";
 import { supportInboxQuery, hasUnread } from "@/lib/support-chat";
 import { useAccount } from "@/components/account/AccountProvider";
@@ -251,6 +255,7 @@ function SignIn() {
 }
 
 type AdminTab =
+  | "reviews"
   | "chats"
   | "community"
   | "overview"
@@ -265,6 +270,16 @@ type AdminTab =
 
 function Dashboard({ email }: { email: string }) {
   const { user } = useAccount();
+  const reviewDarb = useQuery(darbResourcesQuery);
+  const reviewGeneral = useQuery(contentQuery);
+  const reviewWork = useQuery(pendingWorkQuery);
+  const reviewCount =
+    [...(reviewDarb.data ?? []), ...(reviewGeneral.data ?? [])].filter(
+      (r) => reviewReasons(r).length,
+    ).length + (reviewWork.data?.length ?? 0);
+  const [reviewGeneralEdit, setReviewGeneralEdit] = useState<ContentItem | null>(null);
+  const reviewCategories = useQuery(categoriesQuery);
+  const dashboardCache = useQueryClient();
   const chats = useQuery(supportInboxQuery(user?.id));
   const unreadChats = (chats.data ?? []).filter((c) => hasUnread(c, "admin")).length;
   const [tab, setTab] = useState<AdminTab>("overview");
@@ -308,6 +323,7 @@ function Dashboard({ email }: { email: string }) {
   });
 
   const navItems = [
+    { id: "reviews" as const, label: "Review centre · Pending", icon: Check, count: reviewCount },
     { id: "chats" as const, label: "Chats", icon: Inbox, count: unreadChats },
     {
       id: "community" as const,
@@ -354,7 +370,7 @@ function Dashboard({ email }: { email: string }) {
   return (
     <div className="min-h-[100dvh] lg:flex">
       {/* Sidebar */}
-      <aside className="border-b border-amber-100/10 bg-[#17140e] lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
+      <aside className="border-b border-amber-100/10 bg-[#17140e] lg:overflow-y-auto lg:fixed lg:inset-y-0 lg:left-0 lg:w-72 lg:border-b-0 lg:border-r">
         <div className="flex h-full flex-col p-5">
           <div className="border-b border-amber-100/15 pb-6">
             <p className="text-xs tracking-[0.22em] text-amber-100/45">NAQYA</p>
@@ -417,6 +433,21 @@ function Dashboard({ email }: { email: string }) {
 
       {/* Content */}
       <main className="w-full px-5 py-10 md:px-8 lg:ml-72 lg:px-12 lg:py-12">
+        {tab === "reviews" &&
+          (reviewGeneralEdit ? (
+            <ContentForm
+              key={reviewGeneralEdit.id}
+              id={reviewGeneralEdit.id}
+              initial={toDraft(reviewGeneralEdit)}
+              categories={reviewCategories.data ?? []}
+              onDone={() => {
+                setReviewGeneralEdit(null);
+                void dashboardCache.invalidateQueries({ queryKey: ["content"] });
+              }}
+            />
+          ) : (
+            <ReviewQueue onOpen={setTab} onEditGeneral={setReviewGeneralEdit} />
+          ))}
         {tab === "overview" && <Overview pendingCount={pending.total} />}
 
         {tab === "general" && <ContentAdmin />}
@@ -613,6 +644,7 @@ function SuggestionsAdmin() {
   });
 
   const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-review-work"] });
     void qc.invalidateQueries({ queryKey: ["admin-course-coverage"] });
     qc.invalidateQueries({
       queryKey: ["fcds-suggestions"],
@@ -1078,6 +1110,8 @@ type FcdsCourseRow = {
   code: string;
   year: string;
   semester: number | null;
+  course_kind?: CourseKind;
+  specializations?: string[];
   specialization?: FcdsSpecialization;
   created_at: string;
 };
@@ -1096,7 +1130,7 @@ export function CoursePicker({
   const [open, setOpen] = useState(false);
   const selected = courses.find((course) => course.slug === value);
   const selectedLabel = selected
-    ? `${selected.name} · ${selected.code}${selected.semester ? ` · Semester ${selected.semester}` : ""}`
+    ? `${selected.name} · ${selected.code}${courseKind(selected) === "core" ? (selected.semester ? ` · Semester ${selected.semester}` : "") : ` · ${courseKindLabel(selected, true)}`}`
     : "Choose a course";
 
   return (
@@ -1131,7 +1165,7 @@ export function CoursePicker({
             <CommandEmpty className="text-amber-100/55">No matching courses.</CommandEmpty>
             <CommandGroup>
               {courses.map((course) => {
-                const label = `${course.name} · ${course.code}${course.semester ? ` · Semester ${course.semester}` : " · No semester"}`;
+                const label = `${course.name} · ${course.code}${courseKind(course) === "core" ? (course.semester ? ` · Semester ${course.semester}` : " · No semester") : ` · ${courseKindLabel(course, true)}`}`;
                 return (
                   <CommandItem
                     key={course.slug}
@@ -1702,6 +1736,8 @@ function ContentForm({
 /* ------------------------------------------------ */
 
 type FcdsCourseDraft = {
+  course_kind: CourseKind;
+  specializations: string[];
   specialization: FcdsSpecialization;
   name: string;
   code: string;
@@ -1711,6 +1747,8 @@ type FcdsCourseDraft = {
 };
 
 const emptyCourseDraft = (): FcdsCourseDraft => ({
+  course_kind: "core",
+  specializations: [defaultFcdsSpecialization],
   specialization: defaultFcdsSpecialization,
   name: "",
   code: "",
@@ -1782,6 +1820,10 @@ function CoursesAdmin() {
       id: course.id,
 
       draft: {
+        course_kind: courseKind(course),
+        specializations: course.specializations?.length
+          ? course.specializations
+          : [normalizeFcdsSpecialization(course.specialization)],
         name: course.name,
         code: course.code,
         year: course.year,
@@ -1879,15 +1921,23 @@ function CoursesAdmin() {
                 <p className="font-medium">{course.name}</p>
 
                 <p className="mt-1 text-xs text-amber-50/35">
-                  {course.code} · {courseYearLabel(course.year)} ·{" "}
+                  {course.code} ·{" "}
+                  {courseKind(course) === "core"
+                    ? courseYearLabel(course.year)
+                    : courseKindLabel(course, true)}{" "}
+                  ·{" "}
                   {
                     fcdsSpecializations.find(
                       (option) =>
                         option.value === normalizeFcdsSpecialization(course.specialization),
                     )?.label
                   }
-                  {course.semester ? ` · Semester ${course.semester}` : " · No semester"} · /
-                  {course.slug}
+                  {courseKind(course) === "core"
+                    ? course.semester
+                      ? ` · Semester ${course.semester}`
+                      : " · No semester"
+                    : ""}{" "}
+                  · /{course.slug}
                 </p>
               </div>
 
@@ -1957,11 +2007,18 @@ function CourseForm({
       return;
     }
 
-    if (!draft.semester || draft.semester < 1 || draft.semester > 8) {
+    if (
+      draft.course_kind === "core" &&
+      (!draft.semester || draft.semester < 1 || draft.semester > 8)
+    ) {
       toast.error("Choose a course semester from 1 to 8.");
       return;
     }
 
+    if (draft.course_kind !== "faculty" && !draft.specializations.length) {
+      toast.error("Choose at least one linked specialization.");
+      return;
+    }
     if (!draft.slug.trim()) {
       toast.error("Course slug is required.");
       return;
@@ -1972,9 +2029,16 @@ function CourseForm({
     const row = {
       name: draft.name.trim(),
       code: draft.code.trim().toUpperCase(),
-      year: draft.year,
-      semester: draft.semester,
-      specialization: draft.specialization,
+      course_kind: draft.course_kind,
+      specializations:
+        draft.course_kind === "faculty"
+          ? []
+          : draft.specializations.length
+            ? draft.specializations
+            : [draft.specialization],
+      year: draft.course_kind === "core" ? draft.year : "",
+      semester: draft.course_kind === "core" ? draft.semester : null,
+      specialization: normalizeFcdsSpecialization(draft.specializations[0] ?? draft.specialization),
       slug: draft.slug.trim(),
     };
 
@@ -2030,69 +2094,99 @@ function CourseForm({
           />
         </Label>
 
-        <Label label="Specialization">
+        <Label label="Course type">
           <select
-            required
             className={field}
-            value={draft.specialization}
-            onChange={(event) => update("specialization", event.target.value as FcdsSpecialization)}
+            value={draft.course_kind}
+            onChange={(e) => update("course_kind", e.target.value as CourseKind)}
           >
-            {fcdsSpecializations.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
+            {courseKinds.map((kind) => (
+              <option key={kind.value} value={kind.value}>
+                {kind.en}
               </option>
             ))}
           </select>
         </Label>
-
-        <Label label="Year">
-          <select
-            className={field}
-            value={draft.year}
-            onChange={(e) =>
-              setDraft((previous) => ({
-                ...previous,
-                year: e.target.value,
-                semester: null,
-              }))
-            }
-          >
-            <option value="السنة الأولى">Year One</option>
-
-            <option value="السنة الثانية">Year Two</option>
-
-            <option value="السنة الثالثة">Year Three</option>
-
-            <option value="السنة الرابعة">Year Four</option>
-          </select>
-        </Label>
-
-        <Label label="Semester">
-          <select
-            required
-            className={field}
-            value={draft.semester ?? ""}
-            onChange={(e) => {
-              const semester = e.target.value ? Number(e.target.value) : null;
-              setDraft((previous) => ({
-                ...previous,
-                semester,
-                year: semester ? (fcdsYearForSemester(semester) ?? previous.year) : previous.year,
-              }));
-            }}
-          >
-            <option value="">Choose semester</option>
-            {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
-              <option key={semester} value={semester}>
-                Semester {semester}
-              </option>
+        {draft.course_kind !== "faculty" && (
+          <fieldset className="space-y-2 rounded-xl border border-amber-100/15 p-3">
+            <legend className="px-2 text-sm">Linked specializations</legend>
+            {fcdsSpecializations.map((track) => (
+              <label key={track.value} className="flex min-h-10 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.specializations.includes(track.value)}
+                  onChange={(e) =>
+                    update(
+                      "specializations",
+                      e.target.checked
+                        ? [...draft.specializations, track.value]
+                        : draft.specializations.filter((v) => v !== track.value),
+                    )
+                  }
+                />
+                {track.label}
+              </label>
             ))}
-          </select>
-          <p className="mt-2 text-xs text-amber-50/40">
-            Select the course semester from the study plan. The year is set automatically.
+          </fieldset>
+        )}
+        {draft.course_kind === "core" && (
+          <>
+            <Label label="Year">
+              <select
+                className={field}
+                value={draft.year}
+                onChange={(e) =>
+                  setDraft((previous) => ({
+                    ...previous,
+                    year: e.target.value,
+                    semester: null,
+                  }))
+                }
+              >
+                <option value="السنة الأولى">Year One</option>
+
+                <option value="السنة الثانية">Year Two</option>
+
+                <option value="السنة الثالثة">Year Three</option>
+
+                <option value="السنة الرابعة">Year Four</option>
+              </select>
+            </Label>
+
+            <Label label="Semester">
+              <select
+                required
+                className={field}
+                value={draft.semester ?? ""}
+                onChange={(e) => {
+                  const semester = e.target.value ? Number(e.target.value) : null;
+                  setDraft((previous) => ({
+                    ...previous,
+                    semester,
+                    year: semester
+                      ? (fcdsYearForSemester(semester) ?? previous.year)
+                      : previous.year,
+                  }));
+                }}
+              >
+                <option value="">Choose semester</option>
+                {Array.from({ length: 8 }, (_, index) => index + 1).map((semester) => (
+                  <option key={semester} value={semester}>
+                    Semester {semester}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-amber-50/40">
+                Select the course semester from the study plan. The year is set automatically.
+              </p>
+            </Label>
+          </>
+        )}
+        {draft.course_kind !== "core" && (
+          <p className="text-sm text-amber-100/60">
+            Electives have no year or semester. Check the current study plan before selecting.
           </p>
-        </Label>
-
+        )}
         <Label label="Slug">
           <input
             required
@@ -2282,6 +2376,7 @@ function CategoryAdmin() {
 /* Darb course resource coverage — live DB counts */
 /* ------------------------------------------------ */
 function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
+  const [kindFilter, setKindFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [year, setYear] = useState("all");
   const [semester, setSemester] = useState("all");
@@ -2303,10 +2398,15 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
   const filtered = courses.filter((c) => {
     const n = byCourse.get(c.slug)?.length ?? 0;
     return (
+      (kindFilter === "all" || courseKind(c) === kindFilter) &&
       (year === "all" || c.year === year) &&
       (semester === "all" || String(c.semester) === semester) &&
       (specialization === "all" ||
-        normalizeFcdsSpecialization(c.specialization) === specialization) &&
+        courseKind(c) === "faculty" ||
+        (c.specializations?.length
+          ? c.specializations
+          : [normalizeFcdsSpecialization(c.specialization)]
+        ).includes(specialization)) &&
       (visibility === "all" || (visibility === "empty" ? n === 0 : n > 0)) &&
       `${c.name} ${c.code}`.toLowerCase().includes(search.toLowerCase())
     );
@@ -2357,6 +2457,20 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
               </div>
             ))}
           </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {courseKinds.map((kind) => {
+              const group = courses.filter((c) => courseKind(c) === kind.value);
+              return (
+                <div key={kind.value} className="rounded-xl border border-amber-100/15 p-4">
+                  <p className="text-xs text-amber-100/60">{kind.en} coverage</p>
+                  <p className="mt-2 font-semibold">
+                    {group.filter((c) => (byCourse.get(c.slug)?.length ?? 0) > 0).length} /{" "}
+                    {group.length}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
           <div className="h-2 overflow-hidden rounded-full bg-amber-100/10">
             <div
               className="h-full rounded-full bg-amber-300"
@@ -2364,6 +2478,23 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <select
+              aria-label="Course type"
+              className={field}
+              value={kindFilter}
+              onChange={(e) => {
+                setKindFilter(e.target.value);
+                setYear("all");
+                setSemester("all");
+              }}
+            >
+              <option value="all">All course types</option>
+              {courseKinds.map((k) => (
+                <option key={k.value} value={k.value}>
+                  {k.en}
+                </option>
+              ))}
+            </select>
             <input
               className={field}
               placeholder="Search course or code"
@@ -2375,6 +2506,7 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
               className={field}
               value={year}
               onChange={(e) => setYear(e.target.value)}
+              disabled={kindFilter === "faculty" || kindFilter === "program"}
               aria-label="Year"
             >
               <option value="all">All years</option>
@@ -2388,6 +2520,7 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
               className={field}
               value={semester}
               onChange={(e) => setSemester(e.target.value)}
+              disabled={kindFilter === "faculty" || kindFilter === "program"}
               aria-label="Semester"
             >
               <option value="all">All semesters</option>
@@ -2444,7 +2577,10 @@ function CourseCoverageAdmin({ onOpenLibrary }: { onOpenLibrary: () => void }) {
                     <span className="min-w-0">
                       <span className="block font-medium">{c.name}</span>
                       <span className="block text-xs text-amber-50/45">
-                        {c.code} · {courseYearLabel(c.year)} · Semester {c.semester ?? "—"}
+                        {c.code} ·{" "}
+                        {courseKind(c) === "core"
+                          ? `${courseYearLabel(c.year)} · Semester ${c.semester ?? "—"}`
+                          : courseKindLabel(c, true)}
                       </span>
                     </span>
                     <span className="shrink-0 text-right text-xs text-amber-100/75">

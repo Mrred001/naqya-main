@@ -63,3 +63,28 @@ it("searches courses by code and selects the matching semester entry", async () 
   );
   expect(screen.getByRole("combobox")).toHaveTextContent("STAT 13 · Semester 3");
 });
+
+it("labels electives without a year or semester", async () => {
+  const elective = {
+    ...courses[0]!,
+    id: "elective",
+    name: "Operating Systems",
+    slug: "operating-systems",
+    year: "",
+    semester: null,
+    course_kind: "faculty" as const,
+  };
+  render(
+    <CoursePicker
+      courses={[elective]}
+      value="operating-systems"
+      disabled={false}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(screen.getByRole("combobox")).toHaveTextContent("Faculty elective");
+  fireEvent.click(screen.getByRole("combobox"));
+  const option = await screen.findByRole("option", { name: /Operating Systems.*Faculty elective/ });
+  expect(option).not.toHaveTextContent("Semester");
+  expect(option).not.toHaveTextContent("false");
+});
