@@ -11,9 +11,16 @@ export const Route = createFileRoute("/auth/callback")({
 });
 function AuthCallback() {
   const [state, setState] = useState<"loading" | "success" | "error">("loading");
+  const [chatIntent, setChatIntent] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
     let active = true;
+    try {
+      if (sessionStorage.getItem("naqya-auth-intent") === "support-chat") setChatIntent(true);
+      sessionStorage.removeItem("naqya-auth-intent");
+    } catch {
+      /* Optional return intent. */
+    }
     // getSession waits for Supabase's automatic PKCE exchange; never log auth URLs.
     void supabase.auth
       .getSession()
@@ -51,6 +58,14 @@ function AuthCallback() {
       </h1>
       {state === "success" ? (
         <>
+          {chatIntent && (
+            <Link
+              to="/fcds/messages"
+              className="block rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground"
+            >
+              افتح محادثتك مع أحمد
+            </Link>
+          )}
           <p>حسابك جاهز. احفظ المصادر البتهمك وارجع ليها من أي جهاز.</p>
           <Link
             to="/saved"
@@ -68,7 +83,7 @@ function AuthCallback() {
       ) : state === "error" ? (
         <>
           <p>ممكن تكون لغيت الدخول أو الرابط انتهت صلاحيته. تقدر تحاول تاني أو تواصل التصفّح.</p>
-          <GoogleSignIn />
+          <GoogleSignIn {...(chatIntent ? { intent: "support-chat" as const } : {})} />
           <Link to="/" className="block text-primary">
             الرئيسية
           </Link>

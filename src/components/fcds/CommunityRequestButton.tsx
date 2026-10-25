@@ -1,6 +1,7 @@
+import { SupportChatButton } from "@/components/chat/SupportChatButton";
 import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MessageCircle, Plus, Send, GitBranch } from "lucide-react";
+import { Plus, Send, GitBranch } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,18 @@ import { recommendationCourses, submitCommunity, type RequestKind } from "@/lib/
 import { parseYouTube } from "@/lib/content";
 const field =
   "mt-2 min-h-11 w-full rounded-xl border bg-background px-4 py-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary";
-export function CommunityRequestButton({
+export function CommunityRequestButton(props: {
+  kind: RequestKind;
+  resource?: DarbResource;
+  iconOnly?: boolean;
+}) {
+  return props.kind === "message" ? (
+    <SupportChatButton iconOnly={props.iconOnly ?? false} />
+  ) : (
+    <CommunityRequestFormButton {...props} />
+  );
+}
+function CommunityRequestFormButton({
   kind,
   resource,
   iconOnly = false,
@@ -39,15 +51,12 @@ export function CommunityRequestButton({
   const recommend = kind === "course_recommendation";
   const calculator = kind.startsWith("calculator_");
   const suggest = kind === "calculator_suggestion";
-  const label =
-    kind === "message"
-      ? t("راسل أحمد", "Message Ahmed")
-      : recommend
-        ? t("رشّح لمادة تانية", "Recommend for another course")
-        : suggest
-          ? t("اقترح شرح", "Suggest a tutorial")
-          : t("اطلب شرح", "Request a tutorial");
-  const Icon = kind === "message" ? MessageCircle : recommend ? GitBranch : suggest ? Plus : Send;
+  const label = recommend
+    ? t("رشّح لمادة تانية", "Recommend for another course")
+    : suggest
+      ? t("اقترح شرح", "Suggest a tutorial")
+      : t("اطلب شرح", "Request a tutorial");
+  const Icon = recommend ? GitBranch : suggest ? Plus : Send;
   const available = resource ? recommendationCourses(courses.data ?? [], resource) : [];
   const visible = available.filter((c) =>
     `${c.name} ${c.code} ${c.year}`.toLowerCase().includes(search.toLowerCase()),
@@ -121,7 +130,9 @@ export function CommunityRequestButton({
           className={
             iconOnly
               ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-400/40 bg-blue-500/10 text-blue-600 transition-colors hover:bg-blue-500/20 focus-visible:ring-2 focus-visible:ring-blue-400 dark:text-blue-400"
-              : "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-primary"
+              : calculator
+                ? "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-400/70 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 px-4 py-2.5 text-sm font-bold text-[#211604] shadow-sm shadow-amber-500/15 transition-colors hover:from-amber-200 hover:to-amber-300 focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                : "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm transition-colors hover:border-primary focus-visible:ring-2 focus-visible:ring-primary"
           }
         >
           <Icon className="h-4 w-4" aria-hidden="true" />
@@ -134,20 +145,15 @@ export function CommunityRequestButton({
       >
         <DialogTitle className="px-6 text-xl">{label}</DialogTitle>
         <DialogDescription>
-          {kind === "message"
+          {recommend
             ? t(
-                "رسالتك بتصل لأحمد في لوحة الإدارة. لو داير رد، ممكن تكتب وسيلة تواصل اختيارياً.",
-                "Your message goes to Ahmed's admin inbox. You can optionally include a way to reply.",
+                "اختار المواد البتستفيد من نفس الشرح. الربط بيتم بعد مراجعة أحمد.",
+                "Choose courses that benefit from this source. Ahmed reviews recommendations before linking.",
               )
-            : recommend
-              ? t(
-                  "اختار المواد البتستفيد من نفس الشرح. الربط بيتم بعد مراجعة أحمد.",
-                  "Choose courses that benefit from this source. Ahmed reviews recommendations before linking.",
-                )
-              : t(
-                  "حدد العملية وموديل آلتك. الطلب بينتظر مراجعة أحمد قبل النشر.",
-                  "Choose the operation and calculator model. Requests need Ahmed's review before publication.",
-                )}
+            : t(
+                "حدد العملية وموديل آلتك. الطلب بينتظر مراجعة أحمد قبل النشر.",
+                "Choose the operation and calculator model. Requests need Ahmed's review before publication.",
+              )}
         </DialogDescription>
         {sent !== null ? (
           <div role="status" className="py-6 text-center leading-relaxed">
@@ -278,19 +284,10 @@ export function CommunityRequestButton({
                 </>
               )}
               <label className="block text-sm">
-                {kind === "message"
-                  ? t("رسالتك", "Your message")
-                  : recommend
-                    ? t("سبب الترشيح (اختياري)", "Reason (optional)")
-                    : t("تفاصيل إضافية (اختياري)", "Additional details (optional)")}
-                <textarea
-                  name="details"
-                  required={kind === "message"}
-                  minLength={kind === "message" ? 10 : undefined}
-                  maxLength={3000}
-                  rows={4}
-                  className={field}
-                />
+                {recommend
+                  ? t("سبب الترشيح (اختياري)", "Reason (optional)")
+                  : t("تفاصيل إضافية (اختياري)", "Additional details (optional)")}
+                <textarea name="details" maxLength={3000} rows={4} className={field} />
               </label>
             </fieldset>
             {failure && (

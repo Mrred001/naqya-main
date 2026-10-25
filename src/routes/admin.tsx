@@ -1,3 +1,6 @@
+import { SupportInbox } from "@/components/admin/SupportInbox";
+import { supportInboxQuery, hasUnread } from "@/lib/support-chat";
+import { useAccount } from "@/components/account/AccountProvider";
 import { CommunityRequestsAdmin } from "@/components/admin/CommunityRequestsAdmin";
 import { DarbResourceAdmin } from "@/components/admin/DarbResourceAdmin";
 import { DarbResourceEditor, type DarbSeed } from "@/components/admin/DarbResourceEditor";
@@ -248,6 +251,7 @@ function SignIn() {
 }
 
 type AdminTab =
+  | "chats"
   | "community"
   | "overview"
   | "general"
@@ -260,6 +264,9 @@ type AdminTab =
   | "reports";
 
 function Dashboard({ email }: { email: string }) {
+  const { user } = useAccount();
+  const chats = useQuery(supportInboxQuery(user?.id));
+  const unreadChats = (chats.data ?? []).filter((c) => hasUnread(c, "admin")).length;
   const [tab, setTab] = useState<AdminTab>("overview");
 
   const { data: pending = { fcds: 0, general: 0, community: 0, total: 0 } } = useQuery({
@@ -301,6 +308,7 @@ function Dashboard({ email }: { email: string }) {
   });
 
   const navItems = [
+    { id: "chats" as const, label: "Chats", icon: Inbox, count: unreadChats },
     {
       id: "community" as const,
       label: "Messages & requests",
@@ -425,6 +433,7 @@ function Dashboard({ email }: { email: string }) {
 
         {tab === "reports" && <ReportsAdmin />}
         {tab === "community" && <CommunityRequestsAdmin />}
+        {tab === "chats" && <SupportInbox />}
 
         {tab === "categories" && <CategoryAdmin />}
       </main>

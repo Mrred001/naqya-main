@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
-export function GoogleSignIn() {
+export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
   const { language } = useSitePreferences();
   const english = language === "en";
   const [busy, setBusy] = useState(false);
@@ -11,6 +11,12 @@ export function GoogleSignIn() {
     setBusy(true);
     setError(false);
     try {
+      try {
+        if (intent) sessionStorage.setItem("naqya-auth-intent", intent);
+        else sessionStorage.removeItem("naqya-auth-intent");
+      } catch {
+        /* Sign-in works even when session storage is unavailable. */
+      }
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

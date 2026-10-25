@@ -508,6 +508,80 @@ export type Database = {
         };
         Relationships: [];
       };
+      support_conversations: {
+        Row: {
+          admin_read_at: string | null;
+          created_at: string;
+          display_name: string;
+          id: string;
+          last_message_at: string;
+          latest_admin_message_at: string | null;
+          latest_user_message_at: string | null;
+          user_id: string;
+          user_read_at: string | null;
+        };
+        Insert: {
+          admin_read_at?: string | null;
+          created_at?: string;
+          display_name: string;
+          id?: string;
+          last_message_at?: string;
+          latest_admin_message_at?: string | null;
+          latest_user_message_at?: string | null;
+          user_id: string;
+          user_read_at?: string | null;
+        };
+        Update: {
+          admin_read_at?: string | null;
+          created_at?: string;
+          display_name?: string;
+          id?: string;
+          last_message_at?: string;
+          latest_admin_message_at?: string | null;
+          latest_user_message_at?: string | null;
+          user_id?: string;
+          user_read_at?: string | null;
+        };
+        Relationships: [];
+      };
+      support_messages: {
+        Row: {
+          body: string;
+          client_nonce: string;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          sender_id: string | null;
+          sender_role: string;
+        };
+        Insert: {
+          body: string;
+          client_nonce: string;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          sender_id?: string | null;
+          sender_role: string;
+        };
+        Update: {
+          body?: string;
+          client_nonce?: string;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          sender_id?: string | null;
+          sender_role?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_conversation_id_fkey";
+            columns: ["conversation_id"];
+            isOneToOne: false;
+            referencedRelation: "support_conversations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tags: {
         Row: {
           id: string;
@@ -643,6 +717,10 @@ export type Database = {
           youtube_url: string;
         }[];
       };
+      mark_support_read: {
+        Args: { p_conversation: string; p_through: string };
+        Returns: undefined;
+      };
       record_fcds_open: {
         Args: { resource_id: string; visitor_id: string };
         Returns: undefined;
@@ -671,6 +749,14 @@ export type Database = {
           p_links?: Json;
           p_payload?: Json;
           p_suggestion?: string;
+        };
+        Returns: string;
+      };
+      send_support_message: {
+        Args: {
+          p_body: string;
+          p_client_nonce?: string;
+          p_conversation?: string;
         };
         Returns: string;
       };

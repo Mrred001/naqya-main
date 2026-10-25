@@ -52,25 +52,26 @@ describe("community requests", () => {
   });
   it("reuses one visitor key and sends no caller-controlled status or owner", async () => {
     const visitor = communityVisitor();
-    await submitCommunity("message", { details: "Test message" });
+    await submitCommunity("calculator_request", { title: "Matrix square" });
     expect(mocks.rpc).toHaveBeenCalledWith("submit_community_request", {
-      p_kind: "message",
-      p_payload: { details: "Test message" },
+      p_kind: "calculator_request",
+      p_payload: { title: "Matrix square" },
       p_courses: [],
       p_visitor: visitor,
     });
     expect(communityVisitor()).toBe(visitor);
   });
-  it("sends a message and waits for database success before confirming", async () => {
-    mount("message");
-    fireEvent.click(screen.getByRole("button", { name: "Message Ahmed" }));
-    fireEvent.change(screen.getByLabelText("Your message"), {
-      target: { value: "Please add this resource" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Send" }));
-    await screen.findByText("Received. Thank you for contributing!");
-    expect(mocks.rpc.mock.calls[0]?.[1].p_kind).toBe("message");
-  });
+  it.each(["calculator_request", "calculator_suggestion"] as const)(
+    "uses the distinctive gold styling for %s",
+    (kind) => {
+      mount(kind);
+      expect(
+        screen.getByRole("button", {
+          name: kind === "calculator_request" ? "Request a tutorial" : "Suggest a tutorial",
+        }),
+      ).toHaveClass("from-amber-300", "text-[#211604]");
+    },
+  );
   it("submits a source recommendation only for selected unlinked courses", async () => {
     mount("course_recommendation");
     fireEvent.click(screen.getByRole("button", { name: "Recommend for another course" }));
@@ -91,22 +92,30 @@ describe("community requests", () => {
   });
   it("explains a duplicate request without reporting another submission", async () => {
     mocks.rpc.mockResolvedValue({ data: 0, error: null });
-    mount("message");
-    fireEvent.click(screen.getByRole("button", { name: "Message Ahmed" }));
-    fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Test message" } });
+    mount("course_recommendation");
+    fireEvent.click(screen.getByRole("button", { name: "Recommend for another course" }));
+    await screen.findByText("Numerical");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Numerical/ }));
+    fireEvent.change(screen.getByLabelText("Reason (optional)"), {
+      target: { value: "Test reason" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByText(/no duplicate was created/);
   });
   it("preserves the form and reports failure when submission fails", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "network error" } });
-    mount("message");
-    fireEvent.click(screen.getByRole("button", { name: "Message Ahmed" }));
-    fireEvent.change(screen.getByLabelText("Your message"), { target: { value: "Test message" } });
+    mount("course_recommendation");
+    fireEvent.click(screen.getByRole("button", { name: "Recommend for another course" }));
+    await screen.findByText("Numerical");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Numerical/ }));
+    fireEvent.change(screen.getByLabelText("Reason (optional)"), {
+      target: { value: "Test reason" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent("Could not send your request"),
     );
-    expect(screen.getByLabelText("Your message")).toHaveValue("Test message");
+    expect(screen.getByLabelText("Reason (optional)")).toHaveValue("Test reason");
   });
   it("requests a tutorial without requiring a video URL or assuming audio classification", async () => {
     mount("calculator_request");

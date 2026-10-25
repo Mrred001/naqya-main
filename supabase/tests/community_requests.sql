@@ -8,10 +8,12 @@ set local role anon;
 do $$
 declare v uuid:=current_setting('test.visitor')::uuid;rid uuid:=current_setting('test.resource')::uuid;c text:=current_setting('test.course');n integer;
 begin
- n:=public.submit_community_request('message','{"details":"Integration test message"}',p_visitor=>v);assert n=1,'Anonymous message submission';
+ begin
+  perform public.submit_community_request('message','{"details":"Integration test message"}',p_visitor=>v);raise exception 'Legacy message endpoint allowed';
+ exception when insufficient_privilege then null;end;
  begin
   perform public.submit_community_request('message','{"details":"short"}',p_visitor=>v);raise exception 'Short message accepted';
- exception when sqlstate '22023' then null;end;
+ exception when insufficient_privilege then null;end;
  begin
   perform 1 from public.community_requests;raise exception 'Anonymous read allowed';
  exception when insufficient_privilege then null;end;
@@ -33,7 +35,7 @@ set local role authenticated;
 do $$
 declare v uuid:=current_setting('test.visitor')::uuid;rid uuid:=current_setting('test.resource')::uuid;c text:=current_setting('test.course');request_id uuid;published uuid;payload jsonb;
 begin
- assert exists(select 1 from public.community_requests where visitor_key=v and kind='message' and status='pending'),'Admin inbox reads messages';
+
  assert not exists(select 1 from public.fcds_resource_courses where resource_id=rid and course_slug=c),'Submission does not auto-link a source';
  select id into request_id from public.community_requests where visitor_key=v and kind='course_recommendation';
  perform public.approve_course_recommendation(request_id);

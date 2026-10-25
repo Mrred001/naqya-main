@@ -17,6 +17,7 @@ import { Route as NaqyaRouteImport } from './routes/naqya'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as FcdsCalculatorRouteImport } from './routes/fcds.calculator'
+import { Route as FcdsMessagesRouteImport } from './routes/fcds.messages'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as FcdsCourseSlugRouteImport } from './routes/fcds.course.$slug'
 import { Route as FcdsResourceIdRouteImport } from './routes/fcds.resource.$id'
@@ -61,6 +62,11 @@ const FcdsCalculatorRoute = FcdsCalculatorRouteImport.update({
   path: '/calculator',
   getParentRoute: () => FcdsRoute,
 } as any)
+const FcdsMessagesRoute = FcdsMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => FcdsRoute,
+} as any)
 const WatchIdRoute = WatchIdRouteImport.update({
   id: '/watch/$id',
   path: '/watch/$id',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof SavedRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/fcds/calculator': typeof FcdsCalculatorRoute
+  '/fcds/messages': typeof FcdsMessagesRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
   '/fcds/resource/$id': typeof FcdsResourceIdRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/saved': typeof SavedRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/fcds/calculator': typeof FcdsCalculatorRoute
+  '/fcds/messages': typeof FcdsMessagesRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
   '/fcds/resource/$id': typeof FcdsResourceIdRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/saved': typeof SavedRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/fcds/calculator': typeof FcdsCalculatorRoute
+  '/fcds/messages': typeof FcdsMessagesRoute
   '/watch/$id': typeof WatchIdRoute
   '/fcds/course/$slug': typeof FcdsCourseSlugRoute
   '/fcds/resource/$id': typeof FcdsResourceIdRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/auth/callback'
     | '/fcds/calculator'
+    | '/fcds/messages'
     | '/watch/$id'
     | '/fcds/course/$slug'
     | '/fcds/resource/$id'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/auth/callback'
     | '/fcds/calculator'
+    | '/fcds/messages'
     | '/watch/$id'
     | '/fcds/course/$slug'
     | '/fcds/resource/$id'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/auth/callback'
     | '/fcds/calculator'
+    | '/fcds/messages'
     | '/watch/$id'
     | '/fcds/course/$slug'
     | '/fcds/resource/$id'
@@ -228,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FcdsCalculatorRouteImport
       parentRoute: typeof FcdsRoute
     }
+    '/fcds/messages': {
+      id: '/fcds/messages'
+      path: '/messages'
+      fullPath: '/fcds/messages'
+      preLoaderRoute: typeof FcdsMessagesRouteImport
+      parentRoute: typeof FcdsRoute
+    }
     '/watch/$id': {
       id: '/watch/$id'
       path: '/watch/$id'
@@ -254,12 +273,14 @@ declare module '@tanstack/react-router' {
 
 interface FcdsRouteChildren {
   FcdsCalculatorRoute: typeof FcdsCalculatorRoute
+  FcdsMessagesRoute: typeof FcdsMessagesRoute
   FcdsCourseSlugRoute: typeof FcdsCourseSlugRoute
   FcdsResourceIdRoute: typeof FcdsResourceIdRoute
 }
 
 const FcdsRouteChildren: FcdsRouteChildren = {
   FcdsCalculatorRoute: FcdsCalculatorRoute,
+  FcdsMessagesRoute: FcdsMessagesRoute,
   FcdsCourseSlugRoute: FcdsCourseSlugRoute,
   FcdsResourceIdRoute: FcdsResourceIdRoute,
 }
