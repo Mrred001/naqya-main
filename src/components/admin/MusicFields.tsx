@@ -42,24 +42,23 @@ export function MusicFields({
       {status === "minimal_music" && (
         <div className="space-y-2">
           <p className="text-sm leading-relaxed text-amber-100/75">
-            Viewers will see a warning to skip sections containing music.
-            Add an optional note in any wording or language; it will be shown as written.
+            Skip the sections containing music. Notes are optional and will be shown as written.
           </p>
           <label className="block space-y-1.5">
-              <span className="text-xs uppercase tracking-[0.16em] text-amber-100/60">
-                Music notes (optional)
-              </span>
-              <textarea
-                className={field}
-                rows={3}
-                value={ranges}
-                onChange={(event) => onRangesChange(event.target.value)}
-                placeholder={"مثلاً: في موسيقى آخر 25 ثانية؛ تخطى النهاية."}
-                aria-describedby="music-ranges-help"
-              />
-              <span id="music-ranges-help" className="block text-xs text-amber-100/50">
-                Free text — Arabic, English, times, or any helpful note. Leave blank if you wish.
-              </span>
+            <span className="text-xs uppercase tracking-[0.16em] text-amber-100/60">
+              Music notes (optional)
+            </span>
+            <textarea
+              className={field}
+              rows={3}
+              value={ranges}
+              onChange={(event) => onRangesChange(event.target.value)}
+              placeholder={"مثلاً: في موسيقى آخر 25 ثانية؛ تخطى النهاية."}
+              aria-describedby="music-ranges-help"
+            />
+            <span id="music-ranges-help" className="block text-xs text-amber-100/50">
+              Free text — Arabic, English, times, or any helpful note. Leave blank if you wish.
+            </span>
           </label>
         </div>
       )}
