@@ -38,16 +38,11 @@ export function parseMusicSkipRanges(
   return ranges;
 }
 
+/** Curator notes are free-form and optional. Only a classification is required. */
 export function validateMusicSelection(
   status: MusicChoice,
-  ranges: string,
-  isVideo: boolean,
+  _notes: string,
+  _isVideo: boolean,
 ): string | null {
-  if (!status) return "Choose a music level after reviewing the resource.";
-  if (status !== "minimal_music") return null;
-  const parsed = parseMusicSkipRanges(ranges);
-  if (!parsed) return "Use MM:SS-MM:SS timestamps, one range per line, with end after start.";
-  if (isVideo && parsed.length === 0)
-    return "Add the music start/end times so viewers know what to skip.";
-  return null;
+  return status ? null : "Choose a music level after reviewing the resource.";
 }
