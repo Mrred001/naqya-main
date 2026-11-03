@@ -11,10 +11,15 @@ describe("music review notices", () => {
     expect(screen.getByText("Audio not reviewed")).toBeInTheDocument();
     expect(screen.queryByText("No Music")).not.toBeInTheDocument();
   });
-  it("shows a skip recommendation and confirmed timings", () => {
-    render(<MusicNotice status="minimal_music" skipRanges="00:00-00:18" />);
+  it("shows the skip recommendation and preserves free-form notes verbatim", () => {
+    const note = "في موسيقى آخر 25 ثانية — تخطى النهاية.";
+    render(<MusicNotice status="minimal_music" skipRanges={note} />);
     expect(screen.getByText(/Please skip the parts/)).toBeInTheDocument();
-    expect(screen.getByText("00:00 – 00:18")).toBeInTheDocument();
+    expect(screen.getByText(note)).toBeInTheDocument();
+  });
+  it("keeps old timestamp notes unchanged", () => {
+    render(<MusicNotice status="minimal_music" skipRanges="00:00-00:18" />);
+    expect(screen.getByText("00:00-00:18")).toBeInTheDocument();
   });
   it("does not warn after an explicit no-music review", () => {
     const { container } = render(<MusicNotice status="no_music" />);

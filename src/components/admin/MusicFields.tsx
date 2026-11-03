@@ -7,7 +7,6 @@ const field =
 export function MusicFields({
   status,
   ranges,
-  kind,
   onStatusChange,
   onRangesChange,
 }: {
@@ -43,30 +42,24 @@ export function MusicFields({
       {status === "minimal_music" && (
         <div className="space-y-2">
           <p className="text-sm leading-relaxed text-amber-100/75">
-            Viewers will see a warning to skip sections containing music.
-            {kind === "playlist"
-              ? " For a playlist, timestamps differ per video; the warning will be general."
-              : " Enter all music segments so viewers can skip them."}
+            Skip the sections containing music. Notes are optional and will be shown as written.
           </p>
-          {kind === "video" && (
-            <label className="block space-y-1.5">
-              <span className="text-xs uppercase tracking-[0.16em] text-amber-100/60">
-                Music timestamps *
-              </span>
-              <textarea
-                className={field}
-                rows={3}
-                value={ranges}
-                onChange={(event) => onRangesChange(event.target.value)}
-                placeholder={"00:00-00:18\n12:40-13:05"}
-                aria-describedby="music-ranges-help"
-              />
-              <span id="music-ranges-help" className="block text-xs text-amber-100/50">
-                One range per line, MM:SS-MM:SS. These are curator-confirmed timings, not automatic
-                detection.
-              </span>
-            </label>
-          )}
+          <label className="block space-y-1.5">
+            <span className="text-xs uppercase tracking-[0.16em] text-amber-100/60">
+              Music notes (optional)
+            </span>
+            <textarea
+              className={field}
+              rows={3}
+              value={ranges}
+              onChange={(event) => onRangesChange(event.target.value)}
+              placeholder={"مثلاً: في موسيقى آخر 25 ثانية؛ تخطى النهاية."}
+              aria-describedby="music-ranges-help"
+            />
+            <span id="music-ranges-help" className="block text-xs text-amber-100/50">
+              Free text — Arabic, English, times, or any helpful note. Leave blank if you wish.
+            </span>
+          </label>
         </div>
       )}
     </div>

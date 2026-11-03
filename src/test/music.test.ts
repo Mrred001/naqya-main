@@ -15,11 +15,11 @@ describe("curated music classification", () => {
     expect(parseMusicSkipRanges("00:75-01:20")).toBeNull();
     expect(parseMusicSkipRanges("start to end")).toBeNull();
   });
-  it("requires explicit classification and skip ranges for an individual video", () => {
+  it("requires a music classification but accepts arbitrary or empty notes", () => {
     expect(validateMusicSelection("", "", true)).toBeTruthy();
-    expect(validateMusicSelection("minimal_music", "", true)).toBeTruthy();
-    expect(validateMusicSelection("minimal_music", "00:00-00:12", true)).toBeNull();
-    expect(validateMusicSelection("minimal_music", "", false)).toBeNull();
+    expect(validateMusicSelection("minimal_music", "", true)).toBeNull();
+    expect(validateMusicSelection("minimal_music", "في موسيقى آخر 25 ثانية", true)).toBeNull();
+    expect(validateMusicSelection("minimal_music", "Intro only — skip to 1:12", false)).toBeNull();
     expect(validateMusicSelection("no_music", "", true)).toBeNull();
   });
 });

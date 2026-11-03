@@ -1,6 +1,5 @@
 import { AlertTriangle } from "lucide-react";
 import type { MusicStatus } from "@/lib/content";
-import { parseMusicSkipRanges } from "@/lib/music";
 import { useSitePreferences } from "./PreferencesProvider";
 
 /** Warning appears before watching (NAQYA) or opening a YouTube link (Darb). */
@@ -16,7 +15,6 @@ export function MusicNotice({
   const english = language === "en";
   const minimal = status === "minimal_music";
   const unreviewed = !status;
-  const segments = parseMusicSkipRanges(skipRanges ?? "");
   return (
     <aside
       role="note"
@@ -52,12 +50,9 @@ export function MusicNotice({
                   ? "This resource was previously marked as containing music. Please review before watching."
                   : "المصدر ده كان مصنّف سابقاً إنو فيه موسيقى. راجعه قبل المشاهدة."}
           </p>
-          {minimal && segments && segments.length > 0 && (
-            <p className="mt-2 font-medium">
-              {english ? "Skip:" : "الأجزاء المقترح تخطيها:"}{" "}
-              <span dir="ltr" className="inline-block font-mono">
-                {segments.map((s) => s.label).join(" · ")}
-              </span>
+          {minimal && skipRanges?.trim() && (
+            <p className="mt-2 whitespace-pre-wrap break-words font-medium" dir="auto">
+              {skipRanges}
             </p>
           )}
         </div>

@@ -1,7 +1,6 @@
 import { useId, useState, type FormEvent } from "react";
 import { Check, Headphones, ShieldCheck, SkipForward } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { parseYouTube } from "@/lib/content";
 import { validateMusicSelection } from "@/lib/music";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +11,6 @@ export type MusicReview = {
 };
 
 export function MusicReviewDialog({
-  youtubeUrl,
   title,
   onComplete,
   submitLabel = "Approve & add",
@@ -31,11 +29,10 @@ export function MusicReviewDialog({
   const [error, setError] = useState<string | null>(null);
   const errorId = useId();
   const rangesId = useId();
-  const isVideo = parseYouTube(youtubeUrl)?.kind === "video";
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (busy) return;
-    const message = validateMusicSelection(status, ranges, isVideo);
+    const message = validateMusicSelection(status, ranges, false);
     if (message || !status) {
       setError(message);
       return;
@@ -141,32 +138,29 @@ export function MusicReviewDialog({
           {status === "minimal_music" && (
             <div className="space-y-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.04] p-4">
               <p className="text-xs leading-relaxed text-amber-100/65">
-                Viewers will see a notice recommending that they skip music sections.
-                {!isVideo && " Playlist timings vary by video, so the notice will be general."}
+                Viewers will be asked to skip music sections. Optional notes appear as written.
               </p>
-              {isVideo && (
-                <div className="space-y-2">
-                  <label htmlFor={rangesId} className="block text-sm font-medium">
-                    Music timestamps
-                  </label>
-                  <textarea
-                    id={rangesId}
-                    value={ranges}
-                    onChange={(event) => {
-                      setRanges(event.target.value);
-                      setError(null);
-                    }}
-                    rows={3}
-                    placeholder={"00:00-00:18\n12:40-13:05"}
-                    aria-invalid={Boolean(error)}
-                    aria-describedby={error ? errorId : undefined}
-                    className="w-full rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2.5 font-mono text-sm outline-none focus:border-amber-300/60"
-                  />
-                  <p className="text-xs text-amber-100/45">
-                    Use MM:SS-MM:SS, one segment per line.
-                  </p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <label htmlFor={rangesId} className="block text-sm font-medium">
+                  Music notes (optional)
+                </label>
+                <textarea
+                  id={rangesId}
+                  value={ranges}
+                  onChange={(event) => {
+                    setRanges(event.target.value);
+                    setError(null);
+                  }}
+                  rows={3}
+                  placeholder={"مثلاً: في موسيقى آخر 25 ثانية؛ تخطى النهاية."}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={error ? errorId : undefined}
+                  className="w-full rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2.5 font-mono text-sm outline-none focus:border-amber-300/60"
+                />
+                <p className="text-xs text-amber-100/45">
+                  Write freely in Arabic or English; timestamps are not required.
+                </p>
+              </div>
             </div>
           )}
           {failure && (

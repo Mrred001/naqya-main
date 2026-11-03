@@ -41,29 +41,26 @@ describe("suggestion music review", () => {
       }),
     );
   });
-  it("requires valid timestamps for minimal-music videos", async () => {
+  it("accepts a free-form music note for minimal-music videos", async () => {
     const done = open();
     fireEvent.click(screen.getByRole("radio", { name: /^Minimal Music/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Approve & add" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(/start\/end times/);
-    expect(done).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText("Music timestamps"), {
-      target: { value: "00:00-00:18" },
+    fireEvent.change(screen.getByLabelText("Music notes (optional)"), {
+      target: { value: "في موسيقى آخر 25 ثانية" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Approve & add" }));
     await waitFor(() =>
       expect(done).toHaveBeenCalledWith(
         expect.objectContaining({
           music_status: "minimal_music",
-          music_skip_ranges: "00:00-00:18",
+          music_skip_ranges: "في موسيقى آخر 25 ثانية",
         }),
       ),
     );
   });
-  it("allows a playlist-level minimal-music notice without per-video timings", async () => {
+  it("allows a playlist-level minimal-music notice with empty notes", async () => {
     const done = open("https://youtube.com/playlist?list=PLtest");
     fireEvent.click(screen.getByRole("radio", { name: /^Minimal Music/ }));
-    expect(screen.queryByLabelText("Music timestamps")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Music notes (optional)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Approve & add" }));
     await waitFor(() =>
       expect(done).toHaveBeenCalledWith(
