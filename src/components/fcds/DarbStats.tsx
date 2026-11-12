@@ -44,9 +44,6 @@ export function DarbStats() {
           {en
             ? "Unique Darb links; playlists exclude their individual videos. Visits cover both libraries, once per browser per day"
             : "روابط درب بدون تكرار؛ فيديوهات البلاي ليست ما محسوبة كفيديوهات منفردة. الزيارات للموقع كله، مرة للمتصفح يومياً"}
-          {data?.tracked_since
-            ? ` · ${en ? "recorded since" : "التسجيل من"} ${new Date(data.tracked_since).toLocaleDateString(en ? "en-GB" : "ar-EG", { timeZone: "Africa/Cairo" })}`
-            : ""}
           .
         </p>
       )}
