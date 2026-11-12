@@ -42,8 +42,8 @@ export function DarbStats() {
       ) : (
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           {en
-            ? "Unique Darb links; playlists exclude their individual videos. Visits cover both libraries, once per browser per day"
-            : "روابط درب بدون تكرار؛ فيديوهات البلاي ليست ما محسوبة كفيديوهات منفردة. الزيارات للموقع كله، مرة للمتصفح يومياً"}
+            ? "Unique Darb links; playlists exclude their individual videos. Visits are counted once per browser per day"
+            : "روابط درب بدون تكرار؛ فيديوهات البلاي ليست ما محسوبة كفيديوهات منفردة. الزيارات تُحسب مرة للمتصفح يومياً"}
           .
         </p>
       )}
