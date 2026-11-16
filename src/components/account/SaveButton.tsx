@@ -103,8 +103,8 @@ export function SaveButton({ kind, id }: BookmarkTarget) {
           </DialogTitle>
           <DialogDescription>
             {t(
-              "سجّل بقوقل، وبعد الرجوع اضغط حفظ على المصدر البتختاره. المشاهدة ما بتحتاج حساب.",
-              "Sign in with Google, then save any resource to your account. Watching does not require an account.",
+              "سجّل بقوقل أو بالإيميل، وبعد الرجوع اضغط حفظ على المصدر البتختاره. المشاهدة ما بتحتاج حساب.",
+              "Sign in with Google or email, then save any resource to your account. Watching does not require an account.",
             )}
           </DialogDescription>
           <GoogleSignIn />
