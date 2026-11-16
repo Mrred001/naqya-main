@@ -4,7 +4,7 @@ import { rememberAuthReturn, getAuthReturn, clearAuthReturn } from "@/lib/auth-r
 import { supabase } from "@/integrations/supabase/client";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
 
-export function EmailOtpSignIn({ intent }: { intent?: "support-chat" }) {
+export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined }) {
   const { language } = useSitePreferences();
   const english = language === "en";
   const t = (ar: string, en: string) => (english ? en : ar);
