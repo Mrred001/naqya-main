@@ -49,6 +49,8 @@ export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
   const english = language === "en";
   // Public browser OAuth Client ID. When unset, the existing redirect flow remains available.
   const clientId = (import.meta.env["VITE_GOOGLE_CLIENT_ID"] as string | undefined)?.trim();
+  // Keep the email method hidden until SMTP delivery and the OTP template are configured.
+  const emailEnabled = import.meta.env["VITE_EMAIL_OTP_ENABLED"] === "true";
   const buttonRef = useRef<HTMLDivElement>(null);
   const [directReady, setDirectReady] = useState(false);
   const [directFailed, setDirectFailed] = useState(false);
@@ -205,12 +207,16 @@ export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
             : "ما قدرنا نكمل الدخول. جرّب قوقل تاني أو استخدم الإيميل."}
         </p>
       )}
-      <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
-        <span className="h-px flex-1 bg-border" />
-        {english ? "or" : "أو"}
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <EmailOtpSignIn intent={intent} />
+      {emailEnabled && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" />
+            {english ? "or" : "أو"}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <EmailOtpSignIn intent={intent} />
+        </>
+      )}
     </div>
   );
 }
