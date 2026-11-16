@@ -29,10 +29,12 @@ export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined
       if (authError) throw authError;
       setStep("verify");
     } catch {
-      setError(t(
-        "ما قدرنا نرسل الرسالة. جرّب لاحقاً أو استخدم Google. ممكن يكون إرسال البريد غير مفعّل حالياً.",
-        "We couldn't send the email. Try again later or use Google. Email delivery may not be configured yet.",
-      ));
+      setError(
+        t(
+          "ما قدرنا نرسل الرسالة. جرّب لاحقاً أو استخدم Google. ممكن يكون إرسال البريد غير مفعّل حالياً.",
+          "We couldn't send the email. Try again later or use Google. Email delivery may not be configured yet.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -54,7 +56,12 @@ export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined
       clearAuthReturn();
       window.location.assign(destination);
     } catch {
-      setError(t("الرمز غير صحيح أو انتهت صلاحيته. جرّب تاني.", "Invalid or expired code. Please try again."));
+      setError(
+        t(
+          "الرمز غير صحيح أو انتهت صلاحيته. جرّب تاني.",
+          "Invalid or expired code. Please try again.",
+        ),
+      );
     } finally {
       setBusy(false);
     }
@@ -101,7 +108,8 @@ export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined
           ) : (
             <form className="space-y-3" onSubmit={verifyCode}>
               <p className="text-sm text-muted-foreground">
-                {t("راجع بريدك: ", "Check your inbox: ")}<span dir="ltr">{email}</span>
+                {t("راجع بريدك: ", "Check your inbox: ")}
+                <span dir="ltr">{email}</span>
               </p>
               <label className="block text-sm font-semibold" htmlFor="naqya-login-token">
                 {t("رمز التحقق", "Verification code")}
@@ -125,7 +133,9 @@ export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined
                 disabled={busy}
                 className="w-full rounded-lg bg-primary px-3 py-2 font-semibold text-primary-foreground disabled:opacity-50"
               >
-                {busy ? t("جاري التحقق…", "Verifying…") : t("تأكيد الرمز والدخول", "Verify and sign in")}
+                {busy
+                  ? t("جاري التحقق…", "Verifying…")
+                  : t("تأكيد الرمز والدخول", "Verify and sign in")}
               </button>
               <p className="text-xs text-muted-foreground">
                 {t(
@@ -135,7 +145,11 @@ export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined
               </p>
               <button
                 type="button"
-                onClick={() => { setStep("email"); setToken(""); setError(""); }}
+                onClick={() => {
+                  setStep("email");
+                  setToken("");
+                  setError("");
+                }}
                 className="flex items-center gap-1 text-sm text-primary underline"
               >
                 {english ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
@@ -146,13 +160,20 @@ export function EmailOtpSignIn({ intent }: { intent?: "support-chat" | undefined
           <button
             type="button"
             className="text-xs text-muted-foreground underline"
-            onClick={() => { setExpanded(false); setError(""); }}
+            onClick={() => {
+              setExpanded(false);
+              setError("");
+            }}
           >
             {t("إغلاق", "Close")}
           </button>
         </div>
       )}
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
