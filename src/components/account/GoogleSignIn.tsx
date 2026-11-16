@@ -1,13 +1,147 @@
-import { useState } from "react";
-import { rememberAuthReturn } from "@/lib/auth-return";
+import { useEffect, useRef, useState } from "react";
+import { rememberAuthReturn, getAuthReturn, clearAuthReturn } from "@/lib/auth-return";
 import { supabase } from "@/integrations/supabase/client";
 import { useSitePreferences } from "@/components/site/PreferencesProvider";
+import { EmailOtpSignIn } from "./EmailOtpSignIn";
+
+type GoogleIdentityClient = {
+  accounts: {
+    id: {
+      initialize: (options: {
+        client_id: string;
+        nonce: string;
+        callback: (response: { credential?: string }) => void;
+        use_fedcm_for_prompt?: boolean;
+      }) => void;
+      renderButton: (
+        parent: HTMLElement,
+        options: {
+          type: string;
+          theme: string;
+          size: string;
+          text: string;
+          shape: string;
+          width: number;
+        },
+      ) => void;
+    };
+  };
+};
+declare global {
+  interface Window {
+    google?: GoogleIdentityClient;
+  }
+}
+
+async function generateNonce() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const raw = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  const hashed = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(
+    "",
+  );
+  return { raw, hashed };
+}
 
 export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
   const { language } = useSitePreferences();
   const english = language === "en";
+  // Public browser OAuth Client ID. When unset, the existing redirect flow remains available.
+  const clientId = (import.meta.env["VITE_GOOGLE_CLIENT_ID"] as string | undefined)?.trim();
+  // Keep the email method hidden until SMTP delivery and the OTP template are configured.
+  const emailEnabled = import.meta.env["VITE_EMAIL_OTP_ENABLED"] === "true";
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [directReady, setDirectReady] = useState(false);
+  const [directFailed, setDirectFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!clientId) return;
+    let active = true;
+    let script: HTMLScriptElement | null = null;
+    const url = "https://accounts.google.com/gsi/client";
+
+    async function initialize() {
+      try {
+        const { raw, hashed } = await generateNonce();
+        if (!active || !window.google || !buttonRef.current) return;
+        window.google.accounts.id.initialize({
+          client_id: clientId!,
+          nonce: hashed,
+          use_fedcm_for_prompt: true,
+          callback: (response) => {
+            if (!response.credential || !active) {
+              if (active) setError(true);
+              return;
+            }
+            void (async () => {
+              setBusy(true);
+              setError(false);
+              try {
+                rememberAuthReturn(intent);
+                const { error: authError } = await supabase.auth.signInWithIdToken({
+                  provider: "google",
+                  token: response.credential!,
+                  nonce: raw,
+                });
+                if (authError) throw authError;
+                const destination = getAuthReturn();
+                clearAuthReturn();
+                window.location.assign(destination);
+              } catch {
+                if (active) setError(true);
+              } finally {
+                if (active) setBusy(false);
+              }
+            })();
+          },
+        });
+        const parent = buttonRef.current;
+        parent.replaceChildren();
+        window.google.accounts.id.renderButton(parent, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "rectangular",
+          width: Math.max(220, Math.min(380, parent.clientWidth || 320)),
+        });
+        if (active) setDirectReady(true);
+      } catch {
+        if (active) setDirectFailed(true);
+      }
+    }
+
+    if (window.google) {
+      void initialize();
+    } else {
+      script = document.querySelector<HTMLScriptElement>(
+        'script[src="https://accounts.google.com/gsi/client"]',
+      );
+      if (!script) {
+        script = document.createElement("script");
+        script.src = url;
+        script.async = true;
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", onLoad);
+      script.addEventListener("error", onError);
+    }
+    function onLoad() {
+      void initialize();
+    }
+    function onError() {
+      if (active) setDirectFailed(true);
+    }
+    return () => {
+      active = false;
+      script?.removeEventListener("load", onLoad);
+      script?.removeEventListener("error", onError);
+    };
+  }, [clientId, intent]);
+
   async function signIn() {
     setBusy(true);
     setError(false);
@@ -16,7 +150,7 @@ export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: window.location.origin + "/auth/callback",
           scopes: "openid email profile",
         },
       });
@@ -26,31 +160,62 @@ export function GoogleSignIn({ intent }: { intent?: "support-chat" }) {
       setBusy(false);
     }
   }
+
   return (
     <div className="space-y-3">
-      <button
-        type="button"
-        onClick={signIn}
-        disabled={busy}
-        className="flex w-full items-center justify-center gap-3 rounded-xl border bg-card px-4 py-3 font-semibold hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-      >
-        <GoogleMark />
-        <span>
-          {busy
-            ? english
-              ? "Opening Google…"
-              : "جاري فتح قوقل…"
-            : english
-              ? "Continue with Google"
-              : "المتابعة باستخدام Google"}
-        </span>
-      </button>
+      {clientId && (
+        <div
+          ref={buttonRef}
+          className={directReady ? "flex min-h-11 justify-center" : "hidden"}
+          aria-label={english ? "Google sign-in" : "الدخول بقوقل"}
+        />
+      )}
+      {!directReady || !clientId || directFailed ? (
+        <button
+          type="button"
+          onClick={() => void signIn()}
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-3 rounded-xl border bg-card px-4 py-3 font-semibold hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        >
+          <GoogleMark />
+          <span>
+            {busy
+              ? english
+                ? "Opening Google…"
+                : "جاري فتح قوقل…"
+              : english
+                ? "Continue with Google"
+                : "المتابعة باستخدام Google"}
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void signIn()}
+          className="block w-full text-center text-xs text-muted-foreground underline disabled:opacity-50"
+        >
+          {english
+            ? "Having trouble? Use the alternative Google sign-in"
+            : "الدخول المباشر ما اشتغل؟ جرّب طريقة قوقل البديلة"}
+        </button>
+      )}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {english
-            ? "Could not start sign-in. Please try again shortly."
-            : "ما قدرنا نبدأ تسجيل الدخول. جرّب تاني بعد شوية."}
+            ? "Could not complete sign-in. Please try Google again or use email."
+            : "ما قدرنا نكمل الدخول. جرّب قوقل تاني أو استخدم الإيميل."}
         </p>
+      )}
+      {emailEnabled && (
+        <>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden="true">
+            <span className="h-px flex-1 bg-border" />
+            {english ? "or" : "أو"}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <EmailOtpSignIn intent={intent} />
+        </>
       )}
     </div>
   );
